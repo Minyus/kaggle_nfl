@@ -1,0 +1,5 @@
+/:
+  type: kedex.contrib.io.pandas.EfficientCSVLocalDataSet
+#  type: PickleLocalDataSet
+  cached: True
+

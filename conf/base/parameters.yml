@@ -1,0 +1,30 @@
+
+
+
+RUN_CONFIG:
+  tags: # None
+  runner: SequentialRunner # None
+  node_names: # None
+  from_nodes: # None
+  to_nodes: # None
+  from_inputs: # None
+  load_versions: # None
+  pipeline_name: __default__
+
+MLFLOW_LOGGING_CONFIG:
+  offset_hours: 0
+  logging_artifacts:  # None
+  
+PIPELINES:
+  __default__:
+    obj: kedex.pipeline.KedexPipeline
+    parameters_in_inputs: True
+    module: # None
+    decorator: kedex.contrib.decorators.log_time
+    nodes:
+
+      - inputs:
+        func:
+        outputs:
+
+
