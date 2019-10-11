@@ -3,3 +3,6 @@
 #  type: PickleLocalDataSet
   cached: True
 
+data/input/nfl-big-data-bowl-2020/train.csv:
+
+data/load/df_010_samp.csv:

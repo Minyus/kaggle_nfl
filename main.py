@@ -11,6 +11,8 @@ if str(src_path) not in sys.path:
 if "PYTHONPATH" not in os.environ:
     os.environ["PYTHONPATH"] = src_path
 
+import kedex
+print("kedex version: ", kedex.__version__)
 from kedex.mlflow_context import MLflowFlexibleContext
 
 

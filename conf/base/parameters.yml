@@ -23,8 +23,12 @@ PIPELINES:
     decorator: kedex.contrib.decorators.log_time
     nodes:
 
-      - inputs:
+      - inputs: train
         func:
-        outputs:
+          obj: kedex.df_sample
+          frac: 0.01
+          random_state: 0
+          col_sample: PlayId
+        outputs: df_010_samp
 
 
