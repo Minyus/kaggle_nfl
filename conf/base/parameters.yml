@@ -19,7 +19,7 @@ PIPELINES:
   __default__:
     obj: kedex.pipeline.KedexPipeline
     parameters_in_inputs: True
-    module: # None
+    module: kaggle_nfl.kaggle_nfl
     decorator: kedex.contrib.decorators.log_time
     nodes:
 
@@ -30,5 +30,14 @@ PIPELINES:
           random_state: 0
           col_sample: GameId
         outputs: df_010_samp
+
+      - inputs: df_010_samp
+        func: fit_base_model
+        outputs: base_model
+
+      - inputs: base_model
+        func: infer
+        outputs: infered_last_iter
+
 
 

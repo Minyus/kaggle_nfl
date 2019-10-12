@@ -166,3 +166,5 @@ catboost_info
 # csv files
 *.csv
 
+test.csv.encrypted
+sample_submission.csv.encrypted
