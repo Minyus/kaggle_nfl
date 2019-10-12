@@ -1,4 +1,4 @@
-
+outcome_col: Yards
 
 
 RUN_CONFIG:
@@ -28,7 +28,7 @@ PIPELINES:
           obj: kedex.df_sample
           frac: 0.01
           random_state: 0
-          col_sample: PlayId
+          col_sample: GameId
         outputs: df_010_samp
 
 
