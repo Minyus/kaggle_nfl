@@ -2,21 +2,21 @@
 # KEDRO PROJECT
 
 # ignore all local configuration
-conf/local/**
-!conf/local/.gitkeep
+data/input/conf/local/**
+!data/input/conf/local/.gitkeep
 
 # ignore potentially sensitive credentials files
-conf/**/*credentials*
+data/input/conf/**/*credentials*
 
 # ignore everything in the following folders
 data/**
-logs/**
+data/input/logs/**
 references/**
 results/**
 
 # except their sub-folders
 !data/**/
-!logs/**/
+!data/input/logs/**/
 !references/**/
 !results/**/
 
@@ -165,6 +165,9 @@ catboost_info
 
 # csv files
 *.csv
+
+# zip files
+*.zip
 
 test.csv.encrypted
 sample_submission.csv.encrypted
