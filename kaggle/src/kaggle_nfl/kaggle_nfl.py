@@ -16,11 +16,9 @@ def fit_base_model(df, parameters):
     return model
 
 
-
-
-
 def infer(model, parameters):
     from kaggle.competitions import nflrush
+
     log.info("Started inference.")
 
     env = nflrush.make_env()
@@ -49,8 +47,8 @@ if __name__ == "__main__":
             os.environ["PYTHONPATH"] = src_path
 
     print("Read CSV file.")
-    df = pd.read_csv('../input/nfl-big-data-bowl-2020/train.csv', low_memory=False)
-    parameters=None
+    df = pd.read_csv("../input/nfl-big-data-bowl-2020/train.csv", low_memory=False)
+    parameters = None
     print("Fit model.")
     model = fit_base_model(df, parameters)
     print("Infer.")
