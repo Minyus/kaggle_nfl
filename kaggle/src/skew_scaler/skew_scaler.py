@@ -2,7 +2,7 @@ import numpy as np
 from scipy.stats import skewnorm
 
 
-class SkewScaler():
+class SkewScaler:
     def __init__(self,):
         self._a = None
         self._loc = None

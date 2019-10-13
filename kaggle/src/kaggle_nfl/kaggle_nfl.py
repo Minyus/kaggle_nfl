@@ -23,7 +23,9 @@ def infer(model, parameters):
 
     env = nflrush.make_env()
     for (test_df, sample_prediction_df) in env.iter_test():
-        sample_prediction_df.iloc[0, :] = model.cdf(np.arange(-99, 100, 1))
+        sample_prediction_df.iloc[0, :] = np.concatenate(
+            (np.zeros(90), model.cdf(np.arange(-9, 50, 1)), np.ones(50)), axis=None
+        )
         env.predict(sample_prediction_df)
         if sys.version_info >= (3, 6, 8):
             return sample_prediction_df

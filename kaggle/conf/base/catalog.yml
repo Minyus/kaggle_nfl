@@ -3,10 +3,9 @@
 #  type: PickleLocalDataSet
   cached: True
 
-train:
-  filepath: ../input/nfl-big-data-bowl-2020/train.csv
+../input/nfl-big-data-bowl-2020/train.csv:
   type: CSVLocalDataSet
 
 ../load/df_010_samp.csv:
 
-../load/infered_last_iter.csv:
+../load/infered_first_iter.csv:

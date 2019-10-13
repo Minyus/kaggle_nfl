@@ -37,7 +37,7 @@ PIPELINES:
 
       - inputs: base_model
         func: infer
-        outputs: infered_last_iter
+        outputs: infered_first_iter
 
 
 
