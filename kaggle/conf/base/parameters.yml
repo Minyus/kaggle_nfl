@@ -31,7 +31,16 @@ PIPELINES:
           col_sample: GameId
         outputs: df_010_samp
 
-      - inputs: df_010_samp
+      - inputs: train
+        func:
+          obj: kedex.df_query
+          expr: "Position == 'RB'"
+        outputs: df_020_RB
+
+      - inputs: df_020_RB
+        outputs: pairplot
+
+      - inputs: train
         func: fit_base_model
         outputs: base_model
 

@@ -9,3 +9,17 @@
 ../load/df_010_samp.csv:
 
 ../load/infered_first_iter.csv:
+
+../load/pairplot.png:
+  type: kedex.contrib.io.seaborn.SeabornPairPlotDataSet
+  save_args: # https://seaborn.pydata.org/generated/seaborn.pairplot.html
+    x_vars:
+      - Yards
+    aspect: 1
+    chunk_size: 1 # Use if there are many columns
+#    hue: 'Down'
+    plot_kws:
+      s: 20
+#  sample_args:
+#    n: 10000
+#    random_state: 0
