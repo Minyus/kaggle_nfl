@@ -38,7 +38,7 @@ def fit_base_model(df, parameters):
         for play_id in tqdm(play_id_list):
             play_df = vali_df.xs(key=play_id, drop_level=False).reset_index()
             # play_df = vali_df.query("PlayId == @play_id")
-            y_true = play_df["Yards"].max()
+            y_true = play_df["Yards"].iloc[0]
             cdf_arr = _predict_cdf(play_df, model)
 
             h_arr = np.ones(199)
@@ -54,9 +54,16 @@ def fit_base_model(df, parameters):
         )
         log.info(metrics)
         log_metrics(metrics)
-        params = dict(crps_max_play=play_id_list[play_crps_arr.argmax()])
-        log.info(params)
-        log_params(params)
+
+        crps_max_play_id = play_id_list[play_crps_arr.argmax()]
+        crps_max_play_df = vali_df.xs(
+            key=crps_max_play_id, drop_level=False
+        ).reset_index()
+        crps_max_play = crps_max_play_df.query("NflIdRusher == NflId").to_dict(
+            "records"
+        )[0]
+        log.info(crps_max_play)
+        log_params(crps_max_play)
 
     return model
 
