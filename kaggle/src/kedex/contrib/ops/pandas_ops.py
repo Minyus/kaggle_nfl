@@ -9,7 +9,7 @@ INT_TYPES = ["int8", "int16", "int32", "int64"]
 
 
 def df_merge(**kwargs):
-    def _df_merge(left_df, right_df, parameters):
+    def _df_merge(left_df, right_df, *argsignore, **kwargsignore):
         kwargs.setdefault("suffixes", (False, False))
         return pd.merge(left_df, right_df, **kwargs)
 
@@ -17,11 +17,7 @@ def df_merge(**kwargs):
 
 
 def df_concat(**kwargs):
-    def _df_concat(
-        df_0,  # type: pd.DataFrame
-        df_1,  # type: pd.DataFrame
-        parameters,  # type: dict
-    ):
+    def _df_concat(df_0, df_1, *argsignore, **kwargsignore):
         new_col_values = kwargs.get("new_col_values")  # type: List[str]
         new_col_name = kwargs.get("new_col_name")  # type: str
         col_id = kwargs.get("col_id", "index")  # type: str
@@ -51,7 +47,7 @@ def df_concat(**kwargs):
 
 
 def df_sort_values(**kwargs):
-    def _df_sort_values(df, parameters):
+    def _df_sort_values(df, *argsignore, **kwargsignore):
         """ https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.sort_values.html """
         kwargs.update(dict(inplace=True))
         df.sort_values(**kwargs)
@@ -61,10 +57,11 @@ def df_sort_values(**kwargs):
 
 
 def df_sample(**kwargs):
-    def _df_sample(df, parameters):
+    def _df_sample(df, *argsignore, **kwargsignore):
         frac = kwargs.get("frac", 1.0)
         random_state = kwargs.get("random_state")
         col_sample = kwargs.get("col_sample")
+        col_assign = kwargs.get("col_assign")
 
         log.info("DF shape before random sampling: {}".format(df.shape))
         if col_sample:
@@ -72,9 +69,18 @@ def df_sample(**kwargs):
             size = int(len(population_arr) * frac)
             np.random.seed(random_state)
             sample_arr = np.random.choice(population_arr, size=size, replace=False)
-            sample_series = pd.Series(sample_arr, name=col_sample)
-            df = pd.merge(df, sample_series, how="right", on=col_sample)
+            if col_assign:
+                assert isinstance(col_assign, str)
+                sample_set = set(sample_arr.tolist())
+                df[col_assign] = df[col_sample].map(
+                    lambda v: np.int8(v in sample_set), na_action="ignore"
+                )
+            else:
+                sample_series = pd.Series(sample_arr, name=col_sample)
+                df = pd.merge(df, sample_series, how="right", on=col_sample)
         if not col_sample:
+            if col_assign:
+                raise NotImplementedError("Specify col_sample to use col_assign.")
             df = df.sample(frac=frac, random_state=random_state)
         log.info("DF shape after random sampling: {}".format(df.shape))
         return df
@@ -83,7 +89,7 @@ def df_sample(**kwargs):
 
 
 def df_filter(**kwargs):
-    def _df_filter(df, parameters):
+    def _df_filter(df, *argsignore, **kwargsignore):
         items = kwargs.get("items")
         if items:
             if isinstance(items, str):
@@ -100,35 +106,37 @@ def df_filter(**kwargs):
 
 
 def df_get_cols(**kwargs):
-    def _df_get_cols(df, parameters):
+    def _df_get_cols(df, *argsignore, **kwargsignore):
         return df.columns.to_list()
 
     return _df_get_cols
 
 
 def df_filter_cols(**kwargs):
-    def _df_filter_cols(df, parameters):
-        return df_filter(**kwargs)(df, parameters).columns.to_list()
+    def _df_filter_cols(df, *argsignore, **kwargsignore):
+        return df_filter(**kwargs)(df, *argsignore, **kwargsignore).columns.to_list()
 
     return _df_filter_cols
 
 
 def df_select_dtypes(**kwargs):
-    def _df_select_dtypes(df, parameters):
+    def _df_select_dtypes(df, *argsignore, **kwargsignore):
         return df.select_dtypes(**kwargs)
 
     return _df_select_dtypes
 
 
 def df_select_dtypes_cols(**kwargs):
-    def _df_select_dtypes_cols(df, parameters):
-        return df_select_dtypes(**kwargs)(df, parameters).columns.to_list()
+    def _df_select_dtypes_cols(df, *argsignore, **kwargsignore):
+        return df_select_dtypes(**kwargs)(
+            df, *argsignore, **kwargsignore
+        ).columns.to_list()
 
     return _df_select_dtypes_cols
 
 
 def df_get_col_indexes(**kwargs):
-    def _df_get_col_indexes(df, parameters):
+    def _df_get_col_indexes(df, *argsignore, **kwargsignore):
         cols = kwargs.get("cols")
         assert cols
         for col in cols:
@@ -142,7 +150,7 @@ def df_get_col_indexes(**kwargs):
 
 
 def df_drop(**kwargs):
-    def _df_drop(df, parameters):
+    def _df_drop(df, *argsignore, **kwargsignore):
         kwargs.update(dict(inplace=True))
         df.drop(**kwargs)
         return df
@@ -151,8 +159,10 @@ def df_drop(**kwargs):
 
 
 def df_drop_filter(**kwargs):
-    def _df_drop_filter(df, parameters):
-        cols_drop = df_filter(**kwargs)(df, parameters).columns.to_list()
+    def _df_drop_filter(df, *argsignore, **kwargsignore):
+        cols_drop = df_filter(**kwargs)(
+            df, *argsignore, **kwargsignore
+        ).columns.to_list()
         df.drop(columns=cols_drop, inplace=True)
         return df
 
@@ -160,7 +170,7 @@ def df_drop_filter(**kwargs):
 
 
 def df_add_row_stat(**kwargs):
-    def _df_add_row_stat(df, parameters):
+    def _df_add_row_stat(df, *argsignore, **kwargsignore):
         regex = kwargs.get("regex", r".*")
         prefix = kwargs.get("prefix", "stat_all")
 
@@ -231,9 +241,95 @@ def df_add_row_stat(**kwargs):
 
 
 def df_query(**kwargs):
-    def _df_query(df, parameters):
+    def _df_query(df, *argsignore, **kwargsignore):
         kwargs.update(dict(inplace=True))
         df.query(**kwargs)
         return df
 
     return _df_query
+
+
+def df_drop_duplicates(**kwargs):
+    def _df_drop_duplicates(df, *argsignore, **kwargsignore):
+        kwargs.update(dict(inplace=True))
+        df.drop_duplicates(**kwargs)
+        return df
+
+    return _df_drop_duplicates
+
+
+def df_apply(**kwargs):
+    def _df_apply(df, *argsignore, **kwargsignore):
+        return df.apply(**kwargs)
+
+    return _df_apply
+
+
+def df_applymap(**kwargs):
+    def _df_applymap(df, *argsignore, **kwargsignore):
+        return df.applymap(**kwargs)
+
+    return _df_applymap
+
+
+def df_pipe(**kwargs):
+    def _df_pipe(df, *argsignore, **kwargsignore):
+        return df.pipe(**kwargs)
+
+    return _df_pipe
+
+
+def df_agg(**kwargs):
+    def _df_agg(df, *argsignore, **kwargsignore):
+        return df.agg(**kwargs)
+
+    return _df_agg
+
+
+def df_aggregate(**kwargs):
+    def _df_aggregate(df, *argsignore, **kwargsignore):
+        return df.aggregate(**kwargs)
+
+    return _df_aggregate
+
+
+def df_transform(**kwargs):
+    def _df_transform(df, *argsignore, **kwargsignore):
+        return df.transform(**kwargs)
+
+    return _df_transform
+
+
+def df_groupby(**kwargs):
+    def _df_groupby(df, *argsignore, **kwargsignore):
+        return df.groupby(**kwargs)
+
+    return _df_groupby
+
+
+def df_rolling(**kwargs):
+    def _df_rolling(df, *argsignore, **kwargsignore):
+        return df.rolling(**kwargs)
+
+    return _df_rolling
+
+
+def df_expanding(**kwargs):
+    def _df_expanding(df, *argsignore, **kwargsignore):
+        return df.expanding(**kwargs)
+
+    return _df_expanding
+
+
+def df_ewm(**kwargs):
+    def _df_ewm(df, *argsignore, **kwargsignore):
+        return df.ewm(**kwargs)
+
+    return _df_ewm
+
+
+def sr_map(**kwargs):
+    def _sr_map(sr, *argsignore, **kwargsignore):
+        sr.map(**kwargs)
+
+    return _sr_map
