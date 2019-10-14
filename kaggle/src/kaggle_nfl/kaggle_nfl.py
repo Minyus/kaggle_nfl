@@ -13,6 +13,38 @@ if sys.version_info >= (3, 6, 8):
     log = logging.getLogger(__name__)
 
 
+def preprocess(df, parameters=None):
+    """ Reference:
+    https://www.kaggle.com/statsbymichaellopez/nfl-tracking-initial-wrangling-voronoi-areas
+    """
+    df["ToLeft"] = df["PlayDirection"] == "left"
+    df["IsBallCarrier "] = df["NflId"] == df["NflIdRusher"]
+
+    team_abbr_dict = {"ARI": "ARZ", "BAL": "BLT", "CLE": "CLV", "HOU": "HST"}
+    df["VisitorTeamAbbr"] = df["VisitorTeamAbbr"].replace(team_abbr_dict)
+    df["HomeTeamAbbr"] = df["HomeTeamAbbr"].replace(team_abbr_dict)
+
+    home_dict = {True: "home", False: "away"}
+    df["TeamOnOffense"] = (df["PossessionTeam"] == df["HomeTeamAbbr"]).replace(
+        home_dict
+    )
+
+    df["IsOnOffense"] = df["Team"] == df["TeamOnOffense"]
+    df["YardsFromOwnGoal"] = -df["YardLine"] + 100
+    df.loc[
+        (df["FieldPosition"].astype(str) == df["PossessionTeam"]), "YardsFromOwnGoal"
+    ] = df["YardLine"]
+
+    df["X_std"] = df["X"]
+    df.loc[df["ToLeft"], "X_std"] = -df["X"] + 120
+    df["X_std"] = df["X_std"] - 10
+
+    df["Y_std"] = df["Y"]
+    df.loc[df["ToLeft"], "Y_std"] = -df["Y"] + 160 / 3
+
+    return df
+
+
 def fit_base_model(df, parameters):
 
     # play_df["Yards"].clip(lower=-10, upper=50, inplace=True)
@@ -25,6 +57,7 @@ def fit_base_model(df, parameters):
     else:
         fit_df = df
 
+    fit_df = preprocess(fit_df)
     model.fit(fit_df.drop_duplicates(subset="PlayId")["Yards"])
 
     if "Validation" in df.columns:
@@ -69,17 +102,19 @@ def fit_base_model(df, parameters):
 
 
 def _predict_cdf(test_df, model):
-    yard_line = test_df["YardLine"].max()
+    test_df = preprocess(test_df)
+
+    yards_abs = test_df["YardsFromOwnGoal"].iloc[0]
 
     pred_arr = np.zeros(199)
     pred_arr[-100:] = np.ones(100)
 
-    cdf_arr = model.cdf(np.arange(-yard_line, 100 - yard_line, 1))
+    cdf_arr = model.cdf(np.arange(-yards_abs, 100 - yards_abs, 1))
     cdf_arr = np.maximum.accumulate(cdf_arr)
     # for i in range(len(cdf_arr) - 1):
     #     cdf_arr[i + 1] = max(cdf_arr[i + 1], cdf_arr[i])
 
-    pred_arr[(99 - yard_line) : (199 - yard_line)] = cdf_arr
+    pred_arr[(99 - yards_abs) : (199 - yards_abs)] = cdf_arr
     return pred_arr
 
 
