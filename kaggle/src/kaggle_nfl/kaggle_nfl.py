@@ -21,9 +21,13 @@ def fit_base_model(df, parameters):
 
 
 def _predict_cdf(test_df, model):
-    play_arr = np.concatenate(
-        (np.zeros(90), model.cdf(np.arange(-9, 50, 1)), np.ones(50)), axis=None
-    )
+    yard_line = test_df.loc[0, "YardLine"]
+    play_arr = np.zeros(199)
+    play_arr[-99:] = np.ones(99)
+    cdf_arr = model.cdf(np.arange(-yard_line, 100 - yard_line, 1))
+    for i in range(len(cdf_arr) - 1):
+        cdf_arr[i + 1] = max(cdf_arr[i + 1], cdf_arr[i])
+    play_arr[(99 - yard_line) : (199 - yard_line)] = cdf_arr
     return play_arr
 
 
