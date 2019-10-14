@@ -23,27 +23,36 @@ PIPELINES:
     decorator: kedex.contrib.decorators.log_time
     nodes:
 
-      - inputs: train
-        func:
-          obj: kedex.df_sample
-          frac: 0.01
-          random_state: 0
-          col_sample: GameId
-        outputs: df_010_samp
+#      - inputs: train
+#        func:
+#          obj: kedex.df_sample
+#          frac: 0.01
+#          random_state: 0
+#          col_sample: GameId
+#        outputs: df_010_samp
 
-      - inputs: train
-        func:
-          obj: kedex.df_query
-          expr: "Position == 'RB'"
-        outputs: df_020_RB
+#      - inputs: train
+#        func:
+#          obj: kedex.df_query
+#          expr: "Position == 'RB'"
+#        outputs: df_020_RB
 
 #      - inputs: df_020_RB
 #        outputs: pairplot
 
-      - inputs: train
-        outputs: describe
+#      - inputs: train
+#        outputs: describe
 
       - inputs: train
+        func:
+          obj: kedex.df_sample
+          frac: 0.2
+          random_state: 191024
+          col_sample: PlayId
+          col_assign: Validation
+        outputs: df_030
+
+      - inputs: df_030
         func: fit_base_model
         outputs: base_model
 

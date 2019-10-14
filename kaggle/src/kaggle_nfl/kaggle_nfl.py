@@ -6,29 +6,74 @@ from pathlib import Path
 
 if sys.version_info >= (3, 6, 8):
     from skew_scaler import SkewScaler
+    from mlflow import log_metrics, log_params
+    from tqdm import tqdm
+    import logging
+
+    log = logging.getLogger(__name__)
 
 
 def fit_base_model(df, parameters):
-    play_df = df.drop_duplicates(subset="PlayId")
 
     # play_df["Yards"].clip(lower=-10, upper=50, inplace=True)
 
     model = SkewScaler()
 
-    model.fit(play_df["Yards"])
+    if "Validation" in df.columns:
+        fit_df = df.query("Validation == 0").drop(columns=["Validation"])
+        log.info("Fitting model using data shape: {}".format(fit_df.shape))
+    else:
+        fit_df = df
+
+    model.fit(fit_df.drop_duplicates(subset="PlayId")["Yards"])
+
+    if "Validation" in df.columns:
+        vali_df = df.query("Validation == 1").drop(columns=["Validation"])
+        play_id_sr = vali_df["PlayId"].drop_duplicates()
+        play_id_list = play_id_sr.to_list()
+
+        vali_df.set_index("PlayId", inplace=True)
+
+        play_crps_list = []
+        for play_id in tqdm(play_id_list):
+            play_df = vali_df.xs(key=play_id, drop_level=False).reset_index()
+            # play_df = vali_df.query("PlayId == @play_id")
+            y_true = play_df["Yards"].max()
+            cdf_arr = _predict_cdf(play_df, model)
+
+            h_arr = np.ones(199)
+            h_arr[: (99 + y_true)] = 0
+            play_crps = ((cdf_arr - h_arr) ** 2).mean()
+            play_crps_list.append(play_crps)
+
+        play_crps_arr = np.array(play_crps_list)
+        metrics = dict(
+            crps_mean=play_crps_arr.mean(),
+            crps_std=play_crps_arr.std(),
+            crps_max=play_crps_arr.max(),
+        )
+        log.info(metrics)
+        log_metrics(metrics)
+        params = dict(crps_max_play=play_id_list[play_crps_arr.argmax()])
+        log.info(params)
+        log_params(params)
 
     return model
 
 
 def _predict_cdf(test_df, model):
-    yard_line = test_df.loc[0, "YardLine"]
-    play_arr = np.zeros(199)
-    play_arr[-99:] = np.ones(99)
+    yard_line = test_df["YardLine"].max()
+
+    pred_arr = np.zeros(199)
+    pred_arr[-100:] = np.ones(100)
+
     cdf_arr = model.cdf(np.arange(-yard_line, 100 - yard_line, 1))
-    for i in range(len(cdf_arr) - 1):
-        cdf_arr[i + 1] = max(cdf_arr[i + 1], cdf_arr[i])
-    play_arr[(99 - yard_line) : (199 - yard_line)] = cdf_arr
-    return play_arr
+    cdf_arr = np.maximum.accumulate(cdf_arr)
+    # for i in range(len(cdf_arr) - 1):
+    #     cdf_arr[i + 1] = max(cdf_arr[i + 1], cdf_arr[i])
+
+    pred_arr[(99 - yard_line) : (199 - yard_line)] = cdf_arr
+    return pred_arr
 
 
 def infer(model, parameters):
