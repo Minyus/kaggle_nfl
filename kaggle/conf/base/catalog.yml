@@ -1,5 +1,7 @@
 /:
   type: CSVLocalDataSet
+  load_args:
+    low_memory: False
 #  type: PickleLocalDataSet
   cached: True
 
@@ -24,11 +26,11 @@
 ##    n: 10000
 ##    random_state: 0
 
-../load/describe.csv:
-  type: kedex.PandasDescribeDataSet
-  describe_args: # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.describe.html
-    include: all
-    percentiles:
-      - 0.25
-      - 0.5
-      - 0.75
+#../load/describe.csv:
+#  type: kedex.PandasDescribeDataSet
+#  describe_args: # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.describe.html
+#    include: all
+#    percentiles:
+#      - 0.25
+#      - 0.5
+#      - 0.75

@@ -11,6 +11,8 @@ if sys.version_info >= (3, 6, 8):
 def fit_base_model(df, parameters):
     play_df = df.drop_duplicates(subset="PlayId")
 
+    # play_df["Yards"].clip(lower=-10, upper=50, inplace=True)
+
     model = SkewScaler()
 
     model.fit(play_df["Yards"])
@@ -18,14 +20,19 @@ def fit_base_model(df, parameters):
     return model
 
 
+def _predict_cdf(test_df, model):
+    play_arr = np.concatenate(
+        (np.zeros(90), model.cdf(np.arange(-9, 50, 1)), np.ones(50)), axis=None
+    )
+    return play_arr
+
+
 def infer(model, parameters):
     from kaggle.competitions import nflrush
 
     env = nflrush.make_env()
     for (test_df, sample_prediction_df) in env.iter_test():
-        sample_prediction_df.iloc[0, :] = np.concatenate(
-            (np.zeros(90), model.cdf(np.arange(-9, 50, 1)), np.ones(50)), axis=None
-        )
+        sample_prediction_df.iloc[0, :] = _predict_cdf(test_df, model)
         env.predict(sample_prediction_df)
         if sys.version_info >= (3, 6, 8):
             return sample_prediction_df
