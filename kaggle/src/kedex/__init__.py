@@ -7,6 +7,7 @@ from .contrib.decorators.decorators import *  # NOQA
 from .contrib.decorators.pandas_decorators import *  # NOQA
 from .contrib.io.pandas import *  # NOQA
 from .contrib.io.pandas_profiling import *  # NOQA
+from .contrib.io.pillow import *  # NOQA
 from .contrib.io.seaborn import *  # NOQA
 from .contrib.ops.pandas_ops import *  # NOQA
 from .hatch_dict.hatch_dict import *  # NOQA
