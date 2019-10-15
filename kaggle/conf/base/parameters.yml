@@ -40,20 +40,17 @@ PIPELINES:
 #      - inputs: df_020_RB
 #        outputs: pairplot
 
-#      - inputs: train
-#        outputs: describe
-
       - inputs: train
+        func: preprocess
+        outputs: df_030
+
+      - inputs: df_030
         func:
           obj: kedex.df_sample
           frac: 0.1
           random_state: 191024
           col_sample: PlayId
           col_assign: Validation
-        outputs: df_030
-
-      - inputs: df_030
-        func: preprocess
         outputs: df_040
 
       - inputs: df_040
@@ -64,5 +61,15 @@ PIPELINES:
         func: infer
         outputs: infered_first_iter
 
+      - inputs: df_030
+        func:
+          obj: kedex.df_sample
+          frac: 0.01
+          random_state: 191024
+          col_sample: PlayId
+        outputs: df_031
+
+      - inputs: df_030
+        outputs: describe
 
 

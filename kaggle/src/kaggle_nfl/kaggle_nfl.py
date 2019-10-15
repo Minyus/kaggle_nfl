@@ -5,6 +5,8 @@ import os
 from pathlib import Path
 from collections import OrderedDict
 
+from scipy.sparse import coo_matrix
+
 if sys.version_info >= (3, 6, 8):
     from skew_scaler import SkewScaler
     from mlflow import log_metrics, log_params
@@ -18,7 +20,7 @@ def preprocess(df, parameters=None):
     https://www.kaggle.com/statsbymichaellopez/nfl-tracking-initial-wrangling-voronoi-areas
     """
     df["ToLeft"] = df["PlayDirection"] == "left"
-    df["IsBallCarrier "] = df["NflId"] == df["NflIdRusher"]
+    df["IsBallCarrier"] = df["NflId"] == df["NflIdRusher"]
 
     team_abbr_dict = {"ARI": "ARZ", "BAL": "BLT", "CLE": "CLV", "HOU": "HST"}
     df["VisitorTeamAbbr"] = df["VisitorTeamAbbr"].replace(team_abbr_dict)
@@ -49,6 +51,11 @@ def preprocess(df, parameters=None):
         df.groupby(["PlayId"])["RelativeDefenceMeanYards"].transform("mean")
         - df["YardsFromOwnGoal"]
     )
+    """ """
+    df["PlayerCategory"] = df["IsOnOffense"].astype(np.int8)
+    df.loc[df["IsBallCarrier"], "PlayerCategory"] = 2
+    df["X_int"] = np.floor(df["X_std"] + 10).clip(lower=0, upper=119).astype(np.int8)
+    df["Y_int"] = np.floor(df["Y_std"]).clip(lower=0, upper=59).astype(np.int8)
 
     return df
 
@@ -98,6 +105,14 @@ def play_generator(df, use_tqdm=True, **kwargs):
         return tqdm(_play_generator(), total=total, **kwargs)
     else:
         return _play_generator()
+
+
+# def generate_field_image(df, parameters):
+#     for i, play_df, last in play_generator(df):
+#         img = np.zeros((100, 54, 3), dtype=np.int8)
+#         for i in range(3):
+#             cat_df = df.query("PlayerCategory == @i")
+#             coo_matrix()
 
 
 def fit_base_model(df, parameters):
