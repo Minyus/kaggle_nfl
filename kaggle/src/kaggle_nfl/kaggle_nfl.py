@@ -3,6 +3,7 @@ import numpy as np
 import sys
 import os
 from pathlib import Path
+from collections import OrderedDict
 
 if sys.version_info >= (3, 6, 8):
     from skew_scaler import SkewScaler
@@ -42,7 +43,33 @@ def preprocess(df, parameters=None):
     df["Y_std"] = df["Y"]
     df.loc[df["ToLeft"], "Y_std"] = -df["Y"] + 160 / 3
 
+    """ """
+    df["RelativeDefenceMeanYards"] = df["X_std"]
+    df.loc[df["IsOnOffense"], "RelativeDefenceMeanYards"] = np.nan
+    df["RelativeDefenceMeanYards"] = (
+        df.groupby(["PlayId"])["RelativeDefenceMeanYards"].transform("mean")
+        - df["YardsFromOwnGoal"]
+    )
+
     return df
+
+
+def _relative_values(abs_sr, comp_sr, offset=101, transform_func=None):
+    if len(comp_sr) != len(abs_sr):
+        comp_sr = comp_sr.iloc[0]
+    denominator_sr = comp_sr + offset
+    assert (
+        (denominator_sr > 0.0)
+        if isinstance(denominator_sr, float)
+        else (denominator_sr > 0.0).all()
+    )
+
+    numerator_sr = abs_sr + offset
+    values_sr = numerator_sr / denominator_sr
+    assert not values_sr.isna().any()
+    if transform_func and callable(transform_func):
+        values_sr = transform_func(values_sr)
+    return values_sr
 
 
 def fit_base_model(df, parameters):
@@ -58,9 +85,14 @@ def fit_base_model(df, parameters):
         fit_df = df
 
     fit_df = preprocess(fit_df)
-    model.fit(fit_df.drop_duplicates(subset="PlayId")["Yards"])
+    fit_play_df = fit_df.drop_duplicates(subset="PlayId")
+    outcome_sr = _relative_values(
+        fit_play_df["Yards"], fit_play_df["RelativeDefenceMeanYards"]
+    )
+    model.fit(outcome_sr)
 
     if "Validation" in df.columns:
+        log.info("Validating...")
         vali_df = df.query("Validation == 1").drop(columns=["Validation"])
         play_id_sr = vali_df["PlayId"].drop_duplicates()
         play_id_list = play_id_sr.to_list()
@@ -68,7 +100,12 @@ def fit_base_model(df, parameters):
         vali_df.set_index("PlayId", inplace=True)
 
         play_crps_list = []
-        for play_id in tqdm(play_id_list):
+
+        use_tqdm = True
+        if use_tqdm:
+            play_id_tqdm = tqdm(play_id_list)
+
+        for i, play_id in enumerate(play_id_tqdm):
             play_df = vali_df.xs(key=play_id, drop_level=False).reset_index()
             # play_df = vali_df.query("PlayId == @play_id")
             y_true = play_df["Yards"].iloc[0]
@@ -78,25 +115,37 @@ def fit_base_model(df, parameters):
             h_arr[: (99 + y_true)] = 0
             play_crps = ((cdf_arr - h_arr) ** 2).mean()
             play_crps_list.append(play_crps)
+            if (not (i % 100)) or (i == len(play_id_list) - 1):
+                play_crps_arr = np.array(play_crps_list)
+                metrics_orddict = OrderedDict(
+                    [
+                        ("crps_mean", play_crps_arr.mean()),
+                        ("crps_std", play_crps_arr.std()),
+                        ("crps_max", play_crps_arr.max()),
+                    ]
+                )
 
-        play_crps_arr = np.array(play_crps_list)
-        metrics = dict(
-            crps_mean=play_crps_arr.mean(),
-            crps_std=play_crps_arr.std(),
-            crps_max=play_crps_arr.max(),
-        )
-        log.info(metrics)
-        log_metrics(metrics)
+                crps_max_play_id = play_id_list[play_crps_arr.argmax()]
+                crps_max_play_df = vali_df.xs(
+                    key=crps_max_play_id, drop_level=False
+                ).reset_index()
+                crps_max_play_orddict = crps_max_play_df.query(
+                    "NflIdRusher == NflId"
+                ).to_dict(orient="records", into=OrderedDict)[0]
 
-        crps_max_play_id = play_id_list[play_crps_arr.argmax()]
-        crps_max_play_df = vali_df.xs(
-            key=crps_max_play_id, drop_level=False
-        ).reset_index()
-        crps_max_play = crps_max_play_df.query("NflIdRusher == NflId").to_dict(
-            "records"
-        )[0]
-        log.info(crps_max_play)
-        log_params(crps_max_play)
+                report_orddict = OrderedDict([])
+                report_orddict.update(metrics_orddict)
+                report_orddict.update(crps_max_play_orddict)
+                if use_tqdm:
+                    play_id_tqdm.set_postfix(ordered_dict=report_orddict, refresh=True)
+                else:
+                    print(report_orddict)
+            assert not np.isnan(play_crps)
+
+        log.info(metrics_orddict)
+        log.info(crps_max_play_orddict)
+        log_metrics(dict(metrics_orddict))
+        log_params(dict(crps_max_play_orddict))
 
     return model
 
@@ -109,7 +158,11 @@ def _predict_cdf(test_df, model):
     pred_arr = np.zeros(199)
     pred_arr[-100:] = np.ones(100)
 
-    cdf_arr = model.cdf(np.arange(-yards_abs, 100 - yards_abs, 1))
+    target_yards_sr = pd.Series(np.arange(-yards_abs, 100 - yards_abs, 1))
+    outcome_sr = _relative_values(target_yards_sr, test_df["RelativeDefenceMeanYards"])
+    assert not outcome_sr.isna().any()
+    cdf_arr = model.cdf(outcome_sr)
+    assert not np.isnan(cdf_arr).any()
     cdf_arr = np.maximum.accumulate(cdf_arr)
     # for i in range(len(cdf_arr) - 1):
     #     cdf_arr[i + 1] = max(cdf_arr[i + 1], cdf_arr[i])
