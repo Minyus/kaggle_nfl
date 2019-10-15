@@ -52,10 +52,10 @@ def preprocess(df, parameters=None):
         - df["YardsFromOwnGoal"]
     )
     """ """
-    df["PlayerCategory"] = df["IsOnOffense"].astype(np.int8)
+    df["PlayerCategory"] = df["IsOnOffense"].astype(np.uint8)
     df.loc[df["IsBallCarrier"], "PlayerCategory"] = 2
-    df["X_int"] = np.floor(df["X_std"] + 10).clip(lower=0, upper=119).astype(np.int8)
-    df["Y_int"] = np.floor(df["Y_std"]).clip(lower=0, upper=59).astype(np.int8)
+    df["X_int"] = np.floor(df["X_std"] + 10).clip(lower=0, upper=119).astype(np.uint8)
+    df["Y_int"] = np.floor(df["Y_std"]).clip(lower=0, upper=59).astype(np.uint8)
 
     return df
 
@@ -107,12 +107,32 @@ def play_generator(df, use_tqdm=True, **kwargs):
         return _play_generator()
 
 
-# def generate_field_image(df, parameters):
-#     for i, play_df, last in play_generator(df):
-#         img = np.zeros((100, 54, 3), dtype=np.int8)
-#         for i in range(3):
-#             cat_df = df.query("PlayerCategory == @i")
-#             coo_matrix()
+def generate_field_images(df, parameters):
+
+    img_3darr_list = []
+    play_df_list = []
+    for i, play_df, last in play_generator(df):
+        play_df_id = play_df["PlayId"].iloc[0]
+        play_df_list.append(play_df_id)
+        img = np.zeros((120, 60, 3), dtype=np.uint8)
+        img_ch_2darr_list = []
+        for i in range(3):
+            cat_df = df.query("PlayerCategory == @i")
+            count_df = (
+                cat_df.groupby(["X_int", "Y_int"], as_index=False)["NflId"]
+                .count()
+                .astype(np.uint8)
+            )
+            ch_2darr = coo_matrix(
+                (count_df["NflId"], (count_df["X_int"], count_df["Y_int"])),
+                shape=(120, 60),
+            ).toarray()
+            img_ch_2darr_list.append(ch_2darr)
+        img_3darr = np.stack(img_ch_2darr_list, axis=2)
+        img_3darr_list.append(img_3darr)
+    img_4darr = np.stack(img_3darr_list, axis=0)
+    images = dict(images=img_4darr, names=play_df_list)
+    return images
 
 
 def fit_base_model(df, parameters):

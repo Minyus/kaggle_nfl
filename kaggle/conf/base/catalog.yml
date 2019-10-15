@@ -12,6 +12,15 @@
 
 ../load/df_031.csv:
 
+../load/images_4darr.pickle:
+  type: PickleLocalDataSet
+  load_args:  # None
+
+../load/images.png:
+  type: kedex.ImagesLocalDataSet
+  cached: False
+  load_args:  # None
+
 ../load/df_040.csv:
 
 ../load/infered_first_iter.csv:
