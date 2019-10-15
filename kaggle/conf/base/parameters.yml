@@ -53,6 +53,10 @@ PIPELINES:
         outputs: df_030
 
       - inputs: df_030
+        func: preprocess
+        outputs: df_040
+
+      - inputs: df_040
         func: fit_base_model
         outputs: base_model
 

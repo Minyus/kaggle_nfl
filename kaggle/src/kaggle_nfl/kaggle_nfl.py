@@ -74,8 +74,6 @@ def _relative_values(abs_sr, comp_sr, offset=101, transform_func=None):
 
 def fit_base_model(df, parameters):
 
-    # play_df["Yards"].clip(lower=-10, upper=50, inplace=True)
-
     model = SkewScaler()
 
     if "Validation" in df.columns:
@@ -129,9 +127,11 @@ def fit_base_model(df, parameters):
                 crps_max_play_df = vali_df.xs(
                     key=crps_max_play_id, drop_level=False
                 ).reset_index()
-                crps_max_play_orddict = crps_max_play_df.query(
-                    "NflIdRusher == NflId"
-                ).to_dict(orient="records", into=OrderedDict)[0]
+                crps_max_play_orddict = (
+                    crps_max_play_df.query("NflIdRusher == NflId")
+                    .astype(str)
+                    .to_dict(orient="records", into=OrderedDict)[0]
+                )
 
                 report_orddict = OrderedDict([])
                 report_orddict.update(metrics_orddict)
@@ -151,7 +151,6 @@ def fit_base_model(df, parameters):
 
 
 def _predict_cdf(test_df, model):
-    test_df = preprocess(test_df)
 
     yards_abs = test_df["YardsFromOwnGoal"].iloc[0]
 
@@ -176,6 +175,7 @@ def infer(model, parameters):
 
     env = nflrush.make_env()
     for (test_df, sample_prediction_df) in env.iter_test():
+        test_df = preprocess(test_df)
         sample_prediction_df.iloc[0, :] = _predict_cdf(test_df, model)
         env.predict(sample_prediction_df)
         if sys.version_info >= (3, 6, 8):
@@ -201,6 +201,8 @@ if __name__ == "__main__":
     print("Read CSV file.")
     df = pd.read_csv("../input/nfl-big-data-bowl-2020/train.csv", low_memory=False)
     parameters = None
+    print("Preprocess.")
+    df = preprocess(df)
     print("Fit model.")
     model = fit_base_model(df, parameters)
     print("Infer.")
