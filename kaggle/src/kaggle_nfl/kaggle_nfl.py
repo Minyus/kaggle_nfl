@@ -8,7 +8,6 @@ from collections import OrderedDict
 if sys.version_info >= (3, 6, 8):
     from skew_scaler import SkewScaler
     from mlflow import log_metrics, log_params
-    from tqdm import tqdm
     import logging
 
     log = logging.getLogger(__name__)
@@ -73,6 +72,34 @@ def _relative_values(abs_sr, comp_sr, offset=101, transform_func=None):
     return values_sr
 
 
+def play_generator(df, use_tqdm=True, **kwargs):
+
+    # play_df = df.query("PlayId == @play_id")
+    play_id_sr = df["PlayId"].drop_duplicates()
+    play_id_list = play_id_sr.to_list()
+
+    total = len(play_id_list)
+
+    df.set_index("PlayId", inplace=True)
+
+    iterator = range(total)
+
+    def _play_generator():
+
+        for i in iterator:
+            play_id = play_id_list[i]
+            play_df = df.xs(key=play_id, drop_level=False).reset_index()
+            last = i == total - 1
+            yield i, play_df, last
+
+    if use_tqdm:
+        from tqdm import tqdm
+
+        return tqdm(_play_generator(), total=total, **kwargs)
+    else:
+        return _play_generator()
+
+
 def fit_base_model(df, parameters):
 
     model = SkewScaler()
@@ -93,29 +120,22 @@ def fit_base_model(df, parameters):
     if "Validation" in df.columns:
         log.info("Validating...")
         vali_df = df.query("Validation == 1").drop(columns=["Validation"])
-        play_id_sr = vali_df["PlayId"].drop_duplicates()
-        play_id_list = play_id_sr.to_list()
 
-        vali_df.set_index("PlayId", inplace=True)
+        play_crps_dict = {}
+        play_dfs = play_generator(vali_df)
 
-        play_crps_list = []
-
-        use_tqdm = True
-        if use_tqdm:
-            play_id_tqdm = tqdm(play_id_list)
-
-        for i, play_id in enumerate(play_id_tqdm):
-            play_df = vali_df.xs(key=play_id, drop_level=False).reset_index()
-            # play_df = vali_df.query("PlayId == @play_id")
+        for i, play_df, last in play_dfs:
+            play_id = play_df["PlayId"].iloc[0]
             y_true = play_df["Yards"].iloc[0]
             cdf_arr = _predict_cdf(play_df, model)
 
             h_arr = np.ones(199)
             h_arr[: (99 + y_true)] = 0
             play_crps = ((cdf_arr - h_arr) ** 2).mean()
-            play_crps_list.append(play_crps)
-            if (not (i % 100)) or (i == len(play_id_list) - 1):
-                play_crps_arr = np.array(play_crps_list)
+            play_crps_dict[play_id] = play_crps
+
+            if (not (i % 100)) or last:
+                play_crps_arr = np.array(list(play_crps_dict.values()))
                 metrics_orddict = OrderedDict(
                     [
                         ("crps_mean", play_crps_arr.mean()),
@@ -124,7 +144,7 @@ def fit_base_model(df, parameters):
                     ]
                 )
 
-                crps_max_play_id = play_id_list[play_crps_arr.argmax()]
+                crps_max_play_id = max(play_crps_dict, key=play_crps_dict.get)
                 crps_max_play_df = vali_df.xs(
                     key=crps_max_play_id, drop_level=False
                 ).reset_index()
@@ -137,8 +157,8 @@ def fit_base_model(df, parameters):
                 report_orddict = OrderedDict([])
                 report_orddict.update(metrics_orddict)
                 report_orddict.update(crps_max_play_orddict)
-                if use_tqdm:
-                    play_id_tqdm.set_postfix(ordered_dict=report_orddict, refresh=True)
+                if hasattr(play_dfs, "set_postfix"):
+                    play_dfs.set_postfix(ordered_dict=report_orddict, refresh=True)
                 else:
                     print(report_orddict)
             assert not np.isnan(play_crps)
