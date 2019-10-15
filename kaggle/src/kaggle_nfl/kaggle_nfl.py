@@ -55,6 +55,7 @@ def preprocess(df, parameters=None):
 
 
 def _relative_values(abs_sr, comp_sr, offset=101, transform_func=None):
+    transform_func = np.log10
     if len(comp_sr) != len(abs_sr):
         comp_sr = comp_sr.iloc[0]
     denominator_sr = comp_sr + offset
