@@ -117,7 +117,7 @@ def generate_field_images(df, parameters):
         img = np.zeros((120, 60, 3), dtype=np.uint8)
         img_ch_2darr_list = []
         for i in range(3):
-            cat_df = df.query("PlayerCategory == @i")
+            cat_df = play_df.query("PlayerCategory == @i")
             count_df = (
                 cat_df.groupby(["X_int", "Y_int"], as_index=False)["NflId"]
                 .count()
