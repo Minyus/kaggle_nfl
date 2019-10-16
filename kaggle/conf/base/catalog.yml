@@ -19,7 +19,13 @@
 ../load/field_image.png:
   type: kedex.ImagesLocalDataSet
   cached: False
-  load_args:  # None
+  load_args:
+    lower: 0
+    upper: 255
+  save_args:
+    lower: 0
+    upper: 255
+
 
 ../load/df_040.csv:
 
