@@ -88,39 +88,36 @@ def _relative_values(abs_sr, comp_sr, offset=101, transform_func=None):
     return values_sr
 
 
-def play_generator(df, use_tqdm=True, **kwargs):
+class PlayDfsDataset():
+    def __init__(self, df):
+        self.play_id_list = df["PlayId"].drop_duplicates().to_list()
+        self.df = df.set_index("PlayId", inplace=False)
 
-    # play_df = df.query("PlayId == @play_id")
-    play_id_sr = df["PlayId"].drop_duplicates()
-    play_id_list = play_id_sr.to_list()
+    def __getitem__(self, index):
+        play_id = self.play_id_list[index]
+        return self.df.xs(key=play_id, drop_level=False).reset_index()
 
-    total = len(play_id_list)
-
-    df.set_index("PlayId", inplace=True)
-
-    iterator = range(total)
-
-    def _play_generator():
-
-        for i in iterator:
-            play_id = play_id_list[i]
-            play_df = df.xs(key=play_id, drop_level=False).reset_index()
-            last = i == total - 1
-            yield i, play_df, last
-
-    if use_tqdm:
-        from tqdm import tqdm
-
-        return tqdm(_play_generator(), total=total, **kwargs)
-    else:
-        return _play_generator()
+    def __len__(self):
+        return len(self.play_id_list)
 
 
 def generate_field_images(df, parameters):
 
     img_3darr_list = []
     play_df_list = []
-    for i, play_df, last in play_generator(df):
+
+    play_dfs = PlayDfsDataset(df)
+    total = len(play_dfs)
+    use_tqdm = True
+    if use_tqdm:
+        from tqdm import trange
+        play_range = trange(total)
+    else:
+        play_range = range(total)
+    for i in play_range:
+        play_df = play_dfs[i]
+        last = i == total-1
+
         play_df_id = play_df["PlayId"].iloc[0]
         play_df_list.append(play_df_id)
         img = np.zeros((120, 60, 3), dtype=np.uint8)
@@ -168,9 +165,22 @@ def fit_base_model(df, parameters):
         vali_df = df.query("Validation == 1").drop(columns=["Validation"])
 
         play_crps_dict = {}
-        play_dfs = play_generator(vali_df)
 
-        for i, play_df, last in play_dfs:
+        play_dfs = PlayDfsDataset(vali_df)
+        total = len(play_dfs)
+
+        vali_df.set_index("PlayId", inplace=True)
+
+        use_tqdm = True
+        if use_tqdm:
+            from tqdm import trange
+            play_range = trange(total)
+        else:
+            play_range = range(total)
+        for i in play_range:
+            play_df = play_dfs[i]
+            last = i == total-1
+
             play_id = play_df["PlayId"].iloc[0]
             y_true = play_df["Yards"].iloc[0]
             cdf_arr = _predict_cdf(play_df, model)
