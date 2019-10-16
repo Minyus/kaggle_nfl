@@ -107,7 +107,7 @@ class ImagesLocalDataSet(DefaultArgumentsMixIn, AbstractVersionedDataSet):
                 s = p / "{}_{}{}".format(p.stem, name, p.suffix)
                 img = Image.fromarray(images[i, :, :, :], mode=mode)
                 img.save(s, **save_args)
-                return None
+            return None
 
         else:
             raise ValueError("Unsupported number of dimensions: {}".format(images.ndim))

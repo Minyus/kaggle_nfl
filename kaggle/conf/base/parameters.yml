@@ -52,7 +52,7 @@ PIPELINES:
         outputs: images_4darr
 
       - inputs: images_4darr
-        outputs: images
+        outputs: field_image
 
       - inputs: df_030
         func:

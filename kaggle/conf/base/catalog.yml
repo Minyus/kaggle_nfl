@@ -16,7 +16,7 @@
   type: PickleLocalDataSet
   load_args:  # None
 
-../load/images.png:
+../load/field_image.png:
   type: kedex.ImagesLocalDataSet
   cached: False
   load_args:  # None
