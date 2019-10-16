@@ -54,8 +54,17 @@ def preprocess(df, parameters=None):
     """ """
     df["PlayerCategory"] = df["IsOnOffense"].astype(np.uint8)
     df.loc[df["IsBallCarrier"], "PlayerCategory"] = 2
-    df["X_int"] = np.floor(df["X_std"] + 10).clip(lower=0, upper=119).astype(np.uint8)
-    df["Y_int"] = np.floor(df["Y_std"]).clip(lower=0, upper=59).astype(np.uint8)
+    # df["X_int"] = np.floor(df["X_std"] + 10).clip(lower=0, upper=119).astype(np.uint8)
+    len_x = 30
+    df["X_int"] = (
+        np.floor(df["X_std"] - df["YardsFromOwnGoal"] + 10)
+        .clip(lower=0, upper=(len_x - 1))
+        .astype(np.uint8)
+    )
+    len_y = 60
+    df["Y_int"] = (
+        np.floor(df["Y_std"]).clip(lower=0, upper=(len_y - 1)).astype(np.uint8)
+    )
 
     return df
 
@@ -116,6 +125,8 @@ def generate_field_images(df, parameters):
         play_df_list.append(play_df_id)
         img = np.zeros((120, 60, 3), dtype=np.uint8)
         img_ch_2darr_list = []
+        len_x = 30
+        len_y = 60
         for i in range(3):
             cat_df = play_df.query("PlayerCategory == @i")
             count_df = (
@@ -125,7 +136,7 @@ def generate_field_images(df, parameters):
             )
             ch_2darr = coo_matrix(
                 (count_df["NflId"], (count_df["X_int"], count_df["Y_int"])),
-                shape=(120, 60),
+                shape=(len_x, len_y),
             ).toarray()
             img_ch_2darr_list.append(ch_2darr)
         img_3darr = np.stack(img_ch_2darr_list, axis=2)
