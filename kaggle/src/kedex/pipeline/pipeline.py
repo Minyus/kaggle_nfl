@@ -17,7 +17,15 @@ class KedexPipeline(Pipeline):
     ):
 
         for i, node in enumerate(nodes):
+
+            assert node is not None, "Node {}: is empty.".format(i)
             if isinstance(node, dict):
+                assert (
+                    "inputs" in node
+                ), "Node {} ({}): is missing 'inputs' key.".format(i, node)
+                assert (
+                    "outputs" in node
+                ), "Node {} ({}): is missing 'outputs' key.".format(i, node)
 
                 if parameters_in_inputs:
                     inputs = node.get("inputs")
@@ -25,13 +33,9 @@ class KedexPipeline(Pipeline):
                     if not ("parameters" in inputs):
                         node["inputs"] = inputs + ["parameters"]
 
-                # if callable(node.get("func")):
-                #     nodes[i] = Node(**node)
-                # else:
-                if 1:
-                    node.setdefault("main_input_index", main_input_index)
-                    node.setdefault("module", module)
-                    node.setdefault("decorator", decorator)
-                    nodes[i] = SubPipeline(**node)
+                node.setdefault("main_input_index", main_input_index)
+                node.setdefault("module", module)
+                node.setdefault("decorator", decorator)
+                nodes[i] = SubPipeline(**node)
 
         super().__init__(nodes=nodes, name=name)

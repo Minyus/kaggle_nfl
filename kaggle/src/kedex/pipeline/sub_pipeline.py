@@ -18,6 +18,8 @@ class SubPipeline(Pipeline):
     ):
         funcs = _load_callables(func, module)
 
+        if isinstance(inputs, str):
+            inputs = [inputs]
         main_input = inputs[main_input_index]
         nodes = []
         for i, f in enumerate(funcs):
