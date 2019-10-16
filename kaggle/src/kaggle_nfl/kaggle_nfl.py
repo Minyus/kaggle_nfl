@@ -101,26 +101,11 @@ class PlayDfsDataset():
         return len(self.play_id_list)
 
 
-def generate_field_images(df, parameters):
+class FieldImageDataset(PlayDfsDataset):
+    def __getitem__(self, index):
+        play_df = super().__getitem__(index)
+        yards = play_df["Yards"].iloc[0]
 
-    img_3darr_list = []
-    play_df_list = []
-
-    play_dfs = PlayDfsDataset(df)
-    total = len(play_dfs)
-    use_tqdm = True
-    if use_tqdm:
-        from tqdm import trange
-        play_range = trange(total)
-    else:
-        play_range = range(total)
-    for i in play_range:
-        play_df = play_dfs[i]
-        last = i == total-1
-
-        play_df_id = play_df["PlayId"].iloc[0]
-        play_df_list.append(play_df_id)
-        img = np.zeros((120, 60, 3), dtype=np.uint8)
         img_ch_2darr_list = []
         len_x = 30
         len_y = 60
@@ -137,9 +122,35 @@ def generate_field_images(df, parameters):
             ).toarray()
             img_ch_2darr_list.append(ch_2darr)
         img_3darr = np.stack(img_ch_2darr_list, axis=2)
-        img_3darr_list.append(img_3darr)
+        return img_3darr, yards
+
+
+def generate_field_images(df, parameters):
+
+    play_dfs = PlayDfsDataset(df)
+    play_id_list = [play_df["PlayId"].iloc[0] for play_df in play_dfs]
+
+    field_images = FieldImageDataset(df)
+
+    total = len(field_images)
+    use_tqdm = True
+    if use_tqdm:
+        from tqdm import trange
+        play_range = trange(total)
+    else:
+        play_range = range(total)
+
+    img_3darr_list = []
+    yards_list = []
+    for i in play_range:
+        field_image, yards = field_images[i]
+        img_3darr_list.append(field_image)
+        yards_list.append(yards)
+
+    names = ["{}_{}".format(p, y) for p, y in zip(play_id_list, yards_list)]
+
     img_4darr = np.stack(img_3darr_list, axis=0)
-    images = dict(images=img_4darr, names=play_df_list)
+    images = dict(images=img_4darr, names=names)
     return images
 
 
