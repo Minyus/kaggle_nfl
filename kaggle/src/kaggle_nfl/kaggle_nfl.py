@@ -88,7 +88,7 @@ def _relative_values(abs_sr, comp_sr, offset=101, transform_func=None):
     return values_sr
 
 
-class PlayDfsDataset():
+class PlayDfsDataset:
     def __init__(self, df):
         self.play_id_list = df["PlayId"].drop_duplicates().to_list()
         self.df = df.set_index("PlayId", inplace=False)
@@ -136,6 +136,7 @@ def generate_field_images(df, parameters):
     use_tqdm = True
     if use_tqdm:
         from tqdm import trange
+
         play_range = trange(total)
     else:
         play_range = range(total)
@@ -185,12 +186,13 @@ def fit_base_model(df, parameters):
         use_tqdm = True
         if use_tqdm:
             from tqdm import trange
+
             play_range = trange(total)
         else:
             play_range = range(total)
         for i in play_range:
             play_df = play_dfs[i]
-            last = i == total-1
+            last = i == total - 1
 
             play_id = play_df["PlayId"].iloc[0]
             y_true = play_df["Yards"].iloc[0]
