@@ -187,10 +187,10 @@ def fit_base_model(df, parameters):
         if use_tqdm:
             from tqdm import trange
 
-            play_range = trange(total)
+            play_index_iter = trange(total)
         else:
-            play_range = range(total)
-        for i in play_range:
+            play_index_iter = range(total)
+        for i in play_index_iter:
             play_df = play_dfs[i]
             last = i == total - 1
 
@@ -226,8 +226,10 @@ def fit_base_model(df, parameters):
                 report_orddict = OrderedDict([])
                 report_orddict.update(metrics_orddict)
                 report_orddict.update(crps_max_play_orddict)
-                if hasattr(play_dfs, "set_postfix"):
-                    play_dfs.set_postfix(ordered_dict=report_orddict, refresh=True)
+                if hasattr(play_index_iter, "set_postfix"):
+                    play_index_iter.set_postfix(
+                        ordered_dict=report_orddict, refresh=True
+                    )
                 else:
                     print(report_orddict)
             assert not np.isnan(play_crps)
