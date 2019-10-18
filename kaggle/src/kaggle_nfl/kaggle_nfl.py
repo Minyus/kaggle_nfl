@@ -89,40 +89,42 @@ def _relative_values(abs_sr, comp_sr, offset=101, transform_func=None):
 
 
 class PlayDfsDataset:
-    def __init__(self, df):
+    def __init__(self, df, transform=None):
         self.play_id_list = df["PlayId"].drop_duplicates().to_list()
         self.df = df.set_index("PlayId", inplace=False)
+        self.transform = transform
 
     def __getitem__(self, index):
         play_id = self.play_id_list[index]
-        return self.df.xs(key=play_id, drop_level=False).reset_index()
+        item = self.df.xs(key=play_id, drop_level=False).reset_index()
+        if self.transform:
+            item = self.transform(item)
+        return item
 
     def __len__(self):
         return len(self.play_id_list)
 
 
-class FieldImageDataset(PlayDfsDataset):
-    def __getitem__(self, index):
-        play_df = super().__getitem__(index)
-        yards = play_df["Yards"].iloc[0]
+def play_df_to_image_and_yards(play_df):
+    yards = play_df["Yards"].iloc[0]
 
-        img_ch_2darr_list = []
-        len_x = 30
-        len_y = 60
-        for i in range(3):
-            cat_df = play_df.query("PlayerCategory == @i")
-            count_df = (
-                cat_df.groupby(["X_int", "Y_int"], as_index=False)["NflId"]
-                .count()
-                .astype(np.uint8)
-            )
-            ch_2darr = coo_matrix(
-                (count_df["NflId"], (count_df["X_int"], count_df["Y_int"])),
-                shape=(len_x, len_y),
-            ).toarray()
-            img_ch_2darr_list.append(ch_2darr)
-        img_3darr = np.stack(img_ch_2darr_list, axis=2)
-        return img_3darr, yards
+    img_ch_2darr_list = []
+    len_x = 30
+    len_y = 60
+    for i in range(3):
+        cat_df = play_df.query("PlayerCategory == @i")
+        count_df = (
+            cat_df.groupby(["X_int", "Y_int"], as_index=False)["NflId"]
+            .count()
+            .astype(np.uint8)
+        )
+        ch_2darr = coo_matrix(
+            (count_df["NflId"], (count_df["X_int"], count_df["Y_int"])),
+            shape=(len_x, len_y),
+        ).toarray()
+        img_ch_2darr_list.append(ch_2darr)
+    img_3darr = np.stack(img_ch_2darr_list, axis=2)
+    return img_3darr, yards
 
 
 def generate_field_images(df, parameters):
@@ -130,7 +132,7 @@ def generate_field_images(df, parameters):
     play_dfs = PlayDfsDataset(df)
     play_id_list = [play_df["PlayId"].iloc[0] for play_df in play_dfs]
 
-    field_images = FieldImageDataset(df)
+    field_images = PlayDfsDataset(df, transform=play_df_to_image_and_yards)
 
     total = len(field_images)
     use_tqdm = True
@@ -276,6 +278,15 @@ def infer(model, parameters):
     env.write_submission_file()
 
     return None
+
+
+def compose(transforms):
+    def _compose(d):
+        for t in transforms:
+            d = t(d)
+        return d
+
+    return _compose
 
 
 if __name__ == "__main__":
