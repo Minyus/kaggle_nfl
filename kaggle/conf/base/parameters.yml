@@ -53,8 +53,8 @@ pytorch_model:
       in_features: 64
       out_features: 199
 
-    - obj: torch.nn.Softmax
-      dim: -1
+    - obj: torch.nn.Sigmoid
+      _:  # dummy
 
 train_batch_size: 128
 loss_fn:
