@@ -11,10 +11,7 @@ import torch
 from torchvision.transforms import ToTensor, Compose
 import math
 
-
-if sys.version_info >= (3, 6, 8):
-    from skew_scaler import SkewScaler
-    from mlflow import log_metrics, log_params
+if __file__ == "kaggle_nfl":
     import logging
 
     log = logging.getLogger(__name__)
@@ -259,6 +256,7 @@ class FieldImagesDataset:
 
 
 def generate_datasets(df, parameters):
+
     if "Validation" in df.columns:
         fit_df = df.query("Validation == 0").drop(columns=["Validation"])
         vali_df = df.query("Validation == 1").drop(columns=["Validation"])
@@ -274,7 +272,7 @@ def generate_datasets(df, parameters):
     return train_dataset, val_dataset
 
 
-def generate_field_images(df, parameters):
+def generate_field_images(df, parameters=None):
 
     field_images = FieldImagesDataset(df)
     play_id_dict = field_images.play_id_dict
@@ -304,7 +302,9 @@ def generate_field_images(df, parameters):
     return images
 
 
-def fit_base_model(df, parameters):
+def fit_base_model(df, parameters=None):
+    from skew_scaler import SkewScaler
+    from mlflow import log_metrics, log_params
 
     model = SkewScaler()
 
@@ -469,7 +469,7 @@ class PytorchLogNormalCDF(torch.nn.Module):
         # return torch.distributions.normal.Normal(loc=loc, scale=scale).cdf(self.value)
 
 
-def infer(model, parameters):
+def infer(model, parameters=None):
     from kaggle.competitions import nflrush
 
     env = nflrush.make_env()
@@ -477,7 +477,7 @@ def infer(model, parameters):
         test_df = preprocess(test_df)
         sample_prediction_df.iloc[0, :] = _predict_cdf(test_df, model)
         env.predict(sample_prediction_df)
-        if sys.version_info >= (3, 6, 8):
+        if parameters:
             return sample_prediction_df
 
     env.write_submission_file()
@@ -679,7 +679,7 @@ class PytorchFlatten(torch.nn.Module):
 """ """
 
 if __name__ == "__main__":
-    if sys.version_info == (3, 6, 8):
+    if __file__ == "kaggle_nfl":
         log.info("Completed 1st inference iteration. Skip the rest.")
         project_path = Path(__file__).resolve().parent.parent.parent
 
@@ -692,7 +692,7 @@ if __name__ == "__main__":
 
     print("Read CSV file.")
     df = pd.read_csv("../input/nfl-big-data-bowl-2020/train.csv", low_memory=False)
-    parameters = None
+
     print("Preprocess.")
     df = preprocess(df)
     print("Fit model.")
@@ -739,7 +739,7 @@ if __name__ == "__main__":
         pytorch_model, train_dataset
     )
 
-    # model = fit_base_model(df, parameters)
+    # model = fit_base_model(df)
     print("Infer.")
-    infer(model, parameters)
+    infer(model)
     print("Completed.")
