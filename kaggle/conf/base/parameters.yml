@@ -105,6 +105,8 @@ train_params:
   val_data_loader_params:
     batch_size: 100  # input batch size for validation
     num_workers: 4
+  evaluate_train_data: True
+  evaluate_val_data: True
   epochs: 1  # number of epochs to train
   seed: 0  #
 
