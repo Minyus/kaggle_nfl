@@ -143,15 +143,15 @@ PIPELINES:
         func: preprocess
         outputs: df_030
 
-      - inputs: df_030
-        func:
-          - obj: kedex.df_query
-            expr: "Yards > 50"
-          - generate_field_images
-        outputs: images_4darr
+#      - inputs: df_030
+#        func:
+#          - obj: kedex.df_query
+#            expr: "Yards > 50"
+#          - generate_field_images
+#        outputs: images_4darr
 
-      - inputs: images_4darr
-        outputs: field_image
+#      - inputs: images_4darr
+#        outputs: field_image
 
       - inputs: df_030
         func:

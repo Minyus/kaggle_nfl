@@ -8,26 +8,26 @@
 ../input/nfl-big-data-bowl-2020/train.csv:
   type: CSVLocalDataSet
 
-../load/df_030.csv:
+#../load/df_030.csv:
 
-../load/df_031.csv:
+#../load/df_031.csv:
 
-../load/images_4darr.pickle:
-  type: PickleLocalDataSet
-  load_args:  # None
+#../load/images_4darr.pickle:
+#  type: PickleLocalDataSet
+#  load_args:  # None
 
-../load/field_image.png:
-  type: kedex.ImagesLocalDataSet
-  cached: False
-  load_args:
-    lower: 0
-    upper: 255
-  save_args:
-    lower: 0
-    upper: 255
+#../load/field_image.png:
+#  type: kedex.ImagesLocalDataSet
+#  cached: False
+#  load_args:
+#    lower: 0
+#    upper: 255
+#  save_args:
+#    lower: 0
+#    upper: 255
 
 
-../load/df_040.csv:
+#../load/df_040.csv:
 
 ../load/infered_first_iter.csv:
 
@@ -45,11 +45,11 @@
 ##    n: 10000
 ##    random_state: 0
 
-../load/describe.csv:
-  type: kedex.PandasDescribeDataSet
-  describe_args: # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.describe.html
-    include: all
-    percentiles:
-      - 0.25
-      - 0.5
-      - 0.75
+#../load/describe.csv:
+#  type: kedex.PandasDescribeDataSet
+#  describe_args: # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.describe.html
+#    include: all
+#    percentiles:
+#      - 0.25
+#      - 0.5
+#      - 0.75

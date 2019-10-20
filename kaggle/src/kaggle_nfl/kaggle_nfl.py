@@ -69,6 +69,70 @@ def preprocess(df, parameters=None):
         np.floor(df["Y_std"]).clip(lower=0, upper=(len_y - 1)).astype(np.uint8)
     )
 
+    cols = [
+        "GameId",
+        "PlayId",
+        # 'Team',
+        # 'X',
+        # 'Y',
+        # 'S',
+        # 'A',
+        # 'Dis',
+        # 'Orientation',
+        # 'Dir',
+        "NflId",
+        # 'DisplayName',
+        # 'JerseyNumber',
+        "Season",
+        "YardLine",
+        "Quarter",
+        # 'GameClock',
+        # 'PossessionTeam',
+        "Down",
+        "Distance",
+        "FieldPosition",
+        "HomeScoreBeforePlay",
+        "VisitorScoreBeforePlay",
+        # 'NflIdRusher',
+        "OffenseFormation",
+        "OffensePersonnel",
+        "DefendersInTheBox",
+        "DefensePersonnel",
+        # 'PlayDirection',
+        # 'TimeHandoff',
+        # 'TimeSnap',
+        "Yards",
+        "PlayerHeight",
+        "PlayerWeight",
+        # 'PlayerBirthDate',
+        # 'PlayerCollegeName',
+        "Position",
+        "HomeTeamAbbr",
+        "VisitorTeamAbbr",
+        "Week",
+        # 'Stadium',
+        # 'Location',
+        # 'StadiumType',
+        "Turf",
+        "GameWeather",
+        "Temperature",
+        "Humidity",
+        "WindSpeed",
+        "WindDirection",
+        # 'ToLeft',
+        # 'IsBallCarrier',
+        # 'TeamOnOffense',
+        "IsOnOffense",
+        "YardsFromOwnGoal",
+        "X_std",
+        "Y_std",
+        "RelativeDefenceMeanYards",
+        "PlayerCategory",
+        "X_int",
+        "Y_int",
+    ]
+    df = df.filter(items=cols)
+
     return df
 
 
@@ -146,14 +210,11 @@ class FieldImagesDataset:
         play_index_dict = {v: k for k, v in play_id_dict.items()}
         df["PlayIndex"] = df["PlayId"].map(play_index_dict)
 
-        count_df = (
-            df.groupby(
-                ["PlayIndex", "PlayerCategory", "X_int", "Y_int"], as_index=False
-            )["NflId"]
-            .count()
-            .astype(np.uint8)
-        )
+        count_df = df.groupby(
+            ["PlayIndex", "PlayerCategory", "X_int", "Y_int"], as_index=False
+        )["NflId"].count()
         count_df.set_index(["PlayIndex", "PlayerCategory"], inplace=True)
+        count_df.loc[:, "NflId"] = count_df["NflId"].astype(np.uint8)
 
         self.coo_dict = {
             pi: {
@@ -203,8 +264,9 @@ def generate_datasets(df, parameters):
         fit_df = df
         vali_df = df
 
-    log.info("fit_df.shape: {} | vali_df.shape: {}".format(fit_df.shape, vali_df.shape))
+    log.info("Setting up train_dataset from df shape: {}".format(fit_df.shape))
     train_dataset = FieldImagesDataset(fit_df, transform=ToTensor())
+    log.info("Setting up val_dataset from df shape: {}".format(vali_df.shape))
     val_dataset = FieldImagesDataset(vali_df, transform=ToTensor())
 
     return train_dataset, val_dataset
