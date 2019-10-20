@@ -9,6 +9,8 @@ from scipy.sparse import coo_matrix
 
 import torch
 from torchvision.transforms import ToTensor, Compose
+import math
+
 
 if sys.version_info >= (3, 6, 8):
     from skew_scaler import SkewScaler
@@ -447,6 +449,24 @@ def yards_to_index(y_1dtt):
 
 def nfl_crps_loss(input, target):
     return crps_loss(input, target, target_to_index=yards_to_index)
+
+
+class PytorchLogNormalCDF(torch.nn.Module):
+    def __init__(self, x_start=1, x_end=200, x_step=1, x_scale=0.01):
+        value = torch.log(
+            torch.arange(start=x_start, end=x_end, step=x_step, dtype=torch.float32)
+            * x_scale
+        )
+        self.value = torch.unsqueeze(value, 0)
+        super().__init__()
+
+    def forward(self, x):
+        loc = torch.unsqueeze(x[:, 0], 1)
+        scale = torch.unsqueeze(torch.exp(x[:, 1]), 1)
+        return 0.5 * (
+            1 + torch.erf((self.value - loc) * scale.reciprocal() / math.sqrt(2))
+        )
+        # return torch.distributions.normal.Normal(loc=loc, scale=scale).cdf(self.value)
 
 
 def infer(model, parameters):
