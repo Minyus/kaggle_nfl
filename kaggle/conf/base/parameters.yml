@@ -85,7 +85,7 @@ train_params:
   loss_fn:
     obj: loss_fn
   metrics:
-    nll:
+    loss:
       obj: ignite.metrics.Loss
       loss_fn:
         obj: loss_fn
@@ -94,7 +94,7 @@ train_params:
       obj: train_batch_size
     num_workers: 4
   val_data_loader_params:
-    batch_size: 1000  # input batch size for validation
+    batch_size: 100  # input batch size for validation
     num_workers: 4
   epochs: 1  # number of epochs to train
   seed: 0  #

@@ -134,21 +134,65 @@ def play_df_to_image_and_yards(play_df):
 
 
 class FieldImagesDataset:
-    def __init__(self, df, transform=None, target_transform=None):
-        self.play_dfs_dataset = PlayDfsDataset(df, transform=play_df_to_image_and_yards)
+    def __init__(self, df, channel_first=False, transform=None, target_transform=None):
+        play_target_df = (
+            df[["PlayId", "Yards"]].drop_duplicates().reset_index(drop=True)
+        )
+        self.len = len(play_target_df)
+        self.target_dict = play_target_df["Yards"].to_dict()
+
+        play_id_dict = play_target_df["PlayId"].to_dict()
+        self.play_id_dict = play_id_dict
+        play_index_dict = {v: k for k, v in play_id_dict.items()}
+        df["PlayIndex"] = df["PlayId"].map(play_index_dict)
+
+        count_df = (
+            df.groupby(
+                ["PlayIndex", "PlayerCategory", "X_int", "Y_int"], as_index=False
+            )["NflId"]
+            .count()
+            .astype(np.uint8)
+        )
+        count_df.set_index(["PlayIndex", "PlayerCategory"], inplace=True)
+
+        self.coo_dict = {
+            pi: {
+                ci: (
+                    count_df["NflId"].values,
+                    (count_df["X_int"].values, count_df["Y_int"].values),
+                )
+                for ci in range(3)
+            }
+            for pi in play_id_dict.keys()
+        }
+
+        len_x = 30
+        len_y = 60
+        self.shape = (len_x, len_y)
+        self.channel_axis = 0 if channel_first else 2
+
         self.transform = transform
         self.target_transform = target_transform
 
     def __getitem__(self, index):
-        img, target = self.play_dfs_dataset.__getitem__(index)
+
+        play_coo_dict = self.coo_dict[index]
+        img_ch_2darr_list = [
+            coo_matrix(play_coo_dict[ci], shape=self.shape).toarray() for ci in range(3)
+        ]
+        img = np.stack(img_ch_2darr_list, axis=self.channel_axis)
+
+        target = self.target_dict[index]
+
         if self.transform is not None:
             img = self.transform(img)
         if self.target_transform is not None:
             target = self.target_transform(target)
+
         return img, target
 
     def __len__(self):
-        return self.play_dfs_dataset.__len__()
+        return self.len
 
 
 def generate_datasets(df, parameters):
@@ -168,10 +212,8 @@ def generate_datasets(df, parameters):
 
 def generate_field_images(df, parameters):
 
-    play_dfs = PlayDfsDataset(df)
-    play_id_list = [play_df["PlayId"].iloc[0] for play_df in play_dfs]
-
     field_images = FieldImagesDataset(df)
+    play_id_dict = field_images.play_id_dict
 
     total = len(field_images)
     use_tqdm = True
@@ -184,10 +226,12 @@ def generate_field_images(df, parameters):
 
     img_3darr_list = []
     yards_list = []
+    play_id_list = []
     for i in play_range:
         field_image, yards = field_images[i]
         img_3darr_list.append(field_image)
         yards_list.append(yards)
+        play_id_list.append(play_id_dict[i])
 
     names = ["{}_{}".format(p, y) for p, y in zip(play_id_list, yards_list)]
 
