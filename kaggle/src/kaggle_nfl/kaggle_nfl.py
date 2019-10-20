@@ -8,7 +8,7 @@ from collections import OrderedDict
 from scipy.sparse import coo_matrix
 
 import torch
-from torchvision.transforms import ToTensor
+from torchvision.transforms import ToTensor, Compose
 
 if sys.version_info >= (3, 6, 8):
     from skew_scaler import SkewScaler
@@ -133,12 +133,36 @@ def play_df_to_image_and_yards(play_df):
         return img_3darr
 
 
+class FieldImagesDataset:
+    def __init__(self, df, transform=None, target_transform=None):
+        self.play_dfs_dataset = PlayDfsDataset(df, transform=play_df_to_image_and_yards)
+        self.transform = transform
+        self.target_transform = target_transform
+
+    def __getitem__(self, index):
+        img, target = self.play_dfs_dataset.__getitem__(index)
+        if self.transform is not None:
+            img = self.transform(img)
+        if self.target_transform is not None:
+            target = self.target_transform(target)
+        return img, target
+
+    def __len__(self):
+        return self.play_dfs_dataset.__len__()
+
+
 def generate_datasets(df, parameters):
-    # TODO:
-    # data_transform = Compose([ToTensor(), Normalize((0.1307,), (0.3081,))])
-    # train_dataset = MNIST(download=True, root=".", transform=data_transform, train=True)
-    # val_dataset = MNIST(download=False, root=".", transform=data_transform, train=False)
-    train_dataset, val_dataset = "_", "_"
+    if "Validation" in df.columns:
+        fit_df = df.query("Validation == 0").drop(columns=["Validation"])
+        vali_df = df.query("Validation == 1").drop(columns=["Validation"])
+    else:
+        fit_df = df
+        vali_df = df
+
+    log.info("fit_df.shape: {} | vali_df.shape: {}".format(fit_df.shape, vali_df.shape))
+    train_dataset = FieldImagesDataset(fit_df, transform=ToTensor())
+    val_dataset = FieldImagesDataset(vali_df, transform=ToTensor())
+
     return train_dataset, val_dataset
 
 
@@ -147,7 +171,7 @@ def generate_field_images(df, parameters):
     play_dfs = PlayDfsDataset(df)
     play_id_list = [play_df["PlayId"].iloc[0] for play_df in play_dfs]
 
-    field_images = PlayDfsDataset(df, transform=play_df_to_image_and_yards)
+    field_images = FieldImagesDataset(df)
 
     total = len(field_images)
     use_tqdm = True
@@ -301,7 +325,9 @@ def crps_loss(input, target, target_to_index=None, reduction="mean"):
     index_1dtt = target_to_index(target) if target_to_index else target
     h_1dtt = torch.arange(input.shape[1])
 
-    h_2dtt = h_1dtt.reshape(1, -1) >= index_1dtt.reshape(-1, 1)
+    h_2dtt = (h_1dtt.reshape(1, -1) >= index_1dtt.reshape(-1, 1)).type(
+        torch.FloatTensor
+    )
 
     ret = (input - h_2dtt) ** 2
     if reduction != "none":

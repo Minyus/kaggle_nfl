@@ -56,6 +56,9 @@ pytorch_model:
     - obj: torch.nn.Softmax
       dim: -1
 
+train_batch_size: 128
+loss_fn:
+  obj: kaggle_nfl.kaggle_nfl.nfl_crps_loss
 
 train_params:
   optim:
@@ -80,16 +83,21 @@ train_params:
         - 0.1
         - obj: train_batch_size
   loss_fn:
-    obj: kaggle_nfl.pytorch_loss.nfl_crps_loss
+    obj: loss_fn
   metrics:
     nll:
       obj: ignite.metrics.Loss
       loss_fn:
-        obj: kaggle_nfl.pytorch_loss.nfl_crps_loss
-  train_batch_size: 512  # input batch size for training
-  val_batch_size: 1000  # input batch size for validation
+        obj: loss_fn
+  train_data_loader_params:
+    batch_size:  # input batch size for training
+      obj: train_batch_size
+    num_workers: 4
+  val_data_loader_params:
+    batch_size: 1000  # input batch size for validation
+    num_workers: 4
   epochs: 1  # number of epochs to train
-  log_interval: 1  # how many batches to wait before logging training status
+  seed: 0  #
 
 
 RUN_CONFIG:
@@ -190,10 +198,10 @@ PIPELINES:
           - initial_model
           - train_dataset
           - val_dataset
-#        func:
-#          obj: kedex.contrib.ops.pytorch_ops.train_model
-#          train_params:
-#            obj: train_params
+        func:
+          obj: kedex.contrib.ops.pytorch_ops.pytorch_train
+          train_params:
+            obj: train_params
         outputs: pytorch_model
 
       - inputs: pytorch_model
