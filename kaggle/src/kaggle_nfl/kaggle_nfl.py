@@ -7,6 +7,9 @@ from collections import OrderedDict
 
 from scipy.sparse import coo_matrix
 
+import torch
+from torchvision.transforms import ToTensor
+
 if sys.version_info >= (3, 6, 8):
     from skew_scaler import SkewScaler
     from mlflow import log_metrics, log_params
@@ -106,8 +109,6 @@ class PlayDfsDataset:
 
 
 def play_df_to_image_and_yards(play_df):
-    yards = play_df["Yards"].iloc[0]
-
     img_ch_2darr_list = []
     len_x = 30
     len_y = 60
@@ -124,7 +125,21 @@ def play_df_to_image_and_yards(play_df):
         ).toarray()
         img_ch_2darr_list.append(ch_2darr)
     img_3darr = np.stack(img_ch_2darr_list, axis=2)
-    return img_3darr, yards
+
+    if "Yards" in play_df.columns:
+        yards = play_df["Yards"].iloc[0]
+        return img_3darr, yards
+    else:
+        return img_3darr
+
+
+def generate_datasets(df, parameters):
+    # TODO:
+    # data_transform = Compose([ToTensor(), Normalize((0.1307,), (0.3081,))])
+    # train_dataset = MNIST(download=True, root=".", transform=data_transform, train=True)
+    # val_dataset = MNIST(download=False, root=".", transform=data_transform, train=False)
+    train_dataset, val_dataset = "_", "_"
+    return train_dataset, val_dataset
 
 
 def generate_field_images(df, parameters):
@@ -244,24 +259,57 @@ def fit_base_model(df, parameters):
     return model
 
 
-def _predict_cdf(test_df, model):
+# def _predict_cdf(test_df, model):
+#
+#     yards_abs = test_df["YardsFromOwnGoal"].iloc[0]
+#
+#     pred_arr = np.zeros(199)
+#     pred_arr[-100:] = np.ones(100)
+#
+#     target_yards_sr = pd.Series(np.arange(-yards_abs, 100 - yards_abs, 1))
+#     outcome_sr = _relative_values(target_yards_sr, test_df["RelativeDefenceMeanYards"])
+#     assert not outcome_sr.isna().any()
+#     cdf_arr = model.cdf(outcome_sr)
+#     assert not np.isnan(cdf_arr).any()
+#     cdf_arr = np.maximum.accumulate(cdf_arr)
+#     # for i in range(len(cdf_arr) - 1):
+#     #     cdf_arr[i + 1] = max(cdf_arr[i + 1], cdf_arr[i])
+#
+#     pred_arr[(99 - yards_abs) : (199 - yards_abs)] = cdf_arr
+#     return pred_arr
 
-    yards_abs = test_df["YardsFromOwnGoal"].iloc[0]
 
-    pred_arr = np.zeros(199)
-    pred_arr[-100:] = np.ones(100)
+def _predict_cdf(test_df, pytorch_model):
+    img_3darr = play_df_to_image_and_yards(test_df)
 
-    target_yards_sr = pd.Series(np.arange(-yards_abs, 100 - yards_abs, 1))
-    outcome_sr = _relative_values(target_yards_sr, test_df["RelativeDefenceMeanYards"])
-    assert not outcome_sr.isna().any()
-    cdf_arr = model.cdf(outcome_sr)
-    assert not np.isnan(cdf_arr).any()
-    cdf_arr = np.maximum.accumulate(cdf_arr)
-    # for i in range(len(cdf_arr) - 1):
-    #     cdf_arr[i + 1] = max(cdf_arr[i + 1], cdf_arr[i])
+    pytorch_model.eval()
+    with torch.no_grad():
+        imgs_3dtt = ToTensor()(img_3darr)
+        imgs_4dtt = torch.unsqueeze(imgs_3dtt, 0)  # instead of DataLoader
+        out_2dtt = pytorch_model(imgs_4dtt)
+        pred_arr = torch.squeeze(out_2dtt).numpy()
 
-    pred_arr[(99 - yards_abs) : (199 - yards_abs)] = cdf_arr
     return pred_arr
+
+
+def crps_loss(input, target, target_to_index=None, reduction="mean"):
+    index_1dtt = target_to_index(target) if target_to_index else target
+    h_1dtt = torch.arange(input.shape[1])
+
+    h_2dtt = h_1dtt.reshape(1, -1) >= index_1dtt.reshape(-1, 1)
+
+    ret = (input - h_2dtt) ** 2
+    if reduction != "none":
+        ret = torch.mean(ret) if reduction == "mean" else torch.sum(ret)
+    return ret
+
+
+def yards_to_index(y_1dtt):
+    return y_1dtt + 99
+
+
+def nfl_crps_loss(input, target):
+    return crps_loss(input, target, target_to_index=yards_to_index)
 
 
 def infer(model, parameters):

@@ -1,4 +1,95 @@
-outcome_col: Yards
+pytorch_model:
+  obj: kedex.contrib.ops.pytorch_ops.PytorchSequential
+  modules:
+    - obj: torch.nn.Conv2d  # (3, 30, 60) -> (16, 28, 58)
+      in_channels: 3
+      out_channels: 16
+      kernel_size: 3
+
+    - obj: torch.nn.ReLU
+      _:  # dummy
+
+    - obj: torch.nn.AdaptiveMaxPool2d
+      output_size:
+        obj: tuple
+        arg:
+          - 14
+          - 29
+
+
+    - obj: torch.nn.Conv2d  # (16, 14, 29) -> (32, 12, 27)
+      in_channels: 16
+      out_channels: 32
+      kernel_size: 3
+
+    - obj: torch.nn.ReLU
+      _:  # dummy
+
+    - obj: torch.nn.AdaptiveMaxPool2d
+      output_size:
+        obj: tuple
+        arg:
+          - 6
+          - 14
+
+    - obj: torch.nn.Conv2d  # (32, 6, 14) -> (64, 4, 12)
+      in_channels: 32
+      out_channels: 64
+      kernel_size: 3
+
+    - obj: torch.nn.ReLU
+      _:  # dummy
+
+    - obj: torch.nn.AdaptiveMaxPool2d  # (64, 4, 12) -> (64, 1, 1)
+      output_size: 1
+
+    - obj: kedex.contrib.ops.pytorch_ops.PytorchFlatten
+      _:  # dummy
+
+    - obj: torch.nn.Dropout
+      p: 0.2
+
+    - obj: torch.nn.Linear
+      in_features: 64
+      out_features: 199
+
+    - obj: torch.nn.Softmax
+      dim: -1
+
+
+train_params:
+  optim:
+    obj: torch.optim.SGD
+  optim_params:
+    lr:  # learning rate
+      obj: truediv
+      arg:
+        - obj: train_batch_size
+        - 1000
+    momentum:
+      obj: sub
+      arg:
+        - 1
+        - obj: truediv
+          arg:
+            - obj: train_batch_size
+            - 2000
+    weight_decay:
+      obj: truediv
+      arg:
+        - 0.1
+        - obj: train_batch_size
+  loss_fn:
+    obj: kaggle_nfl.pytorch_loss.nfl_crps_loss
+  metrics:
+    nll:
+      obj: ignite.metrics.Loss
+      loss_fn:
+        obj: kaggle_nfl.pytorch_loss.nfl_crps_loss
+  train_batch_size: 512  # input batch size for training
+  val_batch_size: 1000  # input batch size for validation
+  epochs: 1  # number of epochs to train
+  log_interval: 1  # how many batches to wait before logging training status
 
 
 RUN_CONFIG:
@@ -12,7 +103,7 @@ RUN_CONFIG:
   pipeline_name: __default__
 
 MLFLOW_LOGGING_CONFIG:
-  offset_hours: 0
+  offset_hours: 8
   logging_artifacts:  # None
   
 PIPELINES:
@@ -63,23 +154,48 @@ PIPELINES:
           col_assign: Validation
         outputs: df_040
 
-      - inputs: df_040
-        func: fit_base_model
-        outputs: base_model
+#      - inputs: df_040
+#        func: fit_base_model
+#        outputs: base_model
+#
+#      - inputs: base_model
+#        func: infer
+#        outputs: infered_first_iter
+#
+#      - inputs: df_030
+#        func:
+#          obj: kedex.df_sample
+#          frac: 0.01
+#          random_state: 191024
+#          col_sample: PlayId
+#        outputs: df_031
+#
+#      - inputs: df_030
+#        outputs: describe
 
-      - inputs: base_model
+      - inputs: parameters
+        func:
+          obj: pass_func
+          arg:
+            obj: pytorch_model
+        outputs: initial_model
+
+      - inputs: df_040
+        func: generate_datasets
+        outputs:
+          - train_dataset
+          - val_dataset
+
+      - inputs:
+          - initial_model
+          - train_dataset
+          - val_dataset
+#        func:
+#          obj: kedex.contrib.ops.pytorch_ops.train_model
+#          train_params:
+#            obj: train_params
+        outputs: pytorch_model
+
+      - inputs: pytorch_model
         func: infer
         outputs: infered_first_iter
-
-      - inputs: df_030
-        func:
-          obj: kedex.df_sample
-          frac: 0.01
-          random_state: 191024
-          col_sample: PlayId
-        outputs: df_031
-
-      - inputs: df_030
-        outputs: describe
-
-
