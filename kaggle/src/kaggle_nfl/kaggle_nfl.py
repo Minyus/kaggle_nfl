@@ -280,6 +280,8 @@ def fit_base_model(df, parameters):
 
 
 def _predict_cdf(test_df, pytorch_model):
+    yards_abs = test_df["YardsFromOwnGoal"].iloc[0]
+
     img_3darr = play_df_to_image_and_yards(test_df)
 
     pytorch_model.eval()
@@ -289,6 +291,9 @@ def _predict_cdf(test_df, pytorch_model):
         out_2dtt = pytorch_model(imgs_4dtt)
         pred_arr = torch.squeeze(out_2dtt).numpy()
 
+    pred_arr = np.maximum.accumulate(pred_arr)
+    pred_arr[: (99 - yards_abs)] = 0.0
+    pred_arr[(199 - yards_abs) :] = 1.0
     return pred_arr
 
 
