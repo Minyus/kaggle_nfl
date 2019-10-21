@@ -232,49 +232,52 @@ class FieldImagesDataset:
 
         if use_pytorch:
             channel_axis = 0
-            shape = torch.Size(shape)
-
-            self.coo_dict = {
-                pi: {
-                    ci: dict(
-                        values=torch.from_numpy(count_df["NflId"].values),
-                        indices=torch.from_numpy(
-                            count_df[["X_int", "Y_int"]].values.astype(np.int64)
-                        ).t(),
+            count_df.loc[:, ["X_int", "Y_int"]] = count_df[["X_int", "Y_int"]].astype(
+                np.int64
+            )
+            coo_dict = dict()
+            for pi in play_id_dict.keys():
+                coo_2d_list = []
+                for ci in range(3):
+                    ch_df = count_df.xs(pi, ci)
+                    coo_2d = torch.sparse_coo_tensor(
+                        values=torch.from_numpy(ch_df["NflId"].values),
+                        indices=torch.from_numpy(ch_df[["X_int", "Y_int"]].values).t(),
+                        shape=shape,
                     )
-                    for ci in range(3)
-                }
-                for pi in play_id_dict.keys()
-            }
+                    coo_2d_list.append(coo_2d)
+                coo_3d = torch.stack(coo_2d_list, dim=channel_axis)
+                coo_dict[pi] = coo_3d
 
-            def coo_tensor(play_coo_dict):
-                img_ch_2dtt_list = [
-                    torch.sparse_coo_tensor(**play_coo_dict[ci], shape=shape).to_dense()
-                    for ci in range(3)
-                ]
-                img = torch.stack(img_ch_2dtt_list, dim=channel_axis)
+            self.coo_dict = coo_dict
+
+            def coo_tensor(play_coo_3d):
+                img = play_coo_3d.to_dense()
                 return img
 
         else:
             channel_axis = 2
             from scipy.sparse import coo_matrix
 
-            self.coo_dict = {
-                pi: {
-                    ci: (
-                        count_df["NflId"].values,
-                        (count_df["X_int"].values, count_df["Y_int"].values),
+            coo_dict = dict()
+            for pi in play_id_dict.keys():
+                play_coo_2d_dict = dict()
+                for ci in range(3):
+                    ch_df = count_df.xs([pi, ci])
+                    coo_2d = coo_matrix(
+                        (
+                            ch_df["NflId"].values,
+                            (ch_df["X_int"].values, ch_df["Y_int"].values),
+                        ),
+                        shape=shape,
                     )
-                    for ci in range(3)
-                }
-                for pi in play_id_dict.keys()
-            }
+                    play_coo_2d_dict[ci] = coo_2d
+                coo_dict[pi] = play_coo_2d_dict
 
-            def coo_tensor(play_coo_dict):
-                img_ch_2darr_list = [
-                    coo_matrix(play_coo_dict[ci], shape=shape).toarray()
-                    for ci in range(3)
-                ]
+            self.coo_dict = coo_dict
+
+            def coo_tensor(play_coo_2d_dict):
+                img_ch_2darr_list = [play_coo_2d_dict[ci].toarray() for ci in range(3)]
                 img = np.stack(img_ch_2darr_list, axis=channel_axis)
                 return img
 
