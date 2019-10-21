@@ -10,9 +10,8 @@
 ../load/df_020.pickle:
   type: PickleLocalDataSet
 
-#../load/df_030.csv:
-
-#../load/df_031.csv:
+../load/infered_first_iter.csv:
+  type: CSVLocalDataSet
 
 #../load/images_4darr.pickle:
 #  type: PickleLocalDataSet
@@ -27,11 +26,6 @@
 #  save_args:
 #    lower: 0
 #    upper: 255
-
-
-#../load/df_040.csv:
-
-../load/infered_first_iter.csv:
 
 #../load/pairplot.png:
 #  type: kedex.contrib.io.seaborn.SeabornPairPlotDataSet
