@@ -151,18 +151,17 @@ PIPELINES:
 #        outputs: pairplot
 
       - inputs: train
-        func: preprocess
+        func:
+          - obj: kedex.df_sample
+            frac: 0.01
+            random_state: 191024
+            col_sample: PlayId
+        outputs: df_020
+
+      - inputs: df_020
+        func:
+          - preprocess
         outputs: df_030
-
-#      - inputs: df_030
-#        func:
-#          - obj: kedex.df_query
-#            expr: "Yards > 50"
-#          - generate_field_images
-#        outputs: images_4darr
-
-#      - inputs: images_4darr
-#        outputs: field_image
 
       - inputs: df_030
         func:

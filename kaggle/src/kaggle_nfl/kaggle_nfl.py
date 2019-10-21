@@ -239,11 +239,11 @@ class FieldImagesDataset:
             for pi in play_id_dict.keys():
                 coo_2d_list = []
                 for ci in range(3):
-                    ch_df = count_df.xs(pi, ci)
+                    ch_df = count_df.xs([pi, ci])
                     coo_2d = torch.sparse_coo_tensor(
                         values=torch.from_numpy(ch_df["NflId"].values),
                         indices=torch.from_numpy(ch_df[["X_int", "Y_int"]].values).t(),
-                        shape=shape,
+                        size=shape,
                     )
                     coo_2d_list.append(coo_2d)
                 coo_3d = torch.stack(coo_2d_list, dim=channel_axis)
@@ -315,12 +315,12 @@ def generate_datasets(df, parameters=None):
         vali_df = df
 
     log.info("Setting up train_dataset from df shape: {}".format(fit_df.shape))
-    # train_dataset = FieldImagesDataset(fit_df, use_pytorch=True, float_scale=1.0/255)
-    train_dataset = FieldImagesDataset(fit_df, transform=ToTensor())
+    train_dataset = FieldImagesDataset(fit_df, use_pytorch=True, float_scale=1.0 / 255)
+    # train_dataset = FieldImagesDataset(fit_df, transform=ToTensor())
 
     log.info("Setting up val_dataset from df shape: {}".format(vali_df.shape))
-    # val_dataset = FieldImagesDataset(vali_df, use_pytorch=True, float_scale=1.0/255)
-    val_dataset = FieldImagesDataset(vali_df, transform=ToTensor())
+    val_dataset = FieldImagesDataset(vali_df, use_pytorch=True, float_scale=1.0 / 255)
+    # val_dataset = FieldImagesDataset(vali_df, transform=ToTensor())
 
     return train_dataset, val_dataset
 

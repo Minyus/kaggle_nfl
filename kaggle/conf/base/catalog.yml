@@ -8,6 +8,9 @@
 ../input/nfl-big-data-bowl-2020/train.csv:
   type: CSVLocalDataSet
 
+../load/df_020.pickle:
+  type: PickleLocalDataSet
+
 #../load/df_030.csv:
 
 #../load/df_031.csv:
