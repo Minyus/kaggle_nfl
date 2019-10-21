@@ -169,33 +169,6 @@ class PlayDfsDataset:
         return len(self.play_id_list)
 
 
-def play_df_to_image_and_yards(play_df):
-    from scipy.sparse import coo_matrix
-
-    img_ch_2darr_list = []
-    len_x = 30
-    len_y = 60
-    for i in range(3):
-        cat_df = play_df.query("PlayerCategory == @i")
-        count_df = (
-            cat_df.groupby(["X_int", "Y_int"], as_index=False)["NflId"]
-            .count()
-            .astype(np.uint8)
-        )
-        ch_2darr = coo_matrix(
-            (count_df["NflId"], (count_df["X_int"], count_df["Y_int"])),
-            shape=(len_x, len_y),
-        ).toarray()
-        img_ch_2darr_list.append(ch_2darr)
-    img_3darr = np.stack(img_ch_2darr_list, axis=2)
-
-    if "Yards" in play_df.columns:
-        yards = play_df["Yards"].iloc[0]
-        return img_3darr, yards
-    else:
-        return img_3darr
-
-
 class FieldImagesDataset:
     def __init__(
         self,
@@ -206,6 +179,9 @@ class FieldImagesDataset:
         transform=None,
         target_transform=None,
     ):
+
+        if "Yards" not in df.columns:
+            df["Yards"] = np.nan
 
         play_target_df = (
             df[["PlayId", "Yards"]].drop_duplicates().reset_index(drop=True)
@@ -470,11 +446,12 @@ def fit_base_model(df, parameters=None):
 def _predict_cdf(test_df, pytorch_model):
     yards_abs = test_df["YardsFromOwnGoal"].iloc[0]
 
-    img_3darr = play_df_to_image_and_yards(test_df)
+    imgs_3dtt, _ = FieldImagesDataset(test_df, to_pytorch_tensor=True)[0]
+    # img_3darr, _ = FieldImagesDataset(test_df, to_pytorch_tensor=True)[0]
+    # imgs_3dtt = ToTensor()(img_3darr)
 
     pytorch_model.eval()
     with torch.no_grad():
-        imgs_3dtt = ToTensor()(img_3darr)
         imgs_4dtt = torch.unsqueeze(imgs_3dtt, 0)  # instead of DataLoader
         out_2dtt = pytorch_model(imgs_4dtt)
         pred_arr = torch.squeeze(out_2dtt).numpy()
