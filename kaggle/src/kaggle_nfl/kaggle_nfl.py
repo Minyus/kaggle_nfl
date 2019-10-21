@@ -202,7 +202,7 @@ class FieldImagesDataset:
         df,
         shape=(30, 60),
         float_scale=None,
-        use_pytorch=False,
+        to_pytorch_tensor=False,
         transform=None,
         target_transform=None,
     ):
@@ -223,6 +223,9 @@ class FieldImagesDataset:
         )["NflId"].count()
         count_df.set_index(["PlayIndex", "PlayerCategory"], inplace=True)
 
+        if (float_scale is None and to_pytorch_tensor) or float_scale == True:
+            float_scale = 1.0 / 255
+
         if float_scale:
             count_df.loc[:, "NflId"] = (
                 count_df["NflId"].astype(np.float32) * float_scale
@@ -230,7 +233,7 @@ class FieldImagesDataset:
         else:
             count_df.loc[:, "NflId"] = count_df["NflId"].astype(np.uint8)
 
-        if use_pytorch:
+        if to_pytorch_tensor:
             channel_axis = 0
             count_df.loc[:, ["X_int", "Y_int"]] = count_df[["X_int", "Y_int"]].astype(
                 np.int64
@@ -315,11 +318,11 @@ def generate_datasets(df, parameters=None):
         vali_df = df
 
     log.info("Setting up train_dataset from df shape: {}".format(fit_df.shape))
-    train_dataset = FieldImagesDataset(fit_df, use_pytorch=True, float_scale=1.0 / 255)
+    train_dataset = FieldImagesDataset(fit_df, to_pytorch_tensor=True)
     # train_dataset = FieldImagesDataset(fit_df, transform=ToTensor())
 
     log.info("Setting up val_dataset from df shape: {}".format(vali_df.shape))
-    val_dataset = FieldImagesDataset(vali_df, use_pytorch=True, float_scale=1.0 / 255)
+    val_dataset = FieldImagesDataset(vali_df, to_pytorch_tensor=True)
     # val_dataset = FieldImagesDataset(vali_df, transform=ToTensor())
 
     return train_dataset, val_dataset
