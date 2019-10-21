@@ -1,6 +1,24 @@
 pytorch_model:
   obj: kedex.contrib.ops.pytorch_ops.PytorchSequential
   modules:
+
+    - obj: torchvision.models.resnet._resnet
+      arch: resnet9
+      block:
+        obj: torchvision.models.resnet.BasicBlock
+      layers: [1, 1, 1, 1]
+      pretrained: False
+      progress:  # None
+      num_classes: 2
+
+    - obj: kaggle_nfl.kaggle_nfl.PytorchLogNormalCDF
+      x_start: 1
+      x_end: 200
+      x_scale: 0.01
+
+NOT_USED1_pytorch_model:
+  obj: kedex.contrib.ops.pytorch_ops.PytorchSequential
+  modules:
     - obj: torch.nn.Conv2d  # (3, 30, 60) -> (16, 28, 58)
       in_channels: 3
       out_channels: 16
@@ -65,7 +83,7 @@ pytorch_model:
 #    - obj: torch.nn.Sigmoid
 #      _:  # dummy
 
-train_batch_size: 256
+train_batch_size: 64
 loss_fn:
   obj: kaggle_nfl.kaggle_nfl.nfl_crps_loss
 
