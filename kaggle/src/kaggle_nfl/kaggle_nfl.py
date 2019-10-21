@@ -5,8 +5,6 @@ import os
 from pathlib import Path
 from collections import OrderedDict
 
-from scipy.sparse import coo_matrix
-
 import torch
 from torchvision.transforms import ToTensor, Compose
 import math
@@ -69,7 +67,7 @@ def preprocess(df, parameters=None):
     )
 
     cols = [
-        "GameId",
+        # "GameId",
         "PlayId",
         # 'Team',
         # 'X',
@@ -88,7 +86,7 @@ def preprocess(df, parameters=None):
         # 'GameClock',
         # 'PossessionTeam',
         "Down",
-        "Distance",
+        # "Distance",
         "FieldPosition",
         "HomeScoreBeforePlay",
         "VisitorScoreBeforePlay",
@@ -106,8 +104,8 @@ def preprocess(df, parameters=None):
         # 'PlayerBirthDate',
         # 'PlayerCollegeName',
         "Position",
-        "HomeTeamAbbr",
-        "VisitorTeamAbbr",
+        # "HomeTeamAbbr",
+        # "VisitorTeamAbbr",
         "Week",
         # 'Stadium',
         # 'Location',
@@ -116,15 +114,15 @@ def preprocess(df, parameters=None):
         "GameWeather",
         "Temperature",
         "Humidity",
-        "WindSpeed",
-        "WindDirection",
+        # "WindSpeed",
+        # "WindDirection",
         # 'ToLeft',
         # 'IsBallCarrier',
         # 'TeamOnOffense',
         "IsOnOffense",
         "YardsFromOwnGoal",
-        "X_std",
-        "Y_std",
+        # "X_std",
+        # "Y_std",
         "RelativeDefenceMeanYards",
         "PlayerCategory",
         "X_int",
@@ -172,6 +170,8 @@ class PlayDfsDataset:
 
 
 def play_df_to_image_and_yards(play_df):
+    from scipy.sparse import coo_matrix
+
     img_ch_2darr_list = []
     len_x = 30
     len_y = 60
@@ -197,7 +197,16 @@ def play_df_to_image_and_yards(play_df):
 
 
 class FieldImagesDataset:
-    def __init__(self, df, channel_first=False, transform=None, target_transform=None):
+    def __init__(
+        self,
+        df,
+        shape=(30, 60),
+        float_scale=None,
+        use_pytorch=False,
+        transform=None,
+        target_transform=None,
+    ):
+
         play_target_df = (
             df[["PlayId", "Yards"]].drop_duplicates().reset_index(drop=True)
         )
@@ -213,23 +222,63 @@ class FieldImagesDataset:
             ["PlayIndex", "PlayerCategory", "X_int", "Y_int"], as_index=False
         )["NflId"].count()
         count_df.set_index(["PlayIndex", "PlayerCategory"], inplace=True)
-        count_df.loc[:, "NflId"] = count_df["NflId"].astype(np.uint8)
 
-        self.coo_dict = {
-            pi: {
-                ci: (
-                    count_df["NflId"].values,
-                    (count_df["X_int"].values, count_df["Y_int"].values),
-                )
-                for ci in range(3)
+        if float_scale:
+            count_df.loc[:, "NflId"] = (
+                count_df["NflId"].astype(np.float32) * float_scale
+            )
+        else:
+            count_df.loc[:, "NflId"] = count_df["NflId"].astype(np.uint8)
+
+        if use_pytorch:
+            channel_axis = 0
+            shape = torch.Size(shape)
+
+            self.coo_dict = {
+                pi: {
+                    ci: dict(
+                        values=torch.from_numpy(count_df["NflId"].values),
+                        indices=torch.from_numpy(
+                            count_df[["X_int", "Y_int"]].values.astype(np.int64)
+                        ).t(),
+                    )
+                    for ci in range(3)
+                }
+                for pi in play_id_dict.keys()
             }
-            for pi in play_id_dict.keys()
-        }
 
-        len_x = 30
-        len_y = 60
-        self.shape = (len_x, len_y)
-        self.channel_axis = 0 if channel_first else 2
+            def coo_tensor(play_coo_dict):
+                img_ch_2dtt_list = [
+                    torch.sparse_coo_tensor(**play_coo_dict[ci], shape=shape).to_dense()
+                    for ci in range(3)
+                ]
+                img = torch.stack(img_ch_2dtt_list, dim=channel_axis)
+                return img
+
+        else:
+            channel_axis = 2
+            from scipy.sparse import coo_matrix
+
+            self.coo_dict = {
+                pi: {
+                    ci: (
+                        count_df["NflId"].values,
+                        (count_df["X_int"].values, count_df["Y_int"].values),
+                    )
+                    for ci in range(3)
+                }
+                for pi in play_id_dict.keys()
+            }
+
+            def coo_tensor(play_coo_dict):
+                img_ch_2darr_list = [
+                    coo_matrix(play_coo_dict[ci], shape=shape).toarray()
+                    for ci in range(3)
+                ]
+                img = np.stack(img_ch_2darr_list, axis=channel_axis)
+                return img
+
+        self.coo_tensor = coo_tensor
 
         self.transform = transform
         self.target_transform = target_transform
@@ -237,10 +286,8 @@ class FieldImagesDataset:
     def __getitem__(self, index):
 
         play_coo_dict = self.coo_dict[index]
-        img_ch_2darr_list = [
-            coo_matrix(play_coo_dict[ci], shape=self.shape).toarray() for ci in range(3)
-        ]
-        img = np.stack(img_ch_2darr_list, axis=self.channel_axis)
+
+        img = self.coo_tensor(play_coo_dict)
 
         target = self.target_dict[index]
 
@@ -255,7 +302,7 @@ class FieldImagesDataset:
         return self.len
 
 
-def generate_datasets(df, parameters):
+def generate_datasets(df, parameters=None):
 
     if "Validation" in df.columns:
         fit_df = df.query("Validation == 0").drop(columns=["Validation"])
@@ -265,8 +312,11 @@ def generate_datasets(df, parameters):
         vali_df = df
 
     log.info("Setting up train_dataset from df shape: {}".format(fit_df.shape))
+    # train_dataset = FieldImagesDataset(fit_df, use_pytorch=True, float_scale=1.0/255)
     train_dataset = FieldImagesDataset(fit_df, transform=ToTensor())
+
     log.info("Setting up val_dataset from df shape: {}".format(vali_df.shape))
+    # val_dataset = FieldImagesDataset(vali_df, use_pytorch=True, float_scale=1.0/255)
     val_dataset = FieldImagesDataset(vali_df, transform=ToTensor())
 
     return train_dataset, val_dataset
