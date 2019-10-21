@@ -203,9 +203,9 @@ class FieldImagesDataset:
             float_scale = 1.0 / 255
 
         if float_scale:
-            count_df.loc[:, "NflId"] = (
-                count_df["NflId"].astype(np.float32) * float_scale
-            )
+            count_df.loc[:, "NflId"] = count_df["NflId"].astype(
+                np.float32
+            ) * np.float32(float_scale)
         else:
             count_df.loc[:, "NflId"] = count_df["NflId"].astype(np.uint8)
 
