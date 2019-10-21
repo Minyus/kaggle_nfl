@@ -564,8 +564,8 @@ if __name__ == "__main__":
         early_stopping_params=dict(metric="loss", minimize=True, patience=10),
         time_limit=10800,  # 3 hours
         train_data_loader_params=dict(batch_size=train_batch_size, num_workers=4),
-        evaluate_train_data=False,
-        evaluate_val_data=False,
+        evaluate_train_data="COMPLETED",
+        progress_update=False,
         epochs=1000,  # number of epochs to train
         seed=0,  #
     )
