@@ -485,7 +485,9 @@ class PytorchLogNormalCDF(torch.nn.Module):
             torch.arange(start=x_start, end=x_end, step=x_step, dtype=torch.float32)
             * x_scale
         )
-        self.value = torch.unsqueeze(value, 0)
+        value = torch.unsqueeze(value, 0)
+        value.requires_grad = False
+        self.value = value
         super().__init__()
 
     def forward(self, x):
