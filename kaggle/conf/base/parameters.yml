@@ -88,9 +88,9 @@ loss_fn:
   obj: kaggle_nfl.kaggle_nfl.nfl_crps_loss
 
 train_params:
-  optim:
+  optimizer:
     obj: torch.optim.SGD
-  optim_params:
+  optimizer_params:
     lr:  # learning rate
       obj: truediv
       arg:
@@ -109,6 +109,25 @@ train_params:
       arg:
         - 0.1
         - obj: train_batch_size
+  scheduler:
+    obj: ignite.contrib.handlers.param_scheduler.CosineAnnealingScheduler
+  scheduler_params:
+    param_name: lr
+    start_value:
+      obj: truediv
+      arg:
+        - obj: train_batch_size
+        - 1000
+    end_value:
+      obj: truediv
+      arg:
+        - obj: train_batch_size
+        - 1000_000
+    cycle_epochs:  2.0  # cycle_size: int(cycle_epochs * len(train_loader))
+    cycle_mult: 1.0
+    start_value_mult: 1.0
+    end_value_mult: 1.0
+    save_history: False
   loss_fn:
     obj: loss_fn
   metrics:
@@ -119,8 +138,8 @@ train_params:
   early_stopping_params:
     metric: loss
     minimize: True
-    patience: 10
-  time_limit: 60  # 3600
+    patience: 5
+  time_limit: 10
   train_data_loader_params:
     batch_size:  # input batch size for training
       obj: train_batch_size
