@@ -492,10 +492,10 @@ class PytorchLogNormalCDF(torch.nn.Module):
 
     def forward(self, x):
         loc = torch.unsqueeze(x[:, 0], 1)
-        scale = torch.unsqueeze(torch.exp(x[:, 1]), 1)
-        return 0.5 * (
-            1 + torch.erf((self.value - loc) * scale.reciprocal() / math.sqrt(2))
-        )
+        reciprocal_sqrt2_scale = torch.unsqueeze(torch.exp(x[:, 1]), 1)
+        # scale = torch.unsqueeze(torch.exp(x[:, 1]), 1)
+        # reciprocal_sqrt2_scale = scale.reciprocal() / math.sqrt(2)
+        return 0.5 * (1 + torch.erf((self.value - loc) * reciprocal_sqrt2_scale))
         # return torch.distributions.normal.Normal(loc=loc, scale=scale).cdf(self.value)
 
 
