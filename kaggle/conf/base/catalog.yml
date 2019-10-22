@@ -7,8 +7,9 @@
   load_args:
     low_memory: False
 
-../load/df_020.pickle:
-  type: PickleLocalDataSet
+../load/train_dataset.pickle:
+
+../load/val_dataset.pickle:
 
 ../load/infered_first_iter.csv:
   type: CSVLocalDataSet
