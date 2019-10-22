@@ -175,9 +175,11 @@ class FieldImagesDataset:
     def __init__(
         self,
         df,
-        shape=(30, 60),
+        dim_cols=["PlayerCategory", "X_int", "Y_int"],
+        dim_sizes=[3, 30, 60],
         float_scale=None,
         to_pytorch_tensor=False,
+        store_as_sparse_tensor=False,
         transform=None,
         target_transform=None,
     ):
@@ -199,7 +201,6 @@ class FieldImagesDataset:
         count_df = df.groupby(
             ["PlayIndex", "PlayerCategory", "X_int", "Y_int"], as_index=False
         )["NflId"].count()
-        count_df.set_index(["PlayIndex", "PlayerCategory"], inplace=True)
 
         if (float_scale is None and to_pytorch_tensor) or float_scale == True:
             float_scale = 1.0 / 255
@@ -212,32 +213,22 @@ class FieldImagesDataset:
             count_df.loc[:, "NflId"] = count_df["NflId"].astype(np.uint8)
 
         if to_pytorch_tensor:
-            channel_axis = 0
-            count_df.loc[:, ["X_int", "Y_int"]] = count_df[["X_int", "Y_int"]].astype(
-                np.int64
-            )
+
+            count_df.set_index("PlayIndex", inplace=True)
+            count_df.loc[:, dim_cols] = count_df[dim_cols].astype(np.int64)
+            f = torch.sparse_coo_tensor if store_as_sparse_tensor else dict
             coo_dict = dict()
             for pi in play_id_dict.keys():
-                coo_2d_list = []
-                for ci in range(3):
-                    ch_df = count_df.xs([pi, ci])
-                    coo_2d = torch.sparse_coo_tensor(
-                        values=torch.from_numpy(ch_df["NflId"].values),
-                        indices=torch.from_numpy(ch_df[["X_int", "Y_int"]].values).t(),
-                        size=shape,
-                    )
-                    coo_2d_list.append(coo_2d)
-                coo_3d = torch.stack(coo_2d_list, dim=channel_axis)
+                play_df = count_df.xs(pi)
+                coo_3d = f(
+                    values=torch.from_numpy(play_df["NflId"].values),
+                    indices=torch.from_numpy(play_df[dim_cols].values.transpose()),
+                    size=dim_sizes,
+                )
                 coo_dict[pi] = coo_3d
 
-            self.coo_dict = coo_dict
-
-            def coo_tensor(play_coo_3d):
-                img = play_coo_3d.to_dense()
-                return img
-
         else:
-            channel_axis = 2
+            count_df.set_index(["PlayIndex", dim_cols[0]], inplace=True)
             from scipy.sparse import coo_matrix
 
             coo_dict = dict()
@@ -248,30 +239,32 @@ class FieldImagesDataset:
                     coo_2d = coo_matrix(
                         (
                             ch_df["NflId"].values,
-                            (ch_df["X_int"].values, ch_df["Y_int"].values),
+                            (ch_df[dim_cols[1]].values, ch_df[dim_cols[2]].values),
                         ),
-                        shape=shape,
+                        shape=tuple(dim_sizes[1:]),
                     )
                     play_coo_2d_dict[ci] = coo_2d
                 coo_dict[pi] = play_coo_2d_dict
 
-            self.coo_dict = coo_dict
+        self.coo_dict = coo_dict
 
-            def coo_tensor(play_coo_2d_dict):
-                img_ch_2darr_list = [play_coo_2d_dict[ci].toarray() for ci in range(3)]
-                img = np.stack(img_ch_2darr_list, axis=channel_axis)
-                return img
-
-        self.coo_tensor = coo_tensor
-
+        self.to_pytorch_tensor = to_pytorch_tensor
+        self.store_as_sparse_tensor = store_as_sparse_tensor
         self.transform = transform
         self.target_transform = target_transform
 
     def __getitem__(self, index):
 
-        play_coo_dict = self.coo_dict[index]
+        play_coo_3d = self.coo_dict[index]
 
-        img = self.coo_tensor(play_coo_dict)
+        if self.to_pytorch_tensor:
+            if not self.store_as_sparse_tensor:
+                play_coo_3d = torch.sparse_coo_tensor(**play_coo_3d)
+            img = play_coo_3d.to_dense()
+        else:
+            play_coo_dict = play_coo_3d
+            img_ch_2darr_list = [play_coo_dict[ci].toarray() for ci in range(3)]
+            img = np.stack(img_ch_2darr_list, axis=2)
 
         target = self.target_dict[index]
 
