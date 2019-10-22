@@ -11,10 +11,10 @@ import torch
 from torchvision.transforms import ToTensor, Compose
 import math
 
-if __package__ == "kaggle_nfl":
-    import logging
 
-    log = logging.getLogger(__name__)
+import logging
+
+log = logging.getLogger(__name__)
 
 
 def preprocess(df, parameters=None):
@@ -530,27 +530,44 @@ def compose(transforms):
 
 
 if __name__ == "__main__":
-    if __package__ == "kaggle_nfl":
-        log.info("Set up paths.")
-        project_path = Path(__file__).resolve().parent.parent.parent
+    if "pytorch_train" not in dir():
+        from kedex.contrib.ops.pytorch_ops import pytorch_train
+    import torchvision
+    import ignite
+    import logging.config
+    import yaml
 
-        src_path = project_path / "input" / "nfl-big-data-bowl-2020"
-        if str(src_path) not in sys.path:
-            sys.path.insert(0, str(src_path))
+    logging_yaml = """
+    version: 1
+    disable_existing_loggers: False
+    formatters:
+        simple:
+            format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    
+    
+    handlers:
+        console:
+            class: logging.StreamHandler
+            level: INFO
+            formatter: simple
+            stream: ext://sys.stdout
+    
+    root:
+        level: INFO
+        handlers: [console]
+    """
+    conf_logging = yaml.safe_load(logging_yaml)
+    logging.config.dictConfig(conf_logging)
 
-        if "PYTHONPATH" not in os.environ:
-            os.environ["PYTHONPATH"] = src_path
-
-    print("Read CSV file.")
+    log.info("Read CSV file.")
     df = pd.read_csv("../input/nfl-big-data-bowl-2020/train.csv", low_memory=False)
 
-    print("Preprocess.")
+    log.info("Preprocess.")
     df = preprocess(df)
-    print("Set up dataset.")
 
-    import ignite
+    log.info("Set up dataset.")
 
-    train_batch_size = 1024
+    train_batch_size = 32
     loss_fn = nfl_crps_loss
     train_params = dict(
         optim=torch.optim.SGD,
@@ -562,7 +579,7 @@ if __name__ == "__main__":
         loss_fn=loss_fn,
         metrics=dict(loss=ignite.metrics.Loss(loss_fn=loss_fn)),
         early_stopping_params=dict(metric="loss", minimize=True, patience=10),
-        time_limit=10800,  # 3 hours
+        time_limit=7200,
         train_data_loader_params=dict(batch_size=train_batch_size, num_workers=4),
         evaluate_train_data="COMPLETED",
         progress_update=False,
@@ -571,28 +588,42 @@ if __name__ == "__main__":
     )
 
     pytorch_model = torch.nn.Sequential(
-        torch.nn.Conv2d(in_channels=3, out_channels=16, kernel_size=3),
-        torch.nn.ReLU(),
-        torch.nn.AdaptiveMaxPool2d(output_size=(14, 29)),
-        torch.nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3),
-        torch.nn.ReLU(),
-        torch.nn.AdaptiveMaxPool2d(output_size=(6, 14)),
-        torch.nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3),
-        torch.nn.ReLU(),
-        torch.nn.AdaptiveMaxPool2d(output_size=1),
-        PytorchFlatten(),
-        torch.nn.Dropout(0.2),
-        torch.nn.Linear(in_features=64, out_features=2),
+        torchvision.models.resnet._resnet(
+            arch="resnet9",
+            block=torchvision.models.resnet.BasicBlock,
+            layers=[1, 1, 1, 1],
+            pretrained=False,
+            progress=None,
+            num_classes=2,
+        ),
         PytorchLogNormalCDF(x_start=1, x_end=200, x_scale=0.01),
     )
 
+    # pytorch_model = torch.nn.Sequential(
+    #     torch.nn.Conv2d(in_channels=3, out_channels=16, kernel_size=3),
+    #     torch.nn.ReLU(),
+    #     torch.nn.AdaptiveMaxPool2d(output_size=(14, 29)),
+    #     torch.nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3),
+    #     torch.nn.ReLU(),
+    #     torch.nn.AdaptiveMaxPool2d(output_size=(6, 14)),
+    #     torch.nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3),
+    #     torch.nn.ReLU(),
+    #     torch.nn.AdaptiveMaxPool2d(output_size=1),
+    #     PytorchFlatten(),
+    #     torch.nn.Dropout(0.2),
+    #     torch.nn.Linear(in_features=64, out_features=2),
+    #     PytorchLogNormalCDF(x_start=1, x_end=200, x_scale=0.01),
+    # )
+
     train_dataset = FieldImagesDataset(df, to_pytorch_tensor=True)
-    print("Fit model.")
+
+    log.info("Fit model.")
     model = pytorch_train(train_params=train_params, mlflow_logging=False)(
         pytorch_model, train_dataset
     )
 
     # model = fit_base_model(df)
-    print("Infer.")
+    log.info("Infer.")
     infer(model)
-    print("Completed.")
+
+    log.info("Completed.")
