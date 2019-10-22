@@ -120,7 +120,7 @@ train_params:
     metric: loss
     minimize: True
     patience: 10
-  time_limit: 3600
+  time_limit: 60  # 3600
   train_data_loader_params:
     batch_size:  # input batch size for training
       obj: train_batch_size
@@ -158,11 +158,11 @@ PIPELINES:
     nodes:
 
       - inputs: train
-        func:
-          - obj: kedex.df_sample
-            frac: 0.02
-            random_state: 191024
-            col_sample: PlayId
+#        func:
+#          - obj: kedex.df_sample
+#            frac: 0.02
+#            random_state: 191024
+#            col_sample: PlayId
         outputs: df_020
 
       - inputs: df_020
