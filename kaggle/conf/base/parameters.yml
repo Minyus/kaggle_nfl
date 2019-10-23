@@ -9,7 +9,28 @@ pytorch_model:
       layers: [1, 1, 1, 1]
       pretrained: False
       progress:  # None
-      num_classes: 199
+      num_classes: 205  # 199 + 2 + 2 + 2
+
+    - obj: kedex.contrib.ops.pytorch_ops.PytorchUnsqueeze
+      dim: 1
+
+    - obj: torch.nn.AvgPool1d
+      kernel_size: 3
+      stride: 1
+      padding: 0
+
+    - obj: torch.nn.AvgPool1d
+      kernel_size: 3
+      stride: 1
+      padding: 0
+
+    - obj: torch.nn.AvgPool1d
+      kernel_size: 3
+      stride: 1
+      padding: 0
+
+    - obj: kedex.contrib.ops.pytorch_ops.PytorchSqueeze
+      dim: 1
 
     - obj: torch.nn.Sigmoid
       _:  # dummy

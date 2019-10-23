@@ -537,8 +537,6 @@ def compose(transforms):
 
 
 if __name__ == "__main__":
-    if "pytorch_train" not in dir():
-        from kedex.contrib.ops.pytorch_ops import pytorch_train
     import torchvision
     import ignite
     import logging.config
@@ -576,7 +574,7 @@ if __name__ == "__main__":
 
     train_batch_size = 256
     train_params = dict(
-        epochs=4,  # number of epochs to train
+        epochs=6,  # number of epochs to train
         time_limit=10800,
         early_stopping_params=dict(metric="loss", minimize=True, patience=1000),
         scheduler=ignite.contrib.handlers.param_scheduler.LinearCyclicalScheduler,
@@ -606,6 +604,10 @@ if __name__ == "__main__":
         seed=0,  #
     )
 
+    if "PytorchUnsqueeze" not in dir():
+        from kedex.contrib.ops.pytorch_ops import PytorchUnsqueeze
+    if "PytorchSqueeze" not in dir():
+        from kedex.contrib.ops.pytorch_ops import PytorchSqueeze
     pytorch_model = torch.nn.Sequential(
         torchvision.models.resnet._resnet(
             arch="resnet9",
@@ -613,9 +615,14 @@ if __name__ == "__main__":
             layers=[1, 1, 1, 1],
             pretrained=False,
             progress=None,
-            num_classes=199
+            num_classes=205,  # 199 + 2 + 2 + 2
             # num_classes=2,
         ),
+        PytorchUnsqueeze(dim=1),
+        torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=-0),
+        torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=-0),
+        torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=-0),
+        PytorchSqueeze(dim=1),
         torch.nn.Sigmoid()
         # PytorchLogNormalCDF(x_start=1, x_end=200, x_scale=0.01),
     )
@@ -639,6 +646,8 @@ if __name__ == "__main__":
     train_dataset = FieldImagesDataset(df, to_pytorch_tensor=True)
 
     log.info("Fit model.")
+    if "pytorch_train" not in dir():
+        from kedex.contrib.ops.pytorch_ops import pytorch_train
     model = pytorch_train(train_params=train_params, mlflow_logging=False)(
         pytorch_model, train_dataset
     )
