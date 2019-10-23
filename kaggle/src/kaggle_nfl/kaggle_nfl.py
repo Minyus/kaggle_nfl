@@ -562,23 +562,34 @@ if __name__ == "__main__":
 
     log.info("Set up dataset.")
 
-    train_batch_size = 32
     loss_fn = nfl_crps_loss
+    train_batch_size = 256
     train_params = dict(
-        optim=torch.optim.SGD,
-        optim_params=dict(
+        epochs=30,  # number of epochs to train
+        time_limit=10800,
+        early_stopping_params=dict(metric="loss", minimize=True, patience=1000),
+        scheduler=ignite.contrib.handlers.param_scheduler.LinearCyclicalScheduler,
+        scheduler_params=dict(
+            param_name="lr",
+            start_value=train_batch_size / 10000000,
+            end_value=train_batch_size / 200,
+            cycle_epochs=10,  # cycle_size: int(cycle_epochs * len(train_loader))
+            cycle_mult=1.0,
+            start_value_mult=1.0,
+            end_value_mult=1.0,
+            save_history=False,
+        ),
+        optimizer=torch.optim.SGD,
+        optimizer_params=dict(
             lr=train_batch_size / 1000,
             momentum=1 - train_batch_size / 2000,
             weight_decay=0.1 / train_batch_size,
         ),
         loss_fn=loss_fn,
         metrics=dict(loss=ignite.metrics.Loss(loss_fn=loss_fn)),
-        early_stopping_params=dict(metric="loss", minimize=True, patience=10),
-        time_limit=7200,
         train_data_loader_params=dict(batch_size=train_batch_size, num_workers=4),
         evaluate_train_data="COMPLETED",
         progress_update=False,
-        epochs=1000,  # number of epochs to train
         seed=0,  #
     )
 
