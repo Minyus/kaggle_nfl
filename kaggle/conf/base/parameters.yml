@@ -83,8 +83,6 @@ NOT_USED1_pytorch_model:
 #    - obj: torch.nn.Sigmoid
 #      _:  # dummy
 
-loss_fn:
-  obj: kaggle_nfl.kaggle_nfl.nfl_crps_loss
 
 train_batch_size: 256
 
@@ -110,7 +108,7 @@ train_params:
       arg:
         - obj: train_batch_size
         - 200
-    cycle_epochs: 10.0  # cycle_size: int(cycle_epochs * len(train_loader))
+    cycle_epochs: 1  # cycle_size: int(cycle_epochs * len(train_loader))
     cycle_mult: 1.0
     start_value_mult: 1.0
     end_value_mult: 1.0
@@ -137,12 +135,14 @@ train_params:
         - 0.1
         - obj: train_batch_size
   loss_fn:
-    obj: loss_fn
+    obj: kaggle_nfl.kaggle_nfl.NflCrpsLossFunc
+    min: -15
+    max: 25
   metrics:
     loss:
       obj: ignite.metrics.Loss
       loss_fn:
-        obj: loss_fn
+        obj: kaggle_nfl.kaggle_nfl.nfl_crps_loss
   train_data_loader_params:
     batch_size:  # input batch size for training
       obj: train_batch_size

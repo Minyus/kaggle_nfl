@@ -479,6 +479,16 @@ def nfl_crps_loss(input, target):
     return crps_loss(input, target, target_to_index=yards_to_index)
 
 
+class NflCrpsLossFunc:
+    def __init__(self, min=-15, max=25):
+        self.min = min
+        self.max = max
+
+    def __call__(self, input, target):
+        target = torch.clamp(target, min=self.min, max=self.max)
+        return nfl_crps_loss(input, target)
+
+
 class PytorchLogNormalCDF(torch.nn.Module):
     def __init__(self, x_start=1, x_end=200, x_step=1, x_scale=0.01):
         value = torch.log(
@@ -562,7 +572,6 @@ if __name__ == "__main__":
 
     log.info("Set up dataset.")
 
-    loss_fn = nfl_crps_loss
     train_batch_size = 256
     train_params = dict(
         epochs=30,  # number of epochs to train
@@ -585,8 +594,8 @@ if __name__ == "__main__":
             momentum=1 - train_batch_size / 2000,
             weight_decay=0.1 / train_batch_size,
         ),
-        loss_fn=loss_fn,
-        metrics=dict(loss=ignite.metrics.Loss(loss_fn=loss_fn)),
+        loss_fn=NflCrpsLossFunc(min=-15, max=25),
+        metrics=dict(loss=ignite.metrics.Loss(loss_fn=nfl_crps_loss)),
         train_data_loader_params=dict(batch_size=train_batch_size, num_workers=4),
         evaluate_train_data="COMPLETED",
         progress_update=False,
