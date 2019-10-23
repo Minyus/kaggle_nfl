@@ -330,8 +330,10 @@ def generate_field_images(df, parameters=None):
 
 
 def fit_base_model(df, parameters=None):
-    from skew_scaler import SkewScaler
+
     from mlflow import log_metrics, log_params
+
+    from scaler.skew_scaler import SkewScaler
 
     model = SkewScaler()
 
@@ -581,19 +583,20 @@ if __name__ == "__main__":
         scheduler_params=dict(
             param_name="lr",
             start_value=train_batch_size / 10000000,
-            end_value=train_batch_size / 200,
+            end_value=train_batch_size / 4000,
             cycle_epochs=10,  # cycle_size: int(cycle_epochs * len(train_loader))
             cycle_mult=1.0,
             start_value_mult=1.0,
             end_value_mult=1.0,
             save_history=False,
         ),
-        optimizer=torch.optim.SGD,
-        optimizer_params=dict(
-            lr=train_batch_size / 1000,
-            momentum=1 - train_batch_size / 2000,
-            weight_decay=0.1 / train_batch_size,
-        ),
+        optimizer=torch.optim.Adam,
+        # optimizer=torch.optim.SGD,
+        # optimizer_params=dict(
+        #     lr=train_batch_size / 1000,
+        #     momentum=1 - train_batch_size / 2000,
+        #     weight_decay=0.1 / train_batch_size,
+        # ),
         loss_fn=NflCrpsLossFunc(min=-15, max=25),
         metrics=dict(loss=ignite.metrics.Loss(loss_fn=nfl_crps_loss)),
         train_data_loader_params=dict(batch_size=train_batch_size, num_workers=4),
@@ -609,9 +612,11 @@ if __name__ == "__main__":
             layers=[1, 1, 1, 1],
             pretrained=False,
             progress=None,
-            num_classes=2,
+            num_classes=199
+            # num_classes=2,
         ),
-        PytorchLogNormalCDF(x_start=1, x_end=200, x_scale=0.01),
+        torch.nn.Sigmoid()
+        # PytorchLogNormalCDF(x_start=1, x_end=200, x_scale=0.01),
     )
 
     # pytorch_model = torch.nn.Sequential(

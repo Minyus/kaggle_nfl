@@ -9,79 +9,84 @@ pytorch_model:
       layers: [1, 1, 1, 1]
       pretrained: False
       progress:  # None
-      num_classes: 2
+      num_classes: 199
 
-    - obj: kaggle_nfl.kaggle_nfl.PytorchLogNormalCDF
-      x_start: 1
-      x_end: 200
-      x_scale: 0.01
-
-NOT_USED1_pytorch_model:
-  obj: kedex.contrib.ops.pytorch_ops.PytorchSequential
-  modules:
-    - obj: torch.nn.Conv2d  # (3, 30, 60) -> (16, 28, 58)
-      in_channels: 3
-      out_channels: 16
-      kernel_size: 3
-
-    - obj: torch.nn.ReLU
+    - obj: torch.nn.Sigmoid
       _:  # dummy
 
-    - obj: torch.nn.AdaptiveMaxPool2d
-      output_size:
-        obj: tuple
-        arg:
-          - 14
-          - 29
+#      num_classes: 2
+#
+#    - obj: kaggle_nfl.kaggle_nfl.PytorchLogNormalCDF
+#      x_start: 1
+#      x_end: 200
+#      x_scale: 0.01
 
-
-    - obj: torch.nn.Conv2d  # (16, 14, 29) -> (32, 12, 27)
-      in_channels: 16
-      out_channels: 32
-      kernel_size: 3
-
-    - obj: torch.nn.ReLU
-      _:  # dummy
-
-    - obj: torch.nn.AdaptiveMaxPool2d
-      output_size:
-        obj: tuple
-        arg:
-          - 6
-          - 14
-
-    - obj: torch.nn.Conv2d  # (32, 6, 14) -> (64, 4, 12)
-      in_channels: 32
-      out_channels: 64
-      kernel_size: 3
-
-    - obj: torch.nn.ReLU
-      _:  # dummy
-
-    - obj: torch.nn.AdaptiveMaxPool2d  # (64, 4, 12) -> (64, 1, 1)
-      output_size: 1
-
-    - obj: kedex.contrib.ops.pytorch_ops.PytorchFlatten
-      _:  # dummy
-
-    - obj: torch.nn.Dropout
-      p: 0.2
-
-    - obj: torch.nn.Linear
-      in_features: 64
-      out_features: 2
-
-    - obj: kaggle_nfl.kaggle_nfl.PytorchLogNormalCDF
-      x_start: 1
-      x_end: 200
-      x_scale: 0.01
-
+#pytorch_model:
+#  obj: kedex.contrib.ops.pytorch_ops.PytorchSequential
+#  modules:
+#    - obj: torch.nn.Conv2d  # (3, 30, 60) -> (16, 28, 58)
+#      in_channels: 3
+#      out_channels: 16
+#      kernel_size: 3
+#
+#    - obj: torch.nn.ReLU
+#      _:  # dummy
+#
+#    - obj: torch.nn.AdaptiveMaxPool2d
+#      output_size:
+#        obj: tuple
+#        arg:
+#          - 14
+#          - 29
+#
+#
+#    - obj: torch.nn.Conv2d  # (16, 14, 29) -> (32, 12, 27)
+#      in_channels: 16
+#      out_channels: 32
+#      kernel_size: 3
+#
+#    - obj: torch.nn.ReLU
+#      _:  # dummy
+#
+#    - obj: torch.nn.AdaptiveMaxPool2d
+#      output_size:
+#        obj: tuple
+#        arg:
+#          - 6
+#          - 14
+#
+#    - obj: torch.nn.Conv2d  # (32, 6, 14) -> (64, 4, 12)
+#      in_channels: 32
+#      out_channels: 64
+#      kernel_size: 3
+#
+#    - obj: torch.nn.ReLU
+#      _:  # dummy
+#
+#    - obj: torch.nn.AdaptiveMaxPool2d  # (64, 4, 12) -> (64, 1, 1)
+#      output_size: 1
+#
+#    - obj: kedex.contrib.ops.pytorch_ops.PytorchFlatten
+#      _:  # dummy
+#
+#    - obj: torch.nn.Dropout
+#      p: 0.2
+#
 #    - obj: torch.nn.Linear
 #      in_features: 64
-#      out_features: 199
+#      out_features: 2
 #
-#    - obj: torch.nn.Sigmoid
-#      _:  # dummy
+#    - obj: kaggle_nfl.kaggle_nfl.PytorchLogNormalCDF
+#      x_start: 1
+#      x_end: 200
+#      x_scale: 0.01
+#
+##    - obj: torch.nn.Linear
+##      in_features: 64
+##      out_features: 199
+##
+##    - obj: torch.nn.Sigmoid
+##      _:  # dummy
 
 
 train_batch_size: 256
@@ -99,40 +104,42 @@ train_params:
   scheduler_params:
     param_name: lr
     start_value:
-      obj: truediv
+      obj: mul
       arg:
         - obj: train_batch_size
-        - 10_000_000
+        - 0.000_000_1
     end_value:
-      obj: truediv
+      obj: mul
       arg:
         - obj: train_batch_size
-        - 200
-    cycle_epochs: 1  # cycle_size: int(cycle_epochs * len(train_loader))
+        - 0.000_002
+    cycle_epochs: 2  # cycle_size: int(cycle_epochs * len(train_loader))
     cycle_mult: 1.0
     start_value_mult: 1.0
     end_value_mult: 1.0
     save_history: False
   optimizer:
-    obj: torch.optim.SGD
+    obj: torch.optim.Adam
+#  optimizer:
+#    obj: torch.optim.SGD
   optimizer_params:
-    lr:  # learning rate
-      obj: truediv
-      arg:
-        - obj: train_batch_size
-        - 1000
-    momentum:
-      obj: sub
-      arg:
-        - 1
-        - obj: truediv
-          arg:
-            - obj: train_batch_size
-            - 2000
+#    lr:  # learning rate
+#      obj: truediv
+#      arg:
+#        - obj: train_batch_size
+#        - 1000
+#    momentum:
+#      obj: sub
+#      arg:
+#        - 1
+#        - obj: truediv
+#          arg:
+#            - obj: train_batch_size
+#            - 2000
     weight_decay:
       obj: truediv
       arg:
-        - 0.1
+        - 0.01
         - obj: train_batch_size
   loss_fn:
     obj: kaggle_nfl.kaggle_nfl.NflCrpsLossFunc
