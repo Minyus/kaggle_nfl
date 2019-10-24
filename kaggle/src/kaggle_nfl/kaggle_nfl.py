@@ -684,8 +684,8 @@ if __name__ == "__main__":
 
     train_batch_size = 128
     train_params = dict(
-        epochs=18,  # number of epochs to train
-        time_limit=10800,
+        epochs=12,  # number of epochs to train
+        time_limit=12600,  # 3.5 hours
         early_stopping_params=dict(metric="loss", minimize=True, patience=1000),
         scheduler=ignite.contrib.handlers.param_scheduler.LinearCyclicalScheduler,
         scheduler_params=dict(
