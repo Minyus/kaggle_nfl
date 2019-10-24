@@ -69,6 +69,24 @@ def preprocess(df, parameters=None):
         np.floor(df["Y_std"]).clip(lower=0, upper=(len_y - 1)).astype(np.uint8)
     )
 
+    """ """
+    df["Dir_rad"] = np.mod(90 - df["Dir"], 360) * math.pi / 180.0
+    df["Dir_std"] = df["Dir_rad"]
+    df.loc[df["ToLeft"], "Dir_std"] = np.mod(
+        np.pi + df.loc[df["ToLeft"], "Dir_rad"], 2 * np.pi
+    )
+
+    df.rename(columns=dict(S="_S", A="_A"), inplace=True)
+    radius_cols = ["_S", "_A"]
+    dir_cols = radius_cols.copy()
+    for c in radius_cols:
+        for i in range(4):
+            dir_col = "{}{}".format(c, i)
+            df[dir_col] = (df[c] * np.cos(df["Dir_std"] + i * np.pi / 2)).clip(lower=0)
+            dir_cols.append(dir_col)
+
+    """ """
+
     cols = [
         # "GameId",
         "PlayId",
@@ -90,14 +108,14 @@ def preprocess(df, parameters=None):
         # 'PossessionTeam',
         "Down",
         # "Distance",
-        "FieldPosition",
-        "HomeScoreBeforePlay",
-        "VisitorScoreBeforePlay",
+        # "FieldPosition",
+        # "HomeScoreBeforePlay",
+        # "VisitorScoreBeforePlay",
         # 'NflIdRusher',
-        "OffenseFormation",
-        "OffensePersonnel",
-        "DefendersInTheBox",
-        "DefensePersonnel",
+        # "OffenseFormation",
+        # "OffensePersonnel",
+        # "DefendersInTheBox",
+        # "DefensePersonnel",
         # 'PlayDirection',
         # 'TimeHandoff',
         # 'TimeSnap',
@@ -113,10 +131,10 @@ def preprocess(df, parameters=None):
         # 'Stadium',
         # 'Location',
         # 'StadiumType',
-        "Turf",
-        "GameWeather",
-        "Temperature",
-        "Humidity",
+        # "Turf",
+        # "GameWeather",
+        # "Temperature",
+        # "Humidity",
         # "WindSpeed",
         # "WindDirection",
         # 'ToLeft',
@@ -131,6 +149,7 @@ def preprocess(df, parameters=None):
         "X_int",
         "Y_int",
     ]
+    cols = cols + dir_cols
     df = df.filter(items=cols)
 
     return df
@@ -178,6 +197,19 @@ class FieldImagesDataset:
         df,
         dim_cols=["PlayerCategory", "X_int", "Y_int"],
         dim_sizes=[3, 30, 60],
+        value_cols=[
+            "_count",
+            "_S",
+            "_S0",
+            "_S1",
+            "_S2",
+            "_S3",
+            "_A",
+            "_A0",
+            "_A1",
+            "_A2",
+            "_A3",
+        ],
         float_scale=None,
         to_pytorch_tensor=False,
         store_as_sparse_tensor=False,
@@ -201,32 +233,48 @@ class FieldImagesDataset:
         play_index_dict = {v: k for k, v in play_id_dict.items()}
         df["PlayIndex"] = df["PlayId"].map(play_index_dict)
 
+        df["_count"] = 1
+
         count_df = df.groupby(
             ["PlayIndex", "PlayerCategory", "X_int", "Y_int"], as_index=False
-        )["NflId"].count()
+        )[value_cols].sum()
 
         if (float_scale is None and to_pytorch_tensor) or float_scale == True:
             float_scale = 1.0 / 255
 
         if float_scale:
-            count_df.loc[:, "NflId"] = count_df["NflId"].astype(
+            count_df.loc[:, "_count"] = count_df["_count"].astype(
                 np.float32
             ) * np.float32(float_scale)
         else:
-            count_df.loc[:, "NflId"] = count_df["NflId"].astype(np.uint8)
+            count_df.loc[:, "_count"] = count_df["_count"].astype(np.uint8)
 
         if to_pytorch_tensor:
 
-            count_df.set_index("PlayIndex", inplace=True)
-            count_df.loc[:, dim_cols] = count_df[dim_cols].astype(np.int64)
+            melted_df = count_df.melt(id_vars=["PlayIndex"] + dim_cols)
+            value_cols_dict = {value_cols[i]: i for i in range(len(value_cols))}
+            melted_df["Channel"] = (
+                melted_df["variable"].map(value_cols_dict) * 3 + melted_df[dim_cols[0]]
+            )
+
+            dim_cols_ = dim_cols.copy()
+            dim_sizes_ = dim_sizes.copy()
+
+            dim_cols_[0] = "Channel"
+            dim_sizes_[0] = dim_sizes_[0] * len(value_cols)
+
+            melted_df.loc[:, dim_cols_] = melted_df[dim_cols_].astype(np.int64)
+            melted_df.loc[:, "value"] = melted_df["value"].astype(np.float32)
+
+            melted_df.set_index("PlayIndex", inplace=True)
             f = torch.sparse_coo_tensor if store_as_sparse_tensor else dict
             coo_dict = dict()
             for pi in play_id_dict.keys():
-                play_df = count_df.xs(pi)
+                play_df = melted_df.xs(pi)
                 coo_3d = f(
-                    values=torch.from_numpy(play_df["NflId"].values),
-                    indices=torch.from_numpy(play_df[dim_cols].values.transpose()),
-                    size=dim_sizes,
+                    values=torch.from_numpy(play_df["value"].values),
+                    indices=torch.from_numpy(play_df[dim_cols_].values.transpose()),
+                    size=dim_sizes_,
                 )
                 coo_dict[pi] = coo_3d
 
@@ -241,7 +289,7 @@ class FieldImagesDataset:
                     ch_df = count_df.xs([pi, ci])
                     coo_2d = coo_matrix(
                         (
-                            ch_df["NflId"].values,
+                            ch_df["_count"].values,
                             (ch_df[dim_cols[1]].values, ch_df[dim_cols[2]].values),
                         ),
                         shape=tuple(dim_sizes[1:]),
@@ -631,7 +679,7 @@ if __name__ == "__main__":
 
     log.info("Set up dataset.")
 
-    train_batch_size = 256
+    train_batch_size = 64
     train_params = dict(
         epochs=10,  # number of epochs to train
         time_limit=10800,

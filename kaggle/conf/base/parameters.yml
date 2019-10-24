@@ -46,9 +46,9 @@
 pytorch_model:
   obj: kedex.contrib.ops.pytorch_ops.PytorchSequential
   modules:
-    - obj: torch.nn.Conv2d  # (3, 30, 60) -> (8, 26, 46)
-      in_channels: 3
-      out_channels: 8
+    - obj: torch.nn.Conv2d  # (33, 30, 60) -> (40, 26, 46)
+      in_channels: 33
+      out_channels: 40
       kernel_size:
         obj: tuple
         arg:
@@ -62,9 +62,9 @@ pytorch_model:
 #      inplanes: 8
 #      planes: 8
 
-    - obj: torch.nn.Conv2d  # (8, 26, 46) -> (16, 22, 32)
-      in_channels: 8
-      out_channels: 16
+    - obj: torch.nn.Conv2d  # (40, 26, 46) -> (48, 22, 32)
+      in_channels: 40
+      out_channels: 48
       kernel_size:
         obj: tuple
         arg:
@@ -78,9 +78,9 @@ pytorch_model:
 #      inplanes: 16
 #      planes: 16
 
-    - obj: torch.nn.Conv2d  # (16, 22, 32) -> (24, 18, 18)
-      in_channels: 16
-      out_channels: 24
+    - obj: torch.nn.Conv2d  # (48, 22, 32) -> (56, 18, 18)
+      in_channels: 48
+      out_channels: 56
       kernel_size:
         obj: tuple
         arg:
@@ -94,9 +94,9 @@ pytorch_model:
 #      inplanes: 24
 #      planes: 24
 
-    - obj: torch.nn.Conv2d  # (24, 18, 18) -> (32, 14, 4)
-      in_channels: 24
-      out_channels: 32
+    - obj: torch.nn.Conv2d  # (56, 18, 18) -> (64, 14, 4)
+      in_channels: 56
+      out_channels: 64
       kernel_size:
         obj: tuple
         arg:
@@ -110,9 +110,9 @@ pytorch_model:
 #      inplanes: 32
 #      planes: 32
 
-    - obj: torch.nn.Conv2d  # (34, 14, 4) -> (40, 10, 1)
-      in_channels: 32
-      out_channels: 40
+    - obj: torch.nn.Conv2d  # (64, 14, 4) -> (72, 10, 1)
+      in_channels: 64
+      out_channels: 72
       kernel_size:
         obj: tuple
         arg:
@@ -126,7 +126,7 @@ pytorch_model:
       _:  # dummy
 
     - obj: torch.nn.Linear
-      in_features: 400
+      in_features: 720
       out_features: 205  # 199 + 2 + 2 + 2
 
     - obj: kedex.contrib.ops.pytorch_ops.PytorchUnsqueeze
@@ -154,7 +154,7 @@ pytorch_model:
       _:  # dummy
 
 
-train_batch_size: 256
+train_batch_size: 64
 
 train_params:
   epochs: 1000  # number of epochs to train
@@ -176,7 +176,7 @@ train_params:
     end_value:
       obj: mul
       arg:
-        - 0.000_000_5
+        - 0.000_005
         - obj: train_batch_size
     cycle_epochs: 2  # cycle_size: int(cycle_epochs * len(train_loader))
     cycle_mult: 1.0
@@ -216,12 +216,13 @@ train_params:
       loss_fn:
         obj: kaggle_nfl.kaggle_nfl.nfl_crps_loss
   train_data_loader_params:
-    batch_size:  # input batch size for training
+    batch_size:
       obj: train_batch_size
-    num_workers: 4
+    num_workers: 1
   val_data_loader_params:
-    batch_size: 100  # input batch size for validation
-    num_workers: 4
+    batch_size:
+     obj: train_batch_size
+    num_workers: 1
   evaluate_train_data: COMPLETED
   evaluate_val_data: EPOCH_COMPLETED
   progress_update: True
@@ -253,7 +254,7 @@ PIPELINES:
       - inputs: train
 #        func:
 #          - obj: kedex.df_sample
-#            frac: 0.02
+#            frac: 0.1
 #            random_state: 191024
 #            col_sample: PlayId
         outputs: df_020
