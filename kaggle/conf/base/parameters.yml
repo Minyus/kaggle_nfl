@@ -55,8 +55,10 @@ pytorch_model:
           - 5
           - 15
 
-    - obj: torch.nn.ReLU
-      _:  # dummy
+    - obj: torch.nn.CELU
+      alpha: 1.0
+#    - obj: torch.nn.ReLU
+#      _:  # dummy
 
 #    - obj: torchvision.models.resnet.BasicBlock
 #      inplanes: 8
@@ -71,8 +73,10 @@ pytorch_model:
           - 5
           - 15
 
-    - obj: torch.nn.ReLU
-      _:  # dummy
+    - obj: torch.nn.CELU
+      alpha: 1.0
+#    - obj: torch.nn.ReLU
+#      _:  # dummy
 
 #    - obj: torchvision.models.resnet.BasicBlock
 #      inplanes: 16
@@ -87,8 +91,10 @@ pytorch_model:
           - 5
           - 15
 
-    - obj: torch.nn.ReLU
-      _:  # dummy
+    - obj: torch.nn.CELU
+      alpha: 1.0
+#    - obj: torch.nn.ReLU
+#      _:  # dummy
 
 #    - obj: torchvision.models.resnet.BasicBlock
 #      inplanes: 24
@@ -103,8 +109,10 @@ pytorch_model:
           - 5
           - 15
 
-    - obj: torch.nn.ReLU
-      _:  # dummy
+    - obj: torch.nn.CELU
+      alpha: 1.0
+#    - obj: torch.nn.ReLU
+#      _:  # dummy
 
 #    - obj: torchvision.models.resnet.BasicBlock
 #      inplanes: 32
@@ -119,8 +127,10 @@ pytorch_model:
           - 5
           - 4
 
-    - obj: torch.nn.ReLU
-      _:  # dummy
+    - obj: torch.nn.CELU
+      alpha: 1.0
+#    - obj: torch.nn.ReLU
+#      _:  # dummy
 
     - obj: kedex.contrib.ops.pytorch_ops.PytorchFlatten
       _:  # dummy
