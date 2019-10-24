@@ -682,16 +682,16 @@ if __name__ == "__main__":
 
     log.info("Set up dataset.")
 
-    train_batch_size = 64
+    train_batch_size = 128
     train_params = dict(
-        epochs=10,  # number of epochs to train
+        epochs=18,  # number of epochs to train
         time_limit=10800,
         early_stopping_params=dict(metric="loss", minimize=True, patience=1000),
         scheduler=ignite.contrib.handlers.param_scheduler.LinearCyclicalScheduler,
         scheduler_params=dict(
             param_name="lr",
             start_value=0.00000001 * train_batch_size,
-            end_value=0.0000005 * train_batch_size,
+            end_value=0.000005 * train_batch_size,
             cycle_epochs=2,  # cycle_size: int(cycle_epochs * len(train_loader))
             cycle_mult=1.0,
             start_value_mult=1.0,
@@ -708,7 +708,7 @@ if __name__ == "__main__":
         ),
         loss_fn=NflCrpsLossFunc(min=-15, max=25),
         metrics=dict(loss=ignite.metrics.Loss(loss_fn=nfl_crps_loss)),
-        train_data_loader_params=dict(batch_size=train_batch_size, num_workers=4),
+        train_data_loader_params=dict(batch_size=train_batch_size, num_workers=1),
         evaluate_train_data="COMPLETED",
         progress_update=False,
         seed=0,  #
@@ -742,18 +742,18 @@ if __name__ == "__main__":
     # )
 
     pytorch_model = torch.nn.Sequential(
-        torch.nn.Conv2d(in_channels=3, out_channels=8, kernel_size=(5, 15)),
+        torch.nn.Conv2d(in_channels=15, out_channels=32, kernel_size=(5, 15)),
         torch.nn.ReLU(),
-        torch.nn.Conv2d(in_channels=8, out_channels=16, kernel_size=(5, 15)),
+        torch.nn.Conv2d(in_channels=32, out_channels=48, kernel_size=(5, 15)),
         torch.nn.ReLU(),
-        torch.nn.Conv2d(in_channels=16, out_channels=24, kernel_size=(5, 15)),
+        torch.nn.Conv2d(in_channels=48, out_channels=56, kernel_size=(5, 15)),
         torch.nn.ReLU(),
-        torch.nn.Conv2d(in_channels=24, out_channels=32, kernel_size=(5, 15)),
+        torch.nn.Conv2d(in_channels=56, out_channels=64, kernel_size=(5, 15)),
         torch.nn.ReLU(),
-        torch.nn.Conv2d(in_channels=32, out_channels=40, kernel_size=(5, 4)),
+        torch.nn.Conv2d(in_channels=64, out_channels=72, kernel_size=(5, 4)),
         torch.nn.ReLU(),
         PytorchFlatten(),
-        torch.nn.Linear(in_features=400, out_features=205),
+        torch.nn.Linear(in_features=720, out_features=205),
         PytorchUnsqueeze(dim=1),
         torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
         torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
