@@ -46,9 +46,9 @@
 pytorch_model:
   obj: kedex.contrib.ops.pytorch_ops.PytorchSequential
   modules:
-    - obj: torch.nn.Conv2d  # (33, 30, 60) -> (40, 26, 46)
-      in_channels: 33
-      out_channels: 40
+    - obj: torch.nn.Conv2d  # (15, 30, 60) -> (32, 26, 46)
+      in_channels: 15
+      out_channels: 32
       kernel_size:
         obj: tuple
         arg:
@@ -63,7 +63,7 @@ pytorch_model:
 #      planes: 8
 
     - obj: torch.nn.Conv2d  # (40, 26, 46) -> (48, 22, 32)
-      in_channels: 40
+      in_channels: 32
       out_channels: 48
       kernel_size:
         obj: tuple
@@ -154,7 +154,7 @@ pytorch_model:
       _:  # dummy
 
 
-train_batch_size: 64
+train_batch_size: 128
 
 train_params:
   epochs: 1000  # number of epochs to train

@@ -77,12 +77,13 @@ def preprocess(df, parameters=None):
     )
 
     df.rename(columns=dict(S="_S", A="_A"), inplace=True)
-    radius_cols = ["_S", "_A"]
-    dir_cols = radius_cols.copy()
+    radius_cols = ["_S"]
+    dir_cols = []
     for c in radius_cols:
-        for i in range(4):
+        for i in range(2):
             dir_col = "{}{}".format(c, i)
-            df[dir_col] = (df[c] * np.cos(df["Dir_std"] + i * np.pi / 2)).clip(lower=0)
+            df[dir_col] = df[c] * np.cos(df["Dir_std"] - i * np.pi / 2)
+            # df[dir_col] = (df[c] * np.cos(df["Dir_std"] + i * np.pi / 2)).clip(lower=0)
             dir_cols.append(dir_col)
 
     """ """
@@ -148,6 +149,8 @@ def preprocess(df, parameters=None):
         "PlayerCategory",
         "X_int",
         "Y_int",
+        "_S",
+        "_A",
     ]
     cols = cols + dir_cols
     df = df.filter(items=cols)
@@ -202,13 +205,13 @@ class FieldImagesDataset:
             "_S",
             "_S0",
             "_S1",
-            "_S2",
-            "_S3",
+            # "_S2",
+            # "_S3",
             "_A",
-            "_A0",
-            "_A1",
-            "_A2",
-            "_A3",
+            # "_A0",
+            # "_A1",
+            # "_A2",
+            # "_A3",
         ],
         float_scale=None,
         to_pytorch_tensor=False,
