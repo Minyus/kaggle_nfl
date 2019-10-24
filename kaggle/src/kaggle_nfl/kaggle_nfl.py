@@ -633,14 +633,14 @@ if __name__ == "__main__":
 
     train_batch_size = 256
     train_params = dict(
-        epochs=6,  # number of epochs to train
+        epochs=10,  # number of epochs to train
         time_limit=10800,
         early_stopping_params=dict(metric="loss", minimize=True, patience=1000),
         scheduler=ignite.contrib.handlers.param_scheduler.LinearCyclicalScheduler,
         scheduler_params=dict(
             param_name="lr",
-            start_value=train_batch_size * 0.0000001,
-            end_value=train_batch_size * 0.000002,
+            start_value=0.00000001 * train_batch_size,
+            end_value=0.0000005 * train_batch_size,
             cycle_epochs=2,  # cycle_size: int(cycle_epochs * len(train_loader))
             cycle_mult=1.0,
             start_value_mult=1.0,
@@ -667,42 +667,49 @@ if __name__ == "__main__":
         from kedex.contrib.ops.pytorch_ops import PytorchUnsqueeze
     if "PytorchSqueeze" not in dir():
         from kedex.contrib.ops.pytorch_ops import PytorchSqueeze
+    if "PytorchFlatten" not in dir():
+        from kedex.contrib.ops.pytorch_ops import PytorchFlatten
+
+    # pytorch_model = torch.nn.Sequential(
+    #     torchvision.models.resnet._resnet(
+    #         arch="resnet9",
+    #         block=torchvision.models.resnet.BasicBlock,
+    #         layers=[1, 1, 1, 1],
+    #         pretrained=False,
+    #         progress=None,
+    #         num_classes=199,
+    #         # num_classes=2,
+    #     ),
+    #     torch.nn.Dropout(p=0.5),
+    #     torch.nn.Linear(in_features=199, out_features=205),  # 199 + 2 + 2 + 2 = 205
+    #     PytorchUnsqueeze(dim=1),
+    #     torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
+    #     torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
+    #     torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
+    #     PytorchSqueeze(dim=1),
+    #     torch.nn.Sigmoid()
+    # )
+
     pytorch_model = torch.nn.Sequential(
-        torchvision.models.resnet._resnet(
-            arch="resnet9",
-            block=torchvision.models.resnet.BasicBlock,
-            layers=[1, 1, 1, 1],
-            pretrained=False,
-            progress=None,
-            num_classes=199,
-            # num_classes=2,
-        ),
-        torch.nn.Dropout(p=0.5),
-        torch.nn.Linear(in_features=199, out_features=205),  # 199 + 2 + 2 + 2 = 205
+        torch.nn.Conv2d(in_channels=3, out_channels=8, kernel_size=(5, 15)),
+        torch.nn.ReLU(),
+        torch.nn.Conv2d(in_channels=8, out_channels=16, kernel_size=(5, 15)),
+        torch.nn.ReLU(),
+        torch.nn.Conv2d(in_channels=16, out_channels=24, kernel_size=(5, 15)),
+        torch.nn.ReLU(),
+        torch.nn.Conv2d(in_channels=24, out_channels=32, kernel_size=(5, 15)),
+        torch.nn.ReLU(),
+        torch.nn.Conv2d(in_channels=32, out_channels=40, kernel_size=(5, 4)),
+        torch.nn.ReLU(),
+        PytorchFlatten(),
+        torch.nn.Linear(in_features=400, out_features=205),
         PytorchUnsqueeze(dim=1),
         torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
         torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
         torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
         PytorchSqueeze(dim=1),
-        torch.nn.Sigmoid()
-        # PytorchLogNormalCDF(x_start=1, x_end=200, x_scale=0.01),
+        torch.nn.Sigmoid(),
     )
-
-    # pytorch_model = torch.nn.Sequential(
-    #     torch.nn.Conv2d(in_channels=3, out_channels=16, kernel_size=3),
-    #     torch.nn.ReLU(),
-    #     torch.nn.AdaptiveMaxPool2d(output_size=(14, 29)),
-    #     torch.nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3),
-    #     torch.nn.ReLU(),
-    #     torch.nn.AdaptiveMaxPool2d(output_size=(6, 14)),
-    #     torch.nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3),
-    #     torch.nn.ReLU(),
-    #     torch.nn.AdaptiveMaxPool2d(output_size=1),
-    #     PytorchFlatten(),
-    #     torch.nn.Dropout(0.2),
-    #     torch.nn.Linear(in_features=64, out_features=2),
-    #     PytorchLogNormalCDF(x_start=1, x_end=200, x_scale=0.01),
-    # )
 
     train_dataset = AugFieldImagesDataset(df, to_pytorch_tensor=True)
 
