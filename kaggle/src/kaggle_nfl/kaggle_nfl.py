@@ -2,6 +2,7 @@
 
 import pandas as pd
 import numpy as np
+import random
 import sys
 import os
 from pathlib import Path
@@ -180,6 +181,8 @@ class FieldImagesDataset:
         float_scale=None,
         to_pytorch_tensor=False,
         store_as_sparse_tensor=False,
+        random_horizontal_flip=dict(p=0),
+        random_horizontal_shift=dict(p=0, max_shift=1),
         transform=None,
         target_transform=None,
     ):
@@ -250,6 +253,10 @@ class FieldImagesDataset:
 
         self.to_pytorch_tensor = to_pytorch_tensor
         self.store_as_sparse_tensor = store_as_sparse_tensor
+
+        self.random_horizontal_flip = random_horizontal_flip or dict()
+        self.random_horizontal_shift = random_horizontal_shift or dict()
+
         self.transform = transform
         self.target_transform = target_transform
 
@@ -259,6 +266,17 @@ class FieldImagesDataset:
 
         if self.to_pytorch_tensor:
             if not self.store_as_sparse_tensor:
+                _random_horizontal_flip(
+                    indices=play_coo_3d["indices"],
+                    size=play_coo_3d.get("size"),
+                    p=self.random_horizontal_flip.get("p"),
+                )
+                _random_horizontal_shift(
+                    indices=play_coo_3d["indices"],
+                    size=play_coo_3d.get("size"),
+                    p=self.random_horizontal_shift.get("p"),
+                    max_shift=self.random_horizontal_shift.get("max_shift"),
+                )
                 play_coo_3d = torch.sparse_coo_tensor(**play_coo_3d)
             img = play_coo_3d.to_dense()
         else:
@@ -279,6 +297,47 @@ class FieldImagesDataset:
         return self.len
 
 
+def _random_cond(p=None):
+    return p and random.random() < p
+
+
+def _random_flip(indices, size, p, dim):
+    if _random_cond(p):
+        indices[dim, :].mul_(-1).add_(size[dim] - 1)
+
+
+def _random_horizontal_flip(indices, size, p=None):
+    _random_flip(indices, size, p, dim=2)
+
+
+def _random_vertical_flip(indices, size, p=None):
+    _random_flip(indices, size, p, dim=1)
+
+
+def _random_shift(indices, size, p, max_shift, dim):
+    if _random_cond(p):
+        shift = int(max_shift * random.uniform(-1, 1))
+        indices[dim, :].add_(shift).clamp_(min=0, max=size[dim] - 1)
+
+
+def _random_horizontal_shift(indices, size, p=None, max_shift=1):
+    _random_shift(indices, size, p, max_shift, dim=2)
+
+
+def _random_vertical_shift(indices, size, p=None, max_shift=1):
+    _random_shift(indices, size, p, max_shift, dim=1)
+
+
+class AugFieldImagesDataset(FieldImagesDataset):
+    def __init__(self, *args, **kwargs):
+        super().__init__(
+            *args,
+            random_horizontal_flip=dict(p=0.5),
+            random_horizontal_shift=dict(p=1, max_shift=1),
+            **kwargs
+        )
+
+
 def generate_datasets(df, parameters=None):
 
     if "Validation" in df.columns:
@@ -289,11 +348,11 @@ def generate_datasets(df, parameters=None):
         vali_df = df
 
     log.info("Setting up train_dataset from df shape: {}".format(fit_df.shape))
-    train_dataset = FieldImagesDataset(fit_df, to_pytorch_tensor=True)
+    train_dataset = AugFieldImagesDataset(fit_df, to_pytorch_tensor=True)
     # train_dataset = FieldImagesDataset(fit_df, transform=ToTensor())
 
     log.info("Setting up val_dataset from df shape: {}".format(vali_df.shape))
-    val_dataset = FieldImagesDataset(vali_df, to_pytorch_tensor=True)
+    val_dataset = AugFieldImagesDataset(vali_df, to_pytorch_tensor=True)
     # val_dataset = FieldImagesDataset(vali_df, transform=ToTensor())
 
     return train_dataset, val_dataset
@@ -615,13 +674,15 @@ if __name__ == "__main__":
             layers=[1, 1, 1, 1],
             pretrained=False,
             progress=None,
-            num_classes=205,  # 199 + 2 + 2 + 2
+            num_classes=199,
             # num_classes=2,
         ),
+        torch.nn.Dropout(p=0.5),
+        torch.nn.Linear(in_features=199, out_features=205),  # 199 + 2 + 2 + 2 = 205
         PytorchUnsqueeze(dim=1),
-        torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=-0),
-        torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=-0),
-        torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=-0),
+        torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
+        torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
+        torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
         PytorchSqueeze(dim=1),
         torch.nn.Sigmoid()
         # PytorchLogNormalCDF(x_start=1, x_end=200, x_scale=0.01),
@@ -643,7 +704,7 @@ if __name__ == "__main__":
     #     PytorchLogNormalCDF(x_start=1, x_end=200, x_scale=0.01),
     # )
 
-    train_dataset = FieldImagesDataset(df, to_pytorch_tensor=True)
+    train_dataset = AugFieldImagesDataset(df, to_pytorch_tensor=True)
 
     log.info("Fit model.")
     if "pytorch_train" not in dir():
