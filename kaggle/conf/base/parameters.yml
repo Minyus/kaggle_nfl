@@ -46,6 +46,10 @@
 pytorch_model:
   obj: kedex.contrib.ops.pytorch_ops.PytorchSequential
   modules:
+
+    - obj: torch.nn.Dropout2d
+      p: 0.5
+
     - obj: torch.nn.Conv2d  # (15, 30, 60) -> (32, 26, 46)
       in_channels: 15
       out_channels: 32
@@ -134,6 +138,9 @@ pytorch_model:
 
     - obj: kedex.contrib.ops.pytorch_ops.PytorchFlatten
       _:  # dummy
+
+    - obj: torch.nn.Dropout2d
+      p: 0.2
 
     - obj: torch.nn.Linear
       in_features: 720
