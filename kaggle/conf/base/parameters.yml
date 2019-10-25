@@ -284,7 +284,7 @@ PIPELINES:
       - inputs: df_030
         func:
           obj: kedex.df_sample
-          frac: 0.1
+          frac: 0.5
           random_state: 191024
           col_sample: PlayId
           col_assign: Validation
