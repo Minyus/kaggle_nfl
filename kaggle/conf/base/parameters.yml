@@ -47,8 +47,8 @@ pytorch_model:
   obj: kedex.contrib.ops.pytorch_ops.PytorchSequential
   modules:
 
-    - obj: torch.nn.Dropout2d
-      p: 0.5
+#    - obj: torch.nn.Dropout2d
+#      p: 0.5
 
     - obj: torch.nn.Conv2d  # (15, 30, 60) -> (32, 26, 46)
       in_channels: 15
@@ -59,10 +59,10 @@ pytorch_model:
           - 5
           - 15
 
-    - obj: torch.nn.CELU
-      alpha: 1.0
-#    - obj: torch.nn.ReLU
-#      _:  # dummy
+#    - obj: torch.nn.CELU
+#      alpha: 0.2
+    - obj: torch.nn.ReLU
+      _:  # dummy
 
 #    - obj: torchvision.models.resnet.BasicBlock
 #      inplanes: 8
@@ -77,10 +77,10 @@ pytorch_model:
           - 5
           - 15
 
-    - obj: torch.nn.CELU
-      alpha: 1.0
-#    - obj: torch.nn.ReLU
-#      _:  # dummy
+#    - obj: torch.nn.CELU
+#      alpha: 0.2
+    - obj: torch.nn.ReLU
+      _:  # dummy
 
 #    - obj: torchvision.models.resnet.BasicBlock
 #      inplanes: 16
@@ -95,10 +95,10 @@ pytorch_model:
           - 5
           - 15
 
-    - obj: torch.nn.CELU
-      alpha: 1.0
-#    - obj: torch.nn.ReLU
-#      _:  # dummy
+#    - obj: torch.nn.CELU
+#      alpha: 0.2
+    - obj: torch.nn.ReLU
+      _:  # dummy
 
 #    - obj: torchvision.models.resnet.BasicBlock
 #      inplanes: 24
@@ -113,10 +113,10 @@ pytorch_model:
           - 5
           - 15
 
-    - obj: torch.nn.CELU
-      alpha: 1.0
-#    - obj: torch.nn.ReLU
-#      _:  # dummy
+#    - obj: torch.nn.CELU
+#      alpha: 0.2
+    - obj: torch.nn.ReLU
+      _:  # dummy
 
 #    - obj: torchvision.models.resnet.BasicBlock
 #      inplanes: 32
@@ -131,16 +131,16 @@ pytorch_model:
           - 5
           - 4
 
-    - obj: torch.nn.CELU
-      alpha: 1.0
-#    - obj: torch.nn.ReLU
-#      _:  # dummy
+#    - obj: torch.nn.CELU
+#      alpha: 0.2
+    - obj: torch.nn.ReLU
+      _:  # dummy
 
     - obj: kedex.contrib.ops.pytorch_ops.PytorchFlatten
       _:  # dummy
 
-    - obj: torch.nn.Dropout2d
-      p: 0.2
+#    - obj: torch.nn.Dropout
+#      p: 0.2
 
     - obj: torch.nn.Linear
       in_features: 720
@@ -171,7 +171,14 @@ pytorch_model:
       _:  # dummy
 
 
-train_batch_size: 128
+augmentation:
+  random_horizontal_flip:
+    p: 0
+  random_horizontal_shift:
+    p: 0
+    max_shift: 0
+
+train_batch_size: 64
 
 train_params:
   epochs: 1000  # number of epochs to train
@@ -221,12 +228,12 @@ train_params:
     weight_decay:
       obj: truediv
       arg:
-        - 0.01
+        - 0.001
         - obj: train_batch_size
   loss_fn:
     obj: kaggle_nfl.kaggle_nfl.NflCrpsLossFunc
-    min: -15
-    max: 25
+    min: -4 # -15
+    max: 29 # 25
   metrics:
     loss:
       obj: ignite.metrics.Loss
@@ -280,6 +287,27 @@ PIPELINES:
         func:
           - preprocess
         outputs: df_030
+
+      - inputs: df_030
+        outputs: describe
+
+      - inputs: df_030
+        func:
+          obj: kedex.df_query
+          expr: 'PlayerCategory == 0'
+        outputs: describe_cat0
+
+      - inputs: df_030
+        func:
+          obj: kedex.df_query
+          expr: 'PlayerCategory == 1'
+        outputs: describe_cat1
+
+      - inputs: df_030
+        func:
+          obj: kedex.df_query
+          expr: 'PlayerCategory == 2'
+        outputs: describe_cat2
 
       - inputs: df_030
         func:
