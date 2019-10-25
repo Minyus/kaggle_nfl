@@ -684,7 +684,7 @@ if __name__ == "__main__":
 
     train_batch_size = 128
     train_params = dict(
-        epochs=12,  # number of epochs to train
+        epochs=4,  # number of epochs to train
         time_limit=12600,  # 3.5 hours
         early_stopping_params=dict(metric="loss", minimize=True, patience=1000),
         scheduler=ignite.contrib.handlers.param_scheduler.LinearCyclicalScheduler,
@@ -743,15 +743,15 @@ if __name__ == "__main__":
 
     pytorch_model = torch.nn.Sequential(
         torch.nn.Conv2d(in_channels=15, out_channels=32, kernel_size=(5, 15)),
-        torch.nn.ReLU(),
+        torch.nn.CELU(alpha=1.0),
         torch.nn.Conv2d(in_channels=32, out_channels=48, kernel_size=(5, 15)),
-        torch.nn.ReLU(),
+        torch.nn.CELU(alpha=1.0),
         torch.nn.Conv2d(in_channels=48, out_channels=56, kernel_size=(5, 15)),
-        torch.nn.ReLU(),
+        torch.nn.CELU(alpha=1.0),
         torch.nn.Conv2d(in_channels=56, out_channels=64, kernel_size=(5, 15)),
-        torch.nn.ReLU(),
+        torch.nn.CELU(alpha=1.0),
         torch.nn.Conv2d(in_channels=64, out_channels=72, kernel_size=(5, 4)),
-        torch.nn.ReLU(),
+        torch.nn.CELU(alpha=1.0),
         PytorchFlatten(),
         torch.nn.Linear(in_features=720, out_features=205),
         PytorchUnsqueeze(dim=1),
