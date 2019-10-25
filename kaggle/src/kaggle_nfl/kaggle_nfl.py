@@ -689,9 +689,9 @@ if __name__ == "__main__":
 
     log.info("Set up dataset.")
 
-    train_batch_size = 128
+    train_batch_size = 64
     train_params = dict(
-        epochs=6,  # number of epochs to train
+        epochs=8,  # number of epochs to train
         time_limit=12600,  # 3.5 hours
         early_stopping_params=dict(metric="loss", minimize=True, patience=1000),
         scheduler=ignite.contrib.handlers.param_scheduler.LinearCyclicalScheduler,
@@ -706,14 +706,8 @@ if __name__ == "__main__":
             save_history=False,
         ),
         optimizer=torch.optim.Adam,
-        # optimizer=torch.optim.SGD,
-        optimizer_params=dict(
-            # lr=train_batch_size / 1000,
-            # momentum=1 - train_batch_size / 2000,
-            weight_decay=0.01
-            / train_batch_size
-        ),
-        loss_fn=NflCrpsLossFunc(min=-15, max=25),
+        optimizer_params=dict(weight_decay=0.001 / train_batch_size),
+        loss_fn=NflCrpsLossFunc(min=-4, max=29),
         metrics=dict(loss=ignite.metrics.Loss(loss_fn=nfl_crps_loss)),
         train_data_loader_params=dict(batch_size=train_batch_size, num_workers=1),
         evaluate_train_data="COMPLETED",
@@ -749,19 +743,24 @@ if __name__ == "__main__":
     # )
 
     pytorch_model = torch.nn.Sequential(
-        torch.nn.Dropout2d(p=0.5),
+        # torch.nn.Dropout2d(p=0.5),
         torch.nn.Conv2d(in_channels=15, out_channels=32, kernel_size=(5, 15)),
-        torch.nn.CELU(alpha=1.0),
+        torch.nn.ReLU(),
+        # torch.nn.CELU(alpha=1.0),
         torch.nn.Conv2d(in_channels=32, out_channels=48, kernel_size=(5, 15)),
-        torch.nn.CELU(alpha=1.0),
+        torch.nn.ReLU(),
+        # torch.nn.CELU(alpha=1.0),
         torch.nn.Conv2d(in_channels=48, out_channels=56, kernel_size=(5, 15)),
-        torch.nn.CELU(alpha=1.0),
+        torch.nn.ReLU(),
+        # torch.nn.CELU(alpha=1.0),
         torch.nn.Conv2d(in_channels=56, out_channels=64, kernel_size=(5, 15)),
-        torch.nn.CELU(alpha=1.0),
+        torch.nn.ReLU(),
+        # torch.nn.CELU(alpha=1.0),
         torch.nn.Conv2d(in_channels=64, out_channels=72, kernel_size=(5, 4)),
-        torch.nn.CELU(alpha=1.0),
+        torch.nn.ReLU(),
+        # torch.nn.CELU(alpha=1.0),
         PytorchFlatten(),
-        torch.nn.Dropout2d(p=0.2),
+        # torch.nn.Dropout2d(p=0.2),
         torch.nn.Linear(in_features=720, out_features=205),
         PytorchUnsqueeze(dim=1),
         torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
