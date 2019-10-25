@@ -380,13 +380,14 @@ def _random_vertical_shift(indices, size, p=None, max_shift=1):
 
 
 class AugFieldImagesDataset(FieldImagesDataset):
-    def __init__(self, *args, **kwargs):
-        super().__init__(
-            *args,
-            random_horizontal_flip=dict(p=0.5),
-            random_horizontal_shift=dict(p=1, max_shift=1),
-            **kwargs
-        )
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(
+    #         *args,
+    #         random_horizontal_flip=dict(p=0.5),
+    #         random_horizontal_shift=dict(p=1, max_shift=1),
+    #         **kwargs
+    #     )
+    pass
 
 
 def generate_datasets(df, parameters=None):
@@ -398,12 +399,16 @@ def generate_datasets(df, parameters=None):
         fit_df = df
         vali_df = df
 
+    augmentation = parameters.get("augmentation", dict())
+
     log.info("Setting up train_dataset from df shape: {}".format(fit_df.shape))
-    train_dataset = AugFieldImagesDataset(fit_df, to_pytorch_tensor=True)
+    train_dataset = AugFieldImagesDataset(
+        fit_df, to_pytorch_tensor=True, **augmentation
+    )
     # train_dataset = FieldImagesDataset(fit_df, transform=ToTensor())
 
     log.info("Setting up val_dataset from df shape: {}".format(vali_df.shape))
-    val_dataset = AugFieldImagesDataset(vali_df, to_pytorch_tensor=True)
+    val_dataset = AugFieldImagesDataset(vali_df, to_pytorch_tensor=True, **augmentation)
     # val_dataset = FieldImagesDataset(vali_df, transform=ToTensor())
 
     return train_dataset, val_dataset
@@ -595,9 +600,11 @@ class NflCrpsLossFunc:
     def __init__(self, min=-15, max=25):
         self.min = min
         self.max = max
+        self.clip = (min is not None) or (max is not None)
 
     def __call__(self, input, target):
-        target = torch.clamp(target, min=self.min, max=self.max)
+        if self.clip:
+            target = torch.clamp(target, min=self.min, max=self.max)
         return nfl_crps_loss(input, target)
 
 
@@ -764,7 +771,8 @@ if __name__ == "__main__":
         torch.nn.Sigmoid(),
     )
 
-    train_dataset = AugFieldImagesDataset(df, to_pytorch_tensor=True)
+    augmentation = dict()
+    train_dataset = AugFieldImagesDataset(df, to_pytorch_tensor=True, **augmentation)
 
     log.info("Fit model.")
     if "pytorch_train" not in dir():
