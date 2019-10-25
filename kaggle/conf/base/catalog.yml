@@ -11,8 +11,23 @@
 
 ../load/val_dataset.pickle:
 
+../model/pytorch_model.pickle:
+
 ../load/infered_first_iter.csv:
   type: CSVLocalDataSet
+
+../load/describe.csv:
+  type: kedex.PandasDescribeDataSet
+  describe_args: # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.describe.html
+    include: all
+    percentiles:
+      - 0.01
+      - 0.1
+      - 0.25
+      - 0.5
+      - 0.75
+      - 0.9
+      - 0.99
 
 #../load/images_4darr.pickle:
 #  type: PickleLocalDataSet
@@ -42,11 +57,3 @@
 ##    n: 10000
 ##    random_state: 0
 
-#../load/describe.csv:
-#  type: kedex.PandasDescribeDataSet
-#  describe_args: # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.describe.html
-#    include: all
-#    percentiles:
-#      - 0.25
-#      - 0.5
-#      - 0.75
