@@ -47,103 +47,125 @@ pytorch_model:
   obj: kedex.ModuleSequential
   modules:
 
-#    - obj: torch.nn.Dropout2d
-#      p: 0.5
+    - obj: kedex.ModuleConcat
+      modules:
 
-    - obj: torch.nn.Conv2d  # (15, 30, 60) -> (32, 26, 46)
-      in_channels: 15
-      out_channels: 32
-      kernel_size:
-        obj: tuple
-        arg:
-          - 5
-          - 15
+        - obj: kedex.TensorGlobalAvePool2d
+          keepdim: False
 
-    - obj: torch.nn.CELU
-      alpha: 1.0
-#    - obj: torch.nn.ReLU
-#      _:  # dummy
+        - obj: kedex.TensorGlobalMaxPool2d
+          keepdim: False
 
-#    - obj: torchvision.models.resnet.BasicBlock
-#      inplanes: 8
-#      planes: 8
+        - obj: kedex.TensorGlobalMinPool2d
+          keepdim: False
 
-    - obj: torch.nn.Conv2d  # (40, 26, 46) -> (48, 22, 32)
-      in_channels: 32
-      out_channels: 48
-      kernel_size:
-        obj: tuple
-        arg:
-          - 5
-          - 15
+        - obj: kedex.TensorGlobalRangePool2d
+          keepdim: False
 
-    - obj: torch.nn.CELU
-      alpha: 1.0
-#    - obj: torch.nn.ReLU
-#      _:  # dummy
+        - obj: kedex.ModuleSequential
+          modules:
 
-#    - obj: torchvision.models.resnet.BasicBlock
-#      inplanes: 16
-#      planes: 16
+      #    - obj: torch.nn.Dropout2d
+      #      p: 0.5
 
-    - obj: torch.nn.Conv2d  # (48, 22, 32) -> (56, 18, 18)
-      in_channels: 48
-      out_channels: 56
-      kernel_size:
-        obj: tuple
-        arg:
-          - 5
-          - 15
+          - obj: torch.nn.Conv2d  # (15, 30, 60) -> (32, 26, 46)
+            in_channels: 15
+            out_channels: 32
+            kernel_size:
+              obj: tuple
+              arg:
+                - 5
+                - 15
 
-    - obj: torch.nn.CELU
-      alpha: 1.0
-#    - obj: torch.nn.ReLU
-#      _:  # dummy
+          - obj: torch.nn.CELU
+            alpha: 1.0
+      #    - obj: torch.nn.ReLU
+      #      _:  # dummy
 
-#    - obj: torchvision.models.resnet.BasicBlock
-#      inplanes: 24
-#      planes: 24
+      #    - obj: torchvision.models.resnet.BasicBlock
+      #      inplanes: 8
+      #      planes: 8
 
-    - obj: torch.nn.Conv2d  # (56, 18, 18) -> (64, 14, 4)
-      in_channels: 56
-      out_channels: 64
-      kernel_size:
-        obj: tuple
-        arg:
-          - 5
-          - 15
+          - obj: torch.nn.Conv2d  # (40, 26, 46) -> (48, 22, 32)
+            in_channels: 32
+            out_channels: 48
+            kernel_size:
+              obj: tuple
+              arg:
+                - 5
+                - 15
 
-    - obj: torch.nn.CELU
-      alpha: 1.0
-#    - obj: torch.nn.ReLU
-#      _:  # dummy
+          - obj: torch.nn.CELU
+            alpha: 1.0
+      #    - obj: torch.nn.ReLU
+      #      _:  # dummy
 
-#    - obj: torchvision.models.resnet.BasicBlock
-#      inplanes: 32
-#      planes: 32
+      #    - obj: torchvision.models.resnet.BasicBlock
+      #      inplanes: 16
+      #      planes: 16
 
-    - obj: torch.nn.Conv2d  # (64, 14, 4) -> (72, 10, 1)
-      in_channels: 64
-      out_channels: 72
-      kernel_size:
-        obj: tuple
-        arg:
-          - 5
-          - 4
+          - obj: torch.nn.Conv2d  # (48, 22, 32) -> (56, 18, 18)
+            in_channels: 48
+            out_channels: 56
+            kernel_size:
+              obj: tuple
+              arg:
+                - 5
+                - 15
 
-    - obj: torch.nn.CELU
-      alpha: 1.0
-#    - obj: torch.nn.ReLU
-#      _:  # dummy
+          - obj: torch.nn.CELU
+            alpha: 1.0
+      #    - obj: torch.nn.ReLU
+      #      _:  # dummy
 
-    - obj: kedex.TensorFlatten
-      _:  # dummy
+      #    - obj: torchvision.models.resnet.BasicBlock
+      #      inplanes: 24
+      #      planes: 24
 
-#    - obj: torch.nn.Dropout
-#      p: 0.2
+          - obj: torch.nn.Conv2d  # (56, 18, 18) -> (64, 14, 4)
+            in_channels: 56
+            out_channels: 64
+            kernel_size:
+              obj: tuple
+              arg:
+                - 5
+                - 15
+
+          - obj: torch.nn.CELU
+            alpha: 1.0
+      #    - obj: torch.nn.ReLU
+      #      _:  # dummy
+
+      #    - obj: torchvision.models.resnet.BasicBlock
+      #      inplanes: 32
+      #      planes: 32
+
+          - obj: torch.nn.Conv2d  # (64, 14, 4) -> (72, 10, 1)
+            in_channels: 64
+            out_channels: 72
+            kernel_size:
+              obj: tuple
+              arg:
+                - 5
+                - 4
+
+          - obj: torch.nn.CELU
+            alpha: 1.0
+      #    - obj: torch.nn.ReLU
+      #      _:  # dummy
+
+          - obj: kedex.TensorFlatten
+            _:  # dummy
+
+      #    - obj: torch.nn.Dropout
+      #      p: 0.2
+
+#          - obj: torch.nn.Linear
+#            in_features: 720
+#            out_features: 205  # 199 + 2 + 2 + 2
 
     - obj: torch.nn.Linear
-      in_features: 720
+      in_features: 780  # 15 * 4 + 720
       out_features: 205  # 199 + 2 + 2 + 2
 
     - obj: kedex.TensorUnsqueeze
