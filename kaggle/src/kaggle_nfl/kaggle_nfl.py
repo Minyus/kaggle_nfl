@@ -652,7 +652,6 @@ def infer(model, parameters=None):
 
 
 if __name__ == "__main__":
-    import torchvision
     import ignite
     import logging.config
     import yaml
@@ -705,7 +704,7 @@ if __name__ == "__main__":
         ),
         optimizer=torch.optim.Adam,
         optimizer_params=dict(weight_decay=0.001 / train_batch_size),
-        loss_fn=NflCrpsLossFunc(min=-4, max=29),
+        loss_fn=NflCrpsLossFunc(min=-4, max=29, desc_penalty=10.0),
         metrics=dict(loss=ignite.metrics.Loss(loss_fn=nfl_crps_loss)),
         train_data_loader_params=dict(batch_size=train_batch_size, num_workers=1),
         evaluate_train_data="COMPLETED",
@@ -713,12 +712,8 @@ if __name__ == "__main__":
         seed=0,  #
     )
 
-    if "TensorUnsqueeze" not in dir():
-        from kedex.contrib.ops.pytorch_ops import TensorUnsqueeze
-    if "TensorSqueeze" not in dir():
-        from kedex.contrib.ops.pytorch_ops import TensorSqueeze
-    if "TensorFlatten" not in dir():
-        from kedex.contrib.ops.pytorch_ops import TensorFlatten
+    if "ModuleSequential" not in dir():
+        from kedex import *
 
     # pytorch_model = torch.nn.Sequential(
     #     torchvision.models.resnet._resnet(
@@ -740,19 +735,27 @@ if __name__ == "__main__":
     #     torch.nn.Sigmoid()
     # )
 
-    pytorch_model = torch.nn.Sequential(
-        torch.nn.Conv2d(in_channels=15, out_channels=32, kernel_size=(5, 15)),
-        torch.nn.CELU(alpha=1.0),
-        torch.nn.Conv2d(in_channels=32, out_channels=48, kernel_size=(5, 15)),
-        torch.nn.CELU(alpha=1.0),
-        torch.nn.Conv2d(in_channels=48, out_channels=56, kernel_size=(5, 15)),
-        torch.nn.CELU(alpha=1.0),
-        torch.nn.Conv2d(in_channels=56, out_channels=64, kernel_size=(5, 15)),
-        torch.nn.CELU(alpha=1.0),
-        torch.nn.Conv2d(in_channels=64, out_channels=72, kernel_size=(5, 4)),
-        torch.nn.CELU(alpha=1.0),
-        TensorFlatten(),
-        torch.nn.Linear(in_features=720, out_features=205),
+    pytorch_model = ModuleSequential(
+        ModuleConcat(
+            TensorGlobalAvePool2d(keepdim=False),
+            TensorGlobalMaxPool2d(keepdim=False),
+            TensorGlobalMinPool2d(keepdim=False),
+            TensorGlobalRangePool2d(keepdim=False),
+            ModuleSequential(
+                torch.nn.Conv2d(in_channels=15, out_channels=32, kernel_size=(5, 15)),
+                torch.nn.CELU(alpha=1.0),
+                torch.nn.Conv2d(in_channels=32, out_channels=48, kernel_size=(5, 15)),
+                torch.nn.CELU(alpha=1.0),
+                torch.nn.Conv2d(in_channels=48, out_channels=56, kernel_size=(5, 15)),
+                torch.nn.CELU(alpha=1.0),
+                torch.nn.Conv2d(in_channels=56, out_channels=64, kernel_size=(5, 15)),
+                torch.nn.CELU(alpha=1.0),
+                torch.nn.Conv2d(in_channels=64, out_channels=72, kernel_size=(5, 4)),
+                torch.nn.CELU(alpha=1.0),
+                TensorFlatten(),
+            ),
+        ),
+        torch.nn.Linear(in_features=780, out_features=205),
         TensorUnsqueeze(dim=1),
         torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
         torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
@@ -765,13 +768,11 @@ if __name__ == "__main__":
     train_dataset = AugFieldImagesDataset(df, to_pytorch_tensor=True, **augmentation)
 
     log.info("Fit model.")
-    if "pytorch_train" not in dir():
-        from kedex.contrib.ops.pytorch_ops import pytorch_train
-    model = pytorch_train(train_params=train_params, mlflow_logging=False)(
+
+    model = neural_network_train(train_params=train_params, mlflow_logging=False)(
         pytorch_model, train_dataset
     )
 
-    # model = fit_base_model(df)
     log.info("Infer.")
     infer(model)
 
