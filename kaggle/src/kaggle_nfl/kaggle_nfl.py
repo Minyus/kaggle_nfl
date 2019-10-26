@@ -694,8 +694,8 @@ if __name__ == "__main__":
         scheduler=ignite.contrib.handlers.param_scheduler.LinearCyclicalScheduler,
         scheduler_params=dict(
             param_name="lr",
-            start_value=0.00000001 * train_batch_size,
-            end_value=0.000005 * train_batch_size,
+            start_value=0.000001 * train_batch_size,
+            end_value=0.00001 * train_batch_size,
             cycle_epochs=2,  # cycle_size: int(cycle_epochs * len(train_loader))
             cycle_mult=1.0,
             start_value_mult=1.0,

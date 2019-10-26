@@ -137,12 +137,12 @@ train_params:
     start_value:
       obj: mul
       arg:
-        - 0.000_000_01
+        - 0.000_001
         - obj: train_batch_size
     end_value:
       obj: mul
       arg:
-        - 0.000_005
+        - 0.000_01
         - obj: train_batch_size
     cycle_epochs: 2  # cycle_size: int(cycle_epochs * len(train_loader))
     cycle_mult: 1.0
