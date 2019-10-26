@@ -12,9 +12,11 @@
 ../load/val_dataset.pickle:
 
 ../model/pytorch_model.pickle:
+  mlflow_logging: True
 
 ../load/infered_first_iter.csv:
   type: CSVLocalDataSet
+  mlflow_logging: True
 
 ../load/describe.csv:
   type: kedex.PandasDescribeDataSet
