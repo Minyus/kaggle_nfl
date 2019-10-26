@@ -688,7 +688,7 @@ if __name__ == "__main__":
 
     train_batch_size = 64
     train_params = dict(
-        epochs=10,  # number of epochs to train
+        epochs=6,  # number of epochs to train
         time_limit=12600,  # 3.5 hours
         early_stopping_params=dict(metric="loss", minimize=True, patience=1000),
         scheduler=ignite.contrib.handlers.param_scheduler.LinearCyclicalScheduler,
@@ -742,20 +742,97 @@ if __name__ == "__main__":
             TensorGlobalMinPool2d(keepdim=False),
             TensorGlobalRangePool2d(keepdim=False),
             ModuleSequential(
-                torch.nn.Conv2d(in_channels=15, out_channels=32, kernel_size=(5, 15)),
+                ModuleConcat(
+                    TensorSkip(),
+                    torch.nn.Conv2d(
+                        in_channels=15, out_channels=5, kernel_size=3, padding=1
+                    ),
+                    torch.nn.Conv2d(
+                        in_channels=15, out_channels=5, kernel_size=7, padding=3
+                    ),
+                    torch.nn.Conv2d(
+                        in_channels=15,
+                        out_channels=5,
+                        kernel_size=(5, 15),
+                        padding=(2, 7),
+                    ),
+                ),
                 torch.nn.CELU(alpha=1.0),
-                torch.nn.Conv2d(in_channels=32, out_channels=48, kernel_size=(5, 15)),
+                ModuleConcat(
+                    torch.nn.AvgPool2d(kernel_size=3, padding=1, stride=2),
+                    torch.nn.Conv2d(
+                        in_channels=30,
+                        out_channels=10,
+                        kernel_size=3,
+                        padding=1,
+                        stride=2,
+                    ),
+                    torch.nn.Conv2d(
+                        in_channels=30,
+                        out_channels=10,
+                        kernel_size=7,
+                        padding=3,
+                        stride=2,
+                    ),
+                    torch.nn.Conv2d(
+                        in_channels=30,
+                        out_channels=10,
+                        kernel_size=(5, 15),
+                        padding=(2, 7),
+                        stride=2,
+                    ),
+                ),
                 torch.nn.CELU(alpha=1.0),
-                torch.nn.Conv2d(in_channels=48, out_channels=56, kernel_size=(5, 15)),
+                ModuleConcat(
+                    TensorSkip(),
+                    torch.nn.Conv2d(
+                        in_channels=60, out_channels=20, kernel_size=3, padding=1
+                    ),
+                    torch.nn.Conv2d(
+                        in_channels=60, out_channels=20, kernel_size=7, padding=3
+                    ),
+                    torch.nn.Conv2d(
+                        in_channels=60,
+                        out_channels=20,
+                        kernel_size=(5, 15),
+                        padding=(2, 7),
+                    ),
+                ),
                 torch.nn.CELU(alpha=1.0),
-                torch.nn.Conv2d(in_channels=56, out_channels=64, kernel_size=(5, 15)),
+                ModuleConcat(
+                    torch.nn.AvgPool2d(kernel_size=3, padding=1, stride=2),
+                    torch.nn.Conv2d(
+                        in_channels=120,
+                        out_channels=40,
+                        kernel_size=3,
+                        padding=1,
+                        stride=2,
+                    ),
+                    torch.nn.Conv2d(
+                        in_channels=120,
+                        out_channels=40,
+                        kernel_size=7,
+                        padding=3,
+                        stride=2,
+                    ),
+                    torch.nn.Conv2d(
+                        in_channels=120,
+                        out_channels=40,
+                        kernel_size=(5, 15),
+                        padding=(2, 7),
+                        stride=2,
+                    ),
+                ),
                 torch.nn.CELU(alpha=1.0),
-                torch.nn.Conv2d(in_channels=64, out_channels=72, kernel_size=(5, 4)),
+                ModuleConcat(
+                    torch.nn.AvgPool2d(kernel_size=(1, 15)),
+                    torch.nn.MaxPool2d(kernel_size=(1, 15)),
+                ),
                 torch.nn.CELU(alpha=1.0),
                 TensorFlatten(),
             ),
         ),
-        torch.nn.Linear(in_features=780, out_features=56),
+        torch.nn.Linear(in_features=3900, out_features=56),
         TensorUnsqueeze(dim=1),
         torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
         torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
