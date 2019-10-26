@@ -166,7 +166,7 @@ pytorch_model:
 
     - obj: torch.nn.Linear
       in_features: 780  # 15 * 4 + 720
-      out_features: 205  # 199 + 2 + 2 + 2
+      out_features: 56  # 50 + 2 + 2 + 2
 
     - obj: kedex.TensorUnsqueeze
       dim: 1
@@ -192,6 +192,10 @@ pytorch_model:
     - obj: torch.nn.Sigmoid
       _:  # dummy
 
+    - obj: kedex.TensorNearestPad  # 199 = 89 + 50 + 60
+      lower: 89
+      upper: 60
+
 
 augmentation:
   random_horizontal_flip:
@@ -203,7 +207,7 @@ augmentation:
 train_batch_size: 64
 
 train_params:
-  epochs: 1000  # number of epochs to train
+  epochs: 10  # number of epochs to train
   time_limit: 32400
   early_stopping_params:
     metric: loss
