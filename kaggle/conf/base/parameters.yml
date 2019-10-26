@@ -50,151 +50,37 @@ pytorch_model:
     - obj: kedex.ModuleConcat
       modules:
 
-        - obj: kedex.TensorGlobalAvePool2d
-          keepdim: False
-
-        - obj: kedex.TensorGlobalMaxPool2d
-          keepdim: False
-
-        - obj: kedex.TensorGlobalMinPool2d
-          keepdim: False
-
-        - obj: kedex.TensorGlobalRangePool2d
-          keepdim: False
+        - {obj: kedex.TensorGlobalAvePool2d, keepdim: False}
+        - {obj: kedex.TensorGlobalMaxPool2d, keepdim: False}
+        - {obj: kedex.TensorGlobalMinPool2d, keepdim: False}
+        - {obj: kedex.TensorGlobalRangePool2d, keepdim: False}
 
         - obj: kedex.ModuleSequential
           modules:
-
-      #    - obj: torch.nn.Dropout2d
-      #      p: 0.5
-
-          - obj: torch.nn.Conv2d  # (15, 30, 60) -> (32, 26, 46)
-            in_channels: 15
-            out_channels: 32
-            kernel_size:
-              obj: tuple
-              arg:
-                - 5
-                - 15
-
-          - obj: torch.nn.CELU
-            alpha: 1.0
-      #    - obj: torch.nn.ReLU
-      #      _:  # dummy
-
-      #    - obj: torchvision.models.resnet.BasicBlock
-      #      inplanes: 8
-      #      planes: 8
-
-          - obj: torch.nn.Conv2d  # (40, 26, 46) -> (48, 22, 32)
-            in_channels: 32
-            out_channels: 48
-            kernel_size:
-              obj: tuple
-              arg:
-                - 5
-                - 15
-
-          - obj: torch.nn.CELU
-            alpha: 1.0
-      #    - obj: torch.nn.ReLU
-      #      _:  # dummy
-
-      #    - obj: torchvision.models.resnet.BasicBlock
-      #      inplanes: 16
-      #      planes: 16
-
-          - obj: torch.nn.Conv2d  # (48, 22, 32) -> (56, 18, 18)
-            in_channels: 48
-            out_channels: 56
-            kernel_size:
-              obj: tuple
-              arg:
-                - 5
-                - 15
-
-          - obj: torch.nn.CELU
-            alpha: 1.0
-      #    - obj: torch.nn.ReLU
-      #      _:  # dummy
-
-      #    - obj: torchvision.models.resnet.BasicBlock
-      #      inplanes: 24
-      #      planes: 24
-
-          - obj: torch.nn.Conv2d  # (56, 18, 18) -> (64, 14, 4)
-            in_channels: 56
-            out_channels: 64
-            kernel_size:
-              obj: tuple
-              arg:
-                - 5
-                - 15
-
-          - obj: torch.nn.CELU
-            alpha: 1.0
-      #    - obj: torch.nn.ReLU
-      #      _:  # dummy
-
-      #    - obj: torchvision.models.resnet.BasicBlock
-      #      inplanes: 32
-      #      planes: 32
-
-          - obj: torch.nn.Conv2d  # (64, 14, 4) -> (72, 10, 1)
-            in_channels: 64
-            out_channels: 72
-            kernel_size:
-              obj: tuple
-              arg:
-                - 5
-                - 4
-
-          - obj: torch.nn.CELU
-            alpha: 1.0
-      #    - obj: torch.nn.ReLU
-      #      _:  # dummy
-
-          - obj: kedex.TensorFlatten
-            _:  # dummy
-
-      #    - obj: torch.nn.Dropout
-      #      p: 0.2
-
-#          - obj: torch.nn.Linear
-#            in_features: 720
-#            out_features: 205  # 199 + 2 + 2 + 2
+#          - {obj: torch.nn.Dropout2d, p: 0.5}
+          - {obj: torch.nn.Conv2d, in_channels: 15, out_channels: 32, kernel_size: {obj: tuple, arg: [5, 15]} }  # (15, 30, 60) -> (32, 26, 46)
+          - {obj: torch.nn.CELU, alpha: 1.0}
+          - {obj: torch.nn.Conv2d, in_channels: 32, out_channels: 48, kernel_size: {obj: tuple, arg: [5, 15]} }  # (40, 26, 46) -> (48, 22, 32)
+          - {obj: torch.nn.CELU, alpha: 1.0}
+          - {obj: torch.nn.Conv2d, in_channels: 48, out_channels: 56, kernel_size: {obj: tuple, arg: [5, 15]} }  # (48, 22, 32) -> (56, 18, 18)
+          - {obj: torch.nn.CELU, alpha: 1.0}
+          - {obj: torch.nn.Conv2d, in_channels: 56, out_channels: 64, kernel_size: {obj: tuple, arg: [5, 15]} }  # (56, 18, 18) -> (64, 14, 4)
+          - {obj: torch.nn.CELU, alpha: 1.0}
+          - {obj: torch.nn.Conv2d, in_channels: 64, out_channels: 72, kernel_size: {obj: tuple, arg: [5, 4]} }  # (64, 14, 4) -> (72, 10, 1)
+          - {obj: torch.nn.CELU, alpha: 1.0}
+          - {obj: kedex.TensorFlatten, _: }
 
     - obj: torch.nn.Linear
       in_features: 780  # 15 * 4 + 720
       out_features: 56  # 50 + 2 + 2 + 2
 
-    - obj: kedex.TensorUnsqueeze
-      dim: 1
-
-    - obj: torch.nn.AvgPool1d
-      kernel_size: 3
-      stride: 1
-      padding: 0
-
-    - obj: torch.nn.AvgPool1d
-      kernel_size: 3
-      stride: 1
-      padding: 0
-
-    - obj: torch.nn.AvgPool1d
-      kernel_size: 3
-      stride: 1
-      padding: 0
-
-    - obj: kedex.TensorSqueeze
-      dim: 1
-
-    - obj: torch.nn.Sigmoid
-      _:  # dummy
-
-    - obj: kedex.TensorNearestPad  # 199 = 89 + 50 + 60
-      lower: 89
-      upper: 60
+    - {obj: kedex.TensorUnsqueeze, dim: 1}
+    - {obj: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
+    - {obj: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
+    - {obj: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
+    - {obj: kedex.TensorSqueeze, dim: 1}
+    - {obj: torch.nn.Sigmoid, _: }
+    - {obj: kedex.TensorNearestPad, lower: 89, upper: 60}  # 199 = 89 + 50 + 60
 
 
 augmentation:
