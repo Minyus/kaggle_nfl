@@ -1,5 +1,5 @@
 #pytorch_model:
-#  obj: kedex.contrib.ops.pytorch_ops.PytorchSequential
+#  obj: kedex.contrib.ops.pytorch_ops.ModuleSequential
 #  modules:
 #
 #    - obj: torchvision.models.resnet._resnet
@@ -18,7 +18,7 @@
 #      in_features: 199
 #      out_features: 205  # 199 + 2 + 2 + 2
 #
-#    - obj: kedex.contrib.ops.pytorch_ops.PytorchUnsqueeze
+#    - obj: kedex.contrib.ops.pytorch_ops.TensorUnsqueeze
 #      dim: 1
 #
 #    - obj: torch.nn.AvgPool1d
@@ -36,7 +36,7 @@
 #      stride: 1
 #      padding: 0
 #
-#    - obj: kedex.contrib.ops.pytorch_ops.PytorchSqueeze
+#    - obj: kedex.contrib.ops.pytorch_ops.TensorSqueeze
 #      dim: 1
 #
 #    - obj: torch.nn.Sigmoid
@@ -44,7 +44,7 @@
 
 
 pytorch_model:
-  obj: kedex.contrib.ops.pytorch_ops.PytorchSequential
+  obj: kedex.ModuleSequential
   modules:
 
 #    - obj: torch.nn.Dropout2d
@@ -59,10 +59,10 @@ pytorch_model:
           - 5
           - 15
 
-#    - obj: torch.nn.CELU
-#      alpha: 0.2
-    - obj: torch.nn.ReLU
-      _:  # dummy
+    - obj: torch.nn.CELU
+      alpha: 1.0
+#    - obj: torch.nn.ReLU
+#      _:  # dummy
 
 #    - obj: torchvision.models.resnet.BasicBlock
 #      inplanes: 8
@@ -77,10 +77,10 @@ pytorch_model:
           - 5
           - 15
 
-#    - obj: torch.nn.CELU
-#      alpha: 0.2
-    - obj: torch.nn.ReLU
-      _:  # dummy
+    - obj: torch.nn.CELU
+      alpha: 1.0
+#    - obj: torch.nn.ReLU
+#      _:  # dummy
 
 #    - obj: torchvision.models.resnet.BasicBlock
 #      inplanes: 16
@@ -95,10 +95,10 @@ pytorch_model:
           - 5
           - 15
 
-#    - obj: torch.nn.CELU
-#      alpha: 0.2
-    - obj: torch.nn.ReLU
-      _:  # dummy
+    - obj: torch.nn.CELU
+      alpha: 1.0
+#    - obj: torch.nn.ReLU
+#      _:  # dummy
 
 #    - obj: torchvision.models.resnet.BasicBlock
 #      inplanes: 24
@@ -113,10 +113,10 @@ pytorch_model:
           - 5
           - 15
 
-#    - obj: torch.nn.CELU
-#      alpha: 0.2
-    - obj: torch.nn.ReLU
-      _:  # dummy
+    - obj: torch.nn.CELU
+      alpha: 1.0
+#    - obj: torch.nn.ReLU
+#      _:  # dummy
 
 #    - obj: torchvision.models.resnet.BasicBlock
 #      inplanes: 32
@@ -131,12 +131,12 @@ pytorch_model:
           - 5
           - 4
 
-#    - obj: torch.nn.CELU
-#      alpha: 0.2
-    - obj: torch.nn.ReLU
-      _:  # dummy
+    - obj: torch.nn.CELU
+      alpha: 1.0
+#    - obj: torch.nn.ReLU
+#      _:  # dummy
 
-    - obj: kedex.contrib.ops.pytorch_ops.PytorchFlatten
+    - obj: kedex.TensorFlatten
       _:  # dummy
 
 #    - obj: torch.nn.Dropout
@@ -146,7 +146,7 @@ pytorch_model:
       in_features: 720
       out_features: 205  # 199 + 2 + 2 + 2
 
-    - obj: kedex.contrib.ops.pytorch_ops.PytorchUnsqueeze
+    - obj: kedex.TensorUnsqueeze
       dim: 1
 
     - obj: torch.nn.AvgPool1d
@@ -164,7 +164,7 @@ pytorch_model:
       stride: 1
       padding: 0
 
-    - obj: kedex.contrib.ops.pytorch_ops.PytorchSqueeze
+    - obj: kedex.TensorSqueeze
       dim: 1
 
     - obj: torch.nn.Sigmoid
@@ -355,7 +355,7 @@ PIPELINES:
           - train_dataset
           - val_dataset
         func:
-          obj: kedex.contrib.ops.pytorch_ops.pytorch_train
+          obj: kedex.neural_network_train
           train_params:
             obj: train_params
         outputs: pytorch_model

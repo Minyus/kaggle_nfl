@@ -3,13 +3,8 @@
 import pandas as pd
 import numpy as np
 import random
-import sys
-import os
-from pathlib import Path
 from collections import OrderedDict
-
 import torch
-from torchvision.transforms import ToTensor, Compose
 import math
 
 
@@ -608,24 +603,24 @@ class NflCrpsLossFunc:
         return nfl_crps_loss(input, target)
 
 
-class PytorchLogNormalCDF(torch.nn.Module):
-    def __init__(self, x_start=1, x_end=200, x_step=1, x_scale=0.01):
-        value = torch.log(
-            torch.arange(start=x_start, end=x_end, step=x_step, dtype=torch.float32)
-            * x_scale
-        )
-        value = torch.unsqueeze(value, 0)
-        value.requires_grad = False
-        self.value = value
-        super().__init__()
-
-    def forward(self, x):
-        loc = torch.unsqueeze(x[:, 0], 1)
-        reciprocal_sqrt2_scale = torch.unsqueeze(torch.exp(x[:, 1]), 1)
-        # scale = torch.unsqueeze(torch.exp(x[:, 1]), 1)
-        # reciprocal_sqrt2_scale = scale.reciprocal() / math.sqrt(2)
-        return 0.5 * (1 + torch.erf((self.value - loc) * reciprocal_sqrt2_scale))
-        # return torch.distributions.normal.Normal(loc=loc, scale=scale).cdf(self.value)
+# class PytorchLogNormalCDF(torch.nn.Module):
+#     def __init__(self, x_start=1, x_end=200, x_step=1, x_scale=0.01):
+#         value = torch.log(
+#             torch.arange(start=x_start, end=x_end, step=x_step, dtype=torch.float32)
+#             * x_scale
+#         )
+#         value = torch.unsqueeze(value, 0)
+#         value.requires_grad = False
+#         self.value = value
+#         super().__init__()
+#
+#     def forward(self, x):
+#         loc = torch.unsqueeze(x[:, 0], 1)
+#         reciprocal_sqrt2_scale = torch.unsqueeze(torch.exp(x[:, 1]), 1)
+#         # scale = torch.unsqueeze(torch.exp(x[:, 1]), 1)
+#         # reciprocal_sqrt2_scale = scale.reciprocal() / math.sqrt(2)
+#         return 0.5 * (1 + torch.erf((self.value - loc) * reciprocal_sqrt2_scale))
+#         # return torch.distributions.normal.Normal(loc=loc, scale=scale).cdf(self.value)
 
 
 def infer(model, parameters=None):
@@ -642,15 +637,6 @@ def infer(model, parameters=None):
     env.write_submission_file()
 
     return None
-
-
-def compose(transforms):
-    def _compose(d):
-        for t in transforms:
-            d = t(d)
-        return d
-
-    return _compose
 
 
 if __name__ == "__main__":
@@ -715,12 +701,12 @@ if __name__ == "__main__":
         seed=0,  #
     )
 
-    if "PytorchUnsqueeze" not in dir():
-        from kedex.contrib.ops.pytorch_ops import PytorchUnsqueeze
-    if "PytorchSqueeze" not in dir():
-        from kedex.contrib.ops.pytorch_ops import PytorchSqueeze
-    if "PytorchFlatten" not in dir():
-        from kedex.contrib.ops.pytorch_ops import PytorchFlatten
+    if "TensorUnsqueeze" not in dir():
+        from kedex.contrib.ops.pytorch_ops import TensorUnsqueeze
+    if "TensorSqueeze" not in dir():
+        from kedex.contrib.ops.pytorch_ops import TensorSqueeze
+    if "TensorFlatten" not in dir():
+        from kedex.contrib.ops.pytorch_ops import TensorFlatten
 
     # pytorch_model = torch.nn.Sequential(
     #     torchvision.models.resnet._resnet(
@@ -734,39 +720,32 @@ if __name__ == "__main__":
     #     ),
     #     torch.nn.Dropout(p=0.5),
     #     torch.nn.Linear(in_features=199, out_features=205),  # 199 + 2 + 2 + 2 = 205
-    #     PytorchUnsqueeze(dim=1),
+    #     TensorUnsqueeze(dim=1),
     #     torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
     #     torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
     #     torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
-    #     PytorchSqueeze(dim=1),
+    #     TensorSqueeze(dim=1),
     #     torch.nn.Sigmoid()
     # )
 
     pytorch_model = torch.nn.Sequential(
-        # torch.nn.Dropout2d(p=0.5),
         torch.nn.Conv2d(in_channels=15, out_channels=32, kernel_size=(5, 15)),
-        torch.nn.ReLU(),
-        # torch.nn.CELU(alpha=1.0),
+        torch.nn.CELU(alpha=1.0),
         torch.nn.Conv2d(in_channels=32, out_channels=48, kernel_size=(5, 15)),
-        torch.nn.ReLU(),
-        # torch.nn.CELU(alpha=1.0),
+        torch.nn.CELU(alpha=1.0),
         torch.nn.Conv2d(in_channels=48, out_channels=56, kernel_size=(5, 15)),
-        torch.nn.ReLU(),
-        # torch.nn.CELU(alpha=1.0),
+        torch.nn.CELU(alpha=1.0),
         torch.nn.Conv2d(in_channels=56, out_channels=64, kernel_size=(5, 15)),
-        torch.nn.ReLU(),
-        # torch.nn.CELU(alpha=1.0),
+        torch.nn.CELU(alpha=1.0),
         torch.nn.Conv2d(in_channels=64, out_channels=72, kernel_size=(5, 4)),
-        torch.nn.ReLU(),
-        # torch.nn.CELU(alpha=1.0),
-        PytorchFlatten(),
-        # torch.nn.Dropout2d(p=0.2),
+        torch.nn.CELU(alpha=1.0),
+        TensorFlatten(),
         torch.nn.Linear(in_features=720, out_features=205),
-        PytorchUnsqueeze(dim=1),
+        TensorUnsqueeze(dim=1),
         torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
         torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
         torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
-        PytorchSqueeze(dim=1),
+        TensorSqueeze(dim=1),
         torch.nn.Sigmoid(),
     )
 
