@@ -592,15 +592,27 @@ def nfl_crps_loss(input, target):
 
 
 class NflCrpsLossFunc:
-    def __init__(self, min=-15, max=25):
+    def __init__(self, min=-15, max=25, desc_penalty=None):
         self.min = min
         self.max = max
         self.clip = (min is not None) or (max is not None)
+        self.desc_penalty = desc_penalty
 
     def __call__(self, input, target):
         if self.clip:
             target = torch.clamp(target, min=self.min, max=self.max)
-        return nfl_crps_loss(input, target)
+        loss = nfl_crps_loss(input, target)
+        if self.desc_penalty:
+            penalty_tt = torch.relu(tensor_shift(input, offset=1) - input)
+            penalty = torch.mean(penalty_tt)
+            loss += penalty * self.desc_penalty
+        return loss
+
+
+def tensor_shift(tt, offset=1):
+    out_tt = torch.zeros_like(tt)
+    out_tt[:, offset:] = tt[:, :-offset]
+    return out_tt
 
 
 # class PytorchLogNormalCDF(torch.nn.Module):

@@ -256,6 +256,7 @@ train_params:
     obj: kaggle_nfl.kaggle_nfl.NflCrpsLossFunc
     min: -4 # -15
     max: 29 # 25
+    desc_penalty: 10.0
   metrics:
     loss:
       obj: ignite.metrics.Loss
