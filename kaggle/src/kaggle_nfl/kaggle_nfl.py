@@ -1199,7 +1199,8 @@ if __name__ == "__main__":
             TensorGlobalRangePool2d(keepdim=False),
             ModuleSequential(
                 ModuleConcat(
-                    GaussianBlur2d(kernel_size=(15, 15), sigma=(5.0, 5.0)),
+                    TensorSkip(),
+                    # GaussianBlur2d(kernel_size=(15, 15), sigma=(5.0, 5.0)),
                     torch.nn.Conv2d(
                         in_channels=15, out_channels=5, kernel_size=3, padding=1
                     ),
@@ -1240,9 +1241,10 @@ if __name__ == "__main__":
                 ),
                 torch.nn.CELU(alpha=1.0),
                 ModuleConcat(
-                    torch.nn.Conv2d(
-                        in_channels=60, out_channels=60, kernel_size=1, padding=0
-                    ),
+                    TensorSkip(),
+                    # torch.nn.Conv2d(
+                    #     in_channels=60, out_channels=60, kernel_size=1, padding=0
+                    # ),
                     torch.nn.Conv2d(
                         in_channels=60, out_channels=20, kernel_size=3, padding=1
                     ),
