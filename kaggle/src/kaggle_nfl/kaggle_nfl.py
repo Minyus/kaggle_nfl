@@ -1198,6 +1198,7 @@ if __name__ == "__main__":
             TensorGlobalMinPool2d(keepdim=False),
             TensorGlobalRangePool2d(keepdim=False),
             ModuleSequential(
+                torch.nn.Dropout2d(p=0.2),
                 ModuleConcat(
                     TensorSkip(),
                     # GaussianBlur2d(kernel_size=(15, 15), sigma=(5.0, 5.0)),
@@ -1215,6 +1216,7 @@ if __name__ == "__main__":
                     ),
                 ),
                 torch.nn.CELU(alpha=1.0),
+                torch.nn.Dropout2d(p=0.2),
                 ModuleConcat(
                     torch.nn.AvgPool2d(kernel_size=3, padding=1, stride=2),
                     torch.nn.Conv2d(
@@ -1240,6 +1242,7 @@ if __name__ == "__main__":
                     ),
                 ),
                 torch.nn.CELU(alpha=1.0),
+                torch.nn.Dropout2d(p=0.2),
                 ModuleConcat(
                     TensorSkip(),
                     # torch.nn.Conv2d(
@@ -1259,6 +1262,7 @@ if __name__ == "__main__":
                     ),
                 ),
                 torch.nn.CELU(alpha=1.0),
+                torch.nn.Dropout2d(p=0.2),
                 ModuleConcat(
                     torch.nn.AvgPool2d(kernel_size=3, padding=1, stride=2),
                     torch.nn.Conv2d(
@@ -1284,11 +1288,13 @@ if __name__ == "__main__":
                     ),
                 ),
                 torch.nn.CELU(alpha=1.0),
+                torch.nn.Dropout2d(p=0.2),
                 ModuleConcat(
                     torch.nn.AvgPool2d(kernel_size=(1, 15)),
                     torch.nn.MaxPool2d(kernel_size=(1, 15)),
                 ),
                 torch.nn.CELU(alpha=1.0),
+                torch.nn.Dropout2d(p=0.2),
                 TensorFlatten(),
             ),
         ),
