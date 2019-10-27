@@ -838,8 +838,9 @@ if __name__ == "__main__":
         torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
         torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
         TensorSqueeze(dim=1),
-        torch.nn.Sigmoid(),
         TensorNearestPad(lower=89, upper=60),
+        torch.nn.Softmax(dim=1),
+        TensorCumsum(dim=1),
     )
 
     augmentation = dict()

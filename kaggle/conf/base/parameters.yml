@@ -109,8 +109,9 @@ pytorch_model:
     - {obj: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
     - {obj: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
     - {obj: kedex.TensorSqueeze, dim: 1}
-    - {obj: torch.nn.Sigmoid, _: }
     - {obj: kedex.TensorNearestPad, lower: 89, upper: 60}  # 199 = 89 + 50 + 60
+    - {obj: torch.nn.Softmax, dim: 1}
+    - {obj: kedex.TensorCumsum, dim: 1}
 
 
 augmentation:
