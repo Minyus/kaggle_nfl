@@ -563,7 +563,7 @@ def _predict_cdf(test_df, pytorch_model):
         out_2dtt = pytorch_model(imgs_4dtt)
         pred_arr = torch.squeeze(out_2dtt).numpy()
 
-    pred_arr = np.maximum.accumulate(pred_arr)
+    # pred_arr = np.maximum.accumulate(pred_arr)
     pred_arr[: (99 - yards_abs)] = 0.0
     pred_arr[(199 - yards_abs) :] = 1.0
     return pred_arr
