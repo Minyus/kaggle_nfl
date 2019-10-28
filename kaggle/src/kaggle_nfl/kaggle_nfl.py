@@ -25,15 +25,11 @@ def preprocess(df, parameters=None):
     df["HomeTeamAbbr"] = df["HomeTeamAbbr"].replace(team_abbr_dict)
 
     home_dict = {True: "home", False: "away"}
-    df["TeamOnOffense"] = (df["PossessionTeam"] == df["HomeTeamAbbr"]).replace(
-        home_dict
-    )
+    df["TeamOnOffense"] = (df["PossessionTeam"] == df["HomeTeamAbbr"]).replace(home_dict)
 
     df["IsOnOffense"] = df["Team"] == df["TeamOnOffense"]
     df["YardsFromOwnGoal"] = -df["YardLine"] + 100
-    df.loc[
-        (df["FieldPosition"].astype(str) == df["PossessionTeam"]), "YardsFromOwnGoal"
-    ] = df["YardLine"]
+    df.loc[(df["FieldPosition"].astype(str) == df["PossessionTeam"]), "YardsFromOwnGoal"] = df["YardLine"]
 
     df["X_std"] = df["X"]
     df.loc[df["ToLeft"], "X_std"] = -df["X"] + 120
@@ -46,30 +42,21 @@ def preprocess(df, parameters=None):
     df["RelativeDefenceMeanYards"] = df["X_std"]
     df.loc[df["IsOnOffense"], "RelativeDefenceMeanYards"] = np.nan
     df["RelativeDefenceMeanYards"] = (
-        df.groupby(["PlayId"])["RelativeDefenceMeanYards"].transform("mean")
-        - df["YardsFromOwnGoal"]
+        df.groupby(["PlayId"])["RelativeDefenceMeanYards"].transform("mean") - df["YardsFromOwnGoal"]
     )
     """ """
     df["PlayerCategory"] = df["IsOnOffense"].astype(np.uint8)
     df.loc[df["IsBallCarrier"], "PlayerCategory"] = 2
     # df["X_int"] = np.floor(df["X_std"] + 10).clip(lower=0, upper=119).astype(np.uint8)
     len_x = 30
-    df["X_int"] = (
-        np.floor(df["X_std"] - df["YardsFromOwnGoal"] + 10)
-        .clip(lower=0, upper=(len_x - 1))
-        .astype(np.uint8)
-    )
+    df["X_int"] = np.floor(df["X_std"] - df["YardsFromOwnGoal"] + 10).clip(lower=0, upper=(len_x - 1)).astype(np.uint8)
     len_y = 60
-    df["Y_int"] = (
-        np.floor(df["Y_std"]).clip(lower=0, upper=(len_y - 1)).astype(np.uint8)
-    )
+    df["Y_int"] = np.floor(df["Y_std"]).clip(lower=0, upper=(len_y - 1)).astype(np.uint8)
 
     """ """
     df["Dir_rad"] = np.mod(90 - df["Dir"], 360) * math.pi / 180.0
     df["Dir_std"] = df["Dir_rad"]
-    df.loc[df["ToLeft"], "Dir_std"] = np.mod(
-        np.pi + df.loc[df["ToLeft"], "Dir_rad"], 2 * np.pi
-    )
+    df.loc[df["ToLeft"], "Dir_std"] = np.mod(np.pi + df.loc[df["ToLeft"], "Dir_rad"], 2 * np.pi)
 
     df.rename(columns=dict(S="_S", A="_A"), inplace=True)
     radius_cols = ["_S"]
@@ -158,11 +145,7 @@ def _relative_values(abs_sr, comp_sr, offset=101, transform_func=None):
     if len(comp_sr) != len(abs_sr):
         comp_sr = comp_sr.iloc[0]
     denominator_sr = comp_sr + offset
-    assert (
-        (denominator_sr > 0.0)
-        if isinstance(denominator_sr, float)
-        else (denominator_sr > 0.0).all()
-    )
+    assert (denominator_sr > 0.0) if isinstance(denominator_sr, float) else (denominator_sr > 0.0).all()
 
     numerator_sr = abs_sr + offset
     values_sr = numerator_sr / denominator_sr
@@ -220,9 +203,7 @@ class FieldImagesDataset:
         if "Yards" not in df.columns:
             df["Yards"] = np.nan
 
-        play_target_df = (
-            df[["PlayId", "Yards"]].drop_duplicates().reset_index(drop=True)
-        )
+        play_target_df = df[["PlayId", "Yards"]].drop_duplicates().reset_index(drop=True)
         self.len = len(play_target_df)
         self.target_dict = play_target_df["Yards"].to_dict()
 
@@ -233,17 +214,13 @@ class FieldImagesDataset:
 
         df["_count"] = 1
 
-        count_df = df.groupby(
-            ["PlayIndex", "PlayerCategory", "X_int", "Y_int"], as_index=False
-        )[value_cols].sum()
+        count_df = df.groupby(["PlayIndex", "PlayerCategory", "X_int", "Y_int"], as_index=False)[value_cols].sum()
 
         if (float_scale is None and to_pytorch_tensor) or float_scale == True:
             float_scale = 1.0 / 255
 
         if float_scale:
-            count_df.loc[:, "_count"] = count_df["_count"].astype(
-                np.float32
-            ) * np.float32(float_scale)
+            count_df.loc[:, "_count"] = count_df["_count"].astype(np.float32) * np.float32(float_scale)
         else:
             count_df.loc[:, "_count"] = count_df["_count"].astype(np.uint8)
 
@@ -251,9 +228,7 @@ class FieldImagesDataset:
 
             melted_df = count_df.melt(id_vars=["PlayIndex"] + dim_cols)
             value_cols_dict = {value_cols[i]: i for i in range(len(value_cols))}
-            melted_df["Channel"] = (
-                melted_df["variable"].map(value_cols_dict) * 3 + melted_df[dim_cols[0]]
-            )
+            melted_df["Channel"] = melted_df["variable"].map(value_cols_dict) * 3 + melted_df[dim_cols[0]]
 
             dim_cols_ = dim_cols.copy()
             dim_sizes_ = dim_sizes.copy()
@@ -286,10 +261,7 @@ class FieldImagesDataset:
                 for ci in range(3):
                     ch_df = count_df.xs([pi, ci])
                     coo_2d = coo_matrix(
-                        (
-                            ch_df["_count"].values,
-                            (ch_df[dim_cols[1]].values, ch_df[dim_cols[2]].values),
-                        ),
+                        (ch_df["_count"].values, (ch_df[dim_cols[1]].values, ch_df[dim_cols[2]].values)),
                         shape=tuple(dim_sizes[1:]),
                     )
                     play_coo_2d_dict[ci] = coo_2d
@@ -313,9 +285,7 @@ class FieldImagesDataset:
         if self.to_pytorch_tensor:
             if not self.store_as_sparse_tensor:
                 _random_horizontal_flip(
-                    indices=play_coo_3d["indices"],
-                    size=play_coo_3d.get("size"),
-                    p=self.random_horizontal_flip.get("p"),
+                    indices=play_coo_3d["indices"], size=play_coo_3d.get("size"), p=self.random_horizontal_flip.get("p")
                 )
                 _random_horizontal_shift(
                     indices=play_coo_3d["indices"],
@@ -397,9 +367,7 @@ def generate_datasets(df, parameters=None):
     augmentation = parameters.get("augmentation", dict())
 
     log.info("Setting up train_dataset from df shape: {}".format(fit_df.shape))
-    train_dataset = AugFieldImagesDataset(
-        fit_df, to_pytorch_tensor=True, **augmentation
-    )
+    train_dataset = AugFieldImagesDataset(fit_df, to_pytorch_tensor=True, **augmentation)
     # train_dataset = FieldImagesDataset(fit_df, transform=ToTensor())
 
     log.info("Setting up val_dataset from df shape: {}".format(vali_df.shape))
@@ -455,9 +423,7 @@ def fit_base_model(df, parameters=None):
 
     fit_df = preprocess(fit_df)
     fit_play_df = fit_df.drop_duplicates(subset="PlayId")
-    outcome_sr = _relative_values(
-        fit_play_df["Yards"], fit_play_df["RelativeDefenceMeanYards"]
-    )
+    outcome_sr = _relative_values(fit_play_df["Yards"], fit_play_df["RelativeDefenceMeanYards"])
     model.fit(outcome_sr)
 
     if "Validation" in df.columns:
@@ -502,9 +468,7 @@ def fit_base_model(df, parameters=None):
                 )
 
                 crps_max_play_id = max(play_crps_dict, key=play_crps_dict.get)
-                crps_max_play_df = vali_df.xs(
-                    key=crps_max_play_id, drop_level=False
-                ).reset_index()
+                crps_max_play_df = vali_df.xs(key=crps_max_play_id, drop_level=False).reset_index()
                 crps_max_play_orddict = (
                     crps_max_play_df.query("NflIdRusher == NflId")
                     .astype(str)
@@ -515,9 +479,7 @@ def fit_base_model(df, parameters=None):
                 report_orddict.update(metrics_orddict)
                 report_orddict.update(crps_max_play_orddict)
                 if hasattr(play_index_iter, "set_postfix"):
-                    play_index_iter.set_postfix(
-                        ordered_dict=report_orddict, refresh=True
-                    )
+                    play_index_iter.set_postfix(ordered_dict=report_orddict, refresh=True)
                 else:
                     print(report_orddict)
             assert not np.isnan(play_crps)
@@ -573,9 +535,7 @@ def crps_loss(input, target, target_to_index=None, reduction="mean"):
     index_1dtt = target_to_index(target) if target_to_index else target
     h_1dtt = torch.arange(input.shape[1])
 
-    h_2dtt = (h_1dtt.reshape(1, -1) >= index_1dtt.reshape(-1, 1)).type(
-        torch.FloatTensor
-    )
+    h_2dtt = (h_1dtt.reshape(1, -1) >= index_1dtt.reshape(-1, 1)).type(torch.FloatTensor)
 
     ret = (input - h_2dtt) ** 2
     if reduction != "none":
@@ -665,9 +625,7 @@ def normalize_kernel2d(input: torch.Tensor) -> torch.Tensor:
     r"""Normalizes both derivative and smoothing kernel.
     """
     if len(input.size()) < 2:
-        raise TypeError(
-            "input should be at least 2D tensor. Got {}".format(input.size())
-        )
+        raise TypeError("input should be at least 2D tensor. Got {}".format(input.size()))
     norm: torch.Tensor = input.abs().sum(dim=-1).sum(dim=-1)
     return input / (norm.unsqueeze(-1).unsqueeze(-1))
 
@@ -767,13 +725,9 @@ def get_sobel_kernel2d_2nd_order() -> torch.Tensor:
 
 
 def get_diff_kernel2d_2nd_order() -> torch.Tensor:
-    gxx: torch.Tensor = torch.tensor(
-        [[0.0, 0.0, 0.0], [1.0, -2.0, 1.0], [0.0, 0.0, 0.0]]
-    )
+    gxx: torch.Tensor = torch.tensor([[0.0, 0.0, 0.0], [1.0, -2.0, 1.0], [0.0, 0.0, 0.0]])
     gyy: torch.Tensor = gxx.transpose(0, 1)
-    gxy: torch.Tensor = torch.tensor(
-        [[-1.0, 0.0, 1.0], [0.0, 0.0, 0.0], [1.0, 0.0, -1.0]]
-    )
+    gxy: torch.Tensor = torch.tensor([[-1.0, 0.0, 1.0], [0.0, 0.0, 0.0], [1.0, 0.0, -1.0]])
     return torch.stack([gxx, gxy, gyy])
 
 
@@ -807,9 +761,7 @@ def get_spatial_gradient_kernel2d(mode: str, order: int) -> torch.Tensor:
     return kernel
 
 
-def get_gaussian_kernel1d(
-    kernel_size: int, sigma: float, force_even: bool = False
-) -> torch.Tensor:
+def get_gaussian_kernel1d(kernel_size: int, sigma: float, force_even: bool = False) -> torch.Tensor:
     r"""Function that returns Gaussian filter coefficients.
     Args:
         kernel_size (int): filter size. It should be odd and positive.
@@ -825,14 +777,8 @@ def get_gaussian_kernel1d(
         >>> kornia.image.get_gaussian_kernel(5, 1.5)
         tensor([0.1201, 0.2339, 0.2921, 0.2339, 0.1201])
     """
-    if (
-        not isinstance(kernel_size, int)
-        or ((kernel_size % 2 == 0) and not force_even)
-        or (kernel_size <= 0)
-    ):
-        raise TypeError(
-            "kernel_size must be an odd positive integer. " "Got {}".format(kernel_size)
-        )
+    if not isinstance(kernel_size, int) or ((kernel_size % 2 == 0) and not force_even) or (kernel_size <= 0):
+        raise TypeError("kernel_size must be an odd positive integer. " "Got {}".format(kernel_size))
     window_1d: torch.Tensor = gaussian(kernel_size, sigma)
     return window_1d
 
@@ -862,18 +808,14 @@ def get_gaussian_kernel2d(
                 [0.0370, 0.0720, 0.0899, 0.0720, 0.0370]])
     """
     if not isinstance(kernel_size, tuple) or len(kernel_size) != 2:
-        raise TypeError(
-            "kernel_size must be a tuple of length two. Got {}".format(kernel_size)
-        )
+        raise TypeError("kernel_size must be a tuple of length two. Got {}".format(kernel_size))
     if not isinstance(sigma, tuple) or len(sigma) != 2:
         raise TypeError("sigma must be a tuple of length two. Got {}".format(sigma))
     ksize_x, ksize_y = kernel_size
     sigma_x, sigma_y = sigma
     kernel_x: torch.Tensor = get_gaussian_kernel1d(ksize_x, sigma_x, force_even)
     kernel_y: torch.Tensor = get_gaussian_kernel1d(ksize_y, sigma_y, force_even)
-    kernel_2d: torch.Tensor = torch.matmul(
-        kernel_x.unsqueeze(-1), kernel_y.unsqueeze(-1).t()
-    )
+    kernel_2d: torch.Tensor = torch.matmul(kernel_x.unsqueeze(-1), kernel_y.unsqueeze(-1).t())
     return kernel_2d
 
 
@@ -892,9 +834,7 @@ def get_laplacian_kernel1d(kernel_size: int) -> torch.Tensor:
         tensor([ 1.,  1., -4.,  1.,  1.])
     """
     if not isinstance(kernel_size, int) or kernel_size % 2 == 0 or kernel_size <= 0:
-        raise TypeError(
-            "ksize must be an odd positive integer. Got {}".format(kernel_size)
-        )
+        raise TypeError("ksize must be an odd positive integer. Got {}".format(kernel_size))
     window_1d: torch.Tensor = laplacian_1d(kernel_size)
     return window_1d
 
@@ -920,9 +860,7 @@ def get_laplacian_kernel2d(kernel_size: int) -> torch.Tensor:
                 [  1.,   1.,   1.,   1.,   1.]])
     """
     if not isinstance(kernel_size, int) or kernel_size % 2 == 0 or kernel_size <= 0:
-        raise TypeError(
-            "ksize must be an odd positive integer. Got {}".format(kernel_size)
-        )
+        raise TypeError("ksize must be an odd positive integer. Got {}".format(kernel_size))
 
     kernel = torch.ones((kernel_size, kernel_size))
     mid = kernel_size // 2
@@ -954,10 +892,7 @@ def compute_padding(kernel_size: Tuple[int, int]) -> List[int]:
 
 
 def filter2D(
-    input: torch.Tensor,
-    kernel: torch.Tensor,
-    border_type: str = "reflect",
-    normalized: bool = False,
+    input: torch.Tensor, kernel: torch.Tensor, border_type: str = "reflect", normalized: bool = False
 ) -> torch.Tensor:
     r"""Function that convolves a tensor with a kernel.
     The function applies a given kernel to a tensor. The kernel is applied
@@ -981,28 +916,21 @@ def filter2D(
         raise TypeError("Input type is not a torch.Tensor. Got {}".format(type(input)))
 
     if not isinstance(kernel, torch.Tensor):
-        raise TypeError(
-            "Input kernel type is not a torch.Tensor. Got {}".format(type(kernel))
-        )
+        raise TypeError("Input kernel type is not a torch.Tensor. Got {}".format(type(kernel)))
 
     if not isinstance(border_type, str):
         raise TypeError("Input border_type is not string. Got {}".format(type(kernel)))
 
     if not len(input.shape) == 4:
-        raise ValueError(
-            "Invalid input shape, we expect BxCxHxW. Got: {}".format(input.shape)
-        )
+        raise ValueError("Invalid input shape, we expect BxCxHxW. Got: {}".format(input.shape))
 
     if not len(kernel.shape) == 3:
-        raise ValueError(
-            "Invalid kernel shape, we expect BxHxW. Got: {}".format(kernel.shape)
-        )
+        raise ValueError("Invalid kernel shape, we expect BxHxW. Got: {}".format(kernel.shape))
 
     borders_list: List[str] = ["constant", "reflect", "replicate", "circular"]
     if border_type not in borders_list:
         raise ValueError(
-            "Invalid border_type, we expect the following: {0}."
-            "Got: {1}".format(borders_list, border_type)
+            "Invalid border_type, we expect the following: {0}." "Got: {1}".format(borders_list, border_type)
         )
 
     # prepare kernel
@@ -1054,18 +982,11 @@ class GaussianBlur2d(nn.Module):
         >>> output = gauss(input)  # 2x4x5x5
     """
 
-    def __init__(
-        self,
-        kernel_size: Tuple[int, int],
-        sigma: Tuple[float, float],
-        border_type: str = "reflect",
-    ) -> None:
+    def __init__(self, kernel_size: Tuple[int, int], sigma: Tuple[float, float], border_type: str = "reflect") -> None:
         super(GaussianBlur2d, self).__init__()
         self.kernel_size: Tuple[int, int] = kernel_size
         self.sigma: Tuple[float, float] = sigma
-        self.kernel: torch.Tensor = torch.unsqueeze(
-            get_gaussian_kernel2d(kernel_size, sigma), dim=0
-        )
+        self.kernel: torch.Tensor = torch.unsqueeze(get_gaussian_kernel2d(kernel_size, sigma), dim=0)
 
         assert border_type in ["constant", "reflect", "replicate", "circular"]
         self.border_type = border_type
@@ -1094,10 +1015,7 @@ class GaussianBlur2d(nn.Module):
 
 
 def gaussian_blur2d(
-    input: torch.Tensor,
-    kernel_size: Tuple[int, int],
-    sigma: Tuple[float, float],
-    border_type: str = "reflect",
+    input: torch.Tensor, kernel_size: Tuple[int, int], sigma: Tuple[float, float], border_type: str = "reflect"
 ) -> torch.Tensor:
     r"""Function that blurs a tensor using a Gaussian filter.
     See :class:`~kornia.filters.GaussianBlur` for details.
@@ -1202,161 +1120,62 @@ if __name__ == "__main__":
                 ModuleConcat(
                     # TensorSkip(),
                     GaussianBlur2d(kernel_size=(15, 15), sigma=(5.0, 5.0)),
-                    torch.nn.Conv2d(
-                        in_channels=15, out_channels=5, kernel_size=3, padding=1
-                    ),
-                    torch.nn.Conv2d(
-                        in_channels=15, out_channels=5, kernel_size=7, padding=3
-                    ),
-                    torch.nn.Conv2d(
-                        in_channels=15,
-                        out_channels=5,
-                        kernel_size=(5, 15),
-                        padding=(2, 7),
-                    ),
+                    torch.nn.Conv2d(in_channels=15, out_channels=5, kernel_size=3, padding=1),
+                    torch.nn.Conv2d(in_channels=15, out_channels=5, kernel_size=7, padding=3),
+                    torch.nn.Conv2d(in_channels=15, out_channels=5, kernel_size=(5, 15), padding=(2, 7)),
                 ),
                 torch.nn.CELU(alpha=1.0),
                 # torch.nn.Dropout(p=0.05),
                 ModuleConcat(
                     torch.nn.AvgPool2d(kernel_size=3, padding=1, stride=2),
-                    torch.nn.Conv2d(
-                        in_channels=30,
-                        out_channels=10,
-                        kernel_size=3,
-                        padding=1,
-                        stride=2,
-                    ),
-                    torch.nn.Conv2d(
-                        in_channels=30,
-                        out_channels=10,
-                        kernel_size=7,
-                        padding=3,
-                        stride=2,
-                    ),
-                    torch.nn.Conv2d(
-                        in_channels=30,
-                        out_channels=10,
-                        kernel_size=(5, 15),
-                        padding=(2, 7),
-                        stride=2,
-                    ),
+                    torch.nn.Conv2d(in_channels=30, out_channels=10, kernel_size=3, padding=1, stride=2),
+                    torch.nn.Conv2d(in_channels=30, out_channels=10, kernel_size=7, padding=3, stride=2),
+                    torch.nn.Conv2d(in_channels=30, out_channels=10, kernel_size=(5, 15), padding=(2, 7), stride=2),
                 ),
                 torch.nn.CELU(alpha=1.0),
                 # torch.nn.Dropout(p=0.05),
                 ModuleConcat(
                     # TensorSkip(),
-                    torch.nn.Conv2d(
-                        in_channels=60, out_channels=60, kernel_size=1, padding=0
-                    ),
-                    torch.nn.Conv2d(
-                        in_channels=60, out_channels=20, kernel_size=3, padding=1
-                    ),
-                    torch.nn.Conv2d(
-                        in_channels=60, out_channels=20, kernel_size=7, padding=3
-                    ),
-                    torch.nn.Conv2d(
-                        in_channels=60,
-                        out_channels=20,
-                        kernel_size=(5, 15),
-                        padding=(2, 7),
-                    ),
+                    torch.nn.Conv2d(in_channels=60, out_channels=60, kernel_size=1, padding=0),
+                    torch.nn.Conv2d(in_channels=60, out_channels=20, kernel_size=3, padding=1),
+                    torch.nn.Conv2d(in_channels=60, out_channels=20, kernel_size=7, padding=3),
+                    torch.nn.Conv2d(in_channels=60, out_channels=20, kernel_size=(5, 15), padding=(2, 7)),
                 ),
                 torch.nn.CELU(alpha=1.0),
                 # torch.nn.Dropout(p=0.05),
                 ModuleConcat(
                     torch.nn.AvgPool2d(kernel_size=3, padding=1, stride=2),
-                    torch.nn.Conv2d(
-                        in_channels=120,
-                        out_channels=40,
-                        kernel_size=3,
-                        padding=1,
-                        stride=2,
-                    ),
-                    torch.nn.Conv2d(
-                        in_channels=120,
-                        out_channels=40,
-                        kernel_size=7,
-                        padding=3,
-                        stride=2,
-                    ),
-                    torch.nn.Conv2d(
-                        in_channels=120,
-                        out_channels=40,
-                        kernel_size=(5, 15),
-                        padding=(2, 7),
-                        stride=2,
-                    ),
+                    torch.nn.Conv2d(in_channels=120, out_channels=40, kernel_size=3, padding=1, stride=2),
+                    torch.nn.Conv2d(in_channels=120, out_channels=40, kernel_size=7, padding=3, stride=2),
+                    torch.nn.Conv2d(in_channels=120, out_channels=40, kernel_size=(5, 15), padding=(2, 7), stride=2),
+                ),
+                torch.nn.CELU(alpha=1.0),
+                # torch.nn.Dropout(p=0.05),
+                ModuleConcat(
+                    torch.nn.Conv2d(in_channels=240, out_channels=40, kernel_size=(1, 3), padding=(0, 1)),
+                    torch.nn.Conv2d(in_channels=240, out_channels=40, kernel_size=(1, 7), padding=(0, 3)),
+                    torch.nn.Conv2d(in_channels=240, out_channels=40, kernel_size=(1, 15), padding=(0, 7)),
                 ),
                 torch.nn.CELU(alpha=1.0),
                 # torch.nn.Dropout(p=0.05),
                 ModuleConcat(
                     torch.nn.Conv2d(
-                        in_channels=240,
-                        out_channels=40,
-                        kernel_size=(1, 3),
-                        padding=(0, 1),
+                        in_channels=120, out_channels=20, kernel_size=(1, 3), padding=(0, 1), stride=(1, 2)
                     ),
                     torch.nn.Conv2d(
-                        in_channels=240,
-                        out_channels=40,
-                        kernel_size=(1, 7),
-                        padding=(0, 3),
+                        in_channels=120, out_channels=20, kernel_size=(1, 7), padding=(0, 3), stride=(1, 2)
                     ),
                     torch.nn.Conv2d(
-                        in_channels=240,
-                        out_channels=40,
-                        kernel_size=(1, 15),
-                        padding=(0, 7),
+                        in_channels=120, out_channels=20, kernel_size=(1, 15), padding=(0, 7), stride=(1, 2)
                     ),
                 ),
                 torch.nn.CELU(alpha=1.0),
                 # torch.nn.Dropout(p=0.05),
                 ModuleConcat(
+                    torch.nn.Conv2d(in_channels=60, out_channels=10, kernel_size=(1, 3), padding=(0, 1), stride=(1, 2)),
+                    torch.nn.Conv2d(in_channels=60, out_channels=10, kernel_size=(1, 7), padding=(0, 3), stride=(1, 2)),
                     torch.nn.Conv2d(
-                        in_channels=120,
-                        out_channels=20,
-                        kernel_size=(1, 3),
-                        padding=(0, 1),
-                        stride=(1, 2),
-                    ),
-                    torch.nn.Conv2d(
-                        in_channels=120,
-                        out_channels=20,
-                        kernel_size=(1, 7),
-                        padding=(0, 3),
-                        stride=(1, 2),
-                    ),
-                    torch.nn.Conv2d(
-                        in_channels=120,
-                        out_channels=20,
-                        kernel_size=(1, 15),
-                        padding=(0, 7),
-                        stride=(1, 2),
-                    ),
-                ),
-                torch.nn.CELU(alpha=1.0),
-                # torch.nn.Dropout(p=0.05),
-                ModuleConcat(
-                    torch.nn.Conv2d(
-                        in_channels=60,
-                        out_channels=10,
-                        kernel_size=(1, 3),
-                        padding=(0, 1),
-                        stride=(1, 2),
-                    ),
-                    torch.nn.Conv2d(
-                        in_channels=60,
-                        out_channels=10,
-                        kernel_size=(1, 7),
-                        padding=(0, 3),
-                        stride=(1, 2),
-                    ),
-                    torch.nn.Conv2d(
-                        in_channels=60,
-                        out_channels=10,
-                        kernel_size=(1, 15),
-                        padding=(0, 7),
-                        stride=(1, 2),
+                        in_channels=60, out_channels=10, kernel_size=(1, 15), padding=(0, 7), stride=(1, 2)
                     ),
                 ),
                 torch.nn.CELU(alpha=1.0),
@@ -1380,9 +1199,7 @@ if __name__ == "__main__":
 
     log.info("Fit model.")
 
-    model = neural_network_train(train_params=train_params, mlflow_logging=False)(
-        pytorch_model, train_dataset
-    )
+    model = neural_network_train(train_params=train_params, mlflow_logging=False)(pytorch_model, train_dataset)
 
     log.info("Infer.")
     infer(model)
