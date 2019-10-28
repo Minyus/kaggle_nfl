@@ -525,7 +525,7 @@ def _predict_cdf(test_df, pytorch_model):
         out_2dtt = pytorch_model(imgs_4dtt)
         pred_arr = torch.squeeze(out_2dtt).numpy()
 
-    # pred_arr = np.maximum.accumulate(pred_arr)
+    pred_arr = np.maximum.accumulate(pred_arr)
     pred_arr[: (99 - yards_abs)] = 0.0
     pred_arr[(199 - yards_abs) :] = 1.0
     return pred_arr
@@ -1118,8 +1118,8 @@ if __name__ == "__main__":
             ModuleSequential(
                 # torch.nn.Dropout(p=0.05),
                 ModuleConcat(
-                    # TensorSkip(),
-                    GaussianBlur2d(kernel_size=(15, 15), sigma=(5.0, 5.0)),
+                    TensorSkip(),
+                    # GaussianBlur2d(kernel_size=(15, 15), sigma=(5.0, 5.0)),
                     torch.nn.Conv2d(in_channels=15, out_channels=5, kernel_size=3, padding=1),
                     torch.nn.Conv2d(in_channels=15, out_channels=5, kernel_size=7, padding=3),
                     torch.nn.Conv2d(in_channels=15, out_channels=5, kernel_size=(5, 15), padding=(2, 7)),
@@ -1135,8 +1135,8 @@ if __name__ == "__main__":
                 torch.nn.CELU(alpha=1.0),
                 # torch.nn.Dropout(p=0.05),
                 ModuleConcat(
-                    # TensorSkip(),
-                    torch.nn.Conv2d(in_channels=60, out_channels=60, kernel_size=1, padding=0),
+                    TensorSkip(),
+                    # torch.nn.Conv2d(in_channels=60, out_channels=60, kernel_size=1, padding=0),
                     torch.nn.Conv2d(in_channels=60, out_channels=20, kernel_size=3, padding=1),
                     torch.nn.Conv2d(in_channels=60, out_channels=20, kernel_size=7, padding=3),
                     torch.nn.Conv2d(in_channels=60, out_channels=20, kernel_size=(5, 15), padding=(2, 7)),
@@ -1152,7 +1152,9 @@ if __name__ == "__main__":
                 torch.nn.CELU(alpha=1.0),
                 # torch.nn.Dropout(p=0.05),
                 ModuleConcat(
-                    ModuleSequential(torch.nn.AvgPool2d(kernel_size=(1, 15)), TensorFlatten()),
+                    # ModuleSequential(torch.nn.AvgPool2d(kernel_size=(1, 15)), TensorFlatten()),
+                    ModuleSequential(torch.nn.AvgPool2d(kernel_size=(8, 15)), TensorFlatten()),
+                    ModuleSequential(torch.nn.AvgPool2d(kernel_size=(8, 15)), TensorFlatten()),
                     ModuleSequential(
                         # ModuleConcat(
                         #     torch.nn.Conv2d(in_channels=240, out_channels=40, kernel_size=(1, 3), padding=(0, 1)),
@@ -1186,7 +1188,7 @@ if __name__ == "__main__":
                 ),
             ),
         ),
-        torch.nn.Linear(in_features=2940, out_features=56),
+        torch.nn.Linear(in_features=1500, out_features=56),
         TensorUnsqueeze(dim=1),
         torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
         torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),

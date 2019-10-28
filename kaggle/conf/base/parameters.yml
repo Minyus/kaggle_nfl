@@ -101,13 +101,23 @@ pytorch_model:
             - {obj: torch.nn.CELU, alpha: 1.0}
 #            - {obj: torch.nn.Dropout, p: 0.05}
 
-            - obj: kedex.ModuleConcat  # (240, 8, 15) -> (2880,)
+            - obj: kedex.ModuleConcat  # (240, 8, 15) -> (1440,)
               modules:
+
+#                - obj: kedex.ModuleSequential
+#                  modules:
+#                    - {obj: torch.nn.AvgPool2d, kernel_size: "(1, 15)" }  # (240, 8, 15) -> (240, 8, 1)
+#                    - {obj: kedex.TensorFlatten, _: }  # (240, 8, 1) -> (1920,)
 
                 - obj: kedex.ModuleSequential
                   modules:
-                    - {obj: torch.nn.AvgPool2d, kernel_size: "(1, 15)" }  # (240, 8, 15) -> (240, 8, 1)
-                    - {obj: kedex.TensorFlatten, _: }  # (240, 8, 1) -> (1920,)
+                    - {obj: torch.nn.AvgPool2d, kernel_size: "(8, 15)" }  # (240, 8, 15) -> (240, 1, 1)
+                    - {obj: kedex.TensorFlatten, _: }  # (240, 1, 1) -> (240,)
+
+                - obj: kedex.ModuleSequential
+                  modules:
+                    - {obj: torch.nn.MaxPool2d, kernel_size: "(8, 15)" }  # (240, 8, 15) -> (240, 1, 1)
+                    - {obj: kedex.TensorFlatten, _: }  # (240, 1, 1) -> (240,)
 
                 - obj: kedex.ModuleSequential
                   modules:
@@ -137,7 +147,7 @@ pytorch_model:
                     - {obj: kedex.TensorFlatten, _: }  # (120, 2, 4) -> (960,)
 
     - obj: torch.nn.Linear
-      in_features: 2940  # 15 * 4 + 2880
+      in_features: 1500  # 15 * 4 + 1440
       out_features: 56  # 50 + 2 + 2 + 2
 
     - {obj: kedex.TensorUnsqueeze, dim: 1}
