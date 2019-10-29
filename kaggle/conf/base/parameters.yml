@@ -179,7 +179,7 @@ train_params:
     filename_prefix: "%Y-%m-%dT%H-%M-%S"
     offset_hours: 8
     score_name: loss
-    n_saved: 20
+    n_saved: 1
     atomic: True
     require_empty: True
     create_dir: True
