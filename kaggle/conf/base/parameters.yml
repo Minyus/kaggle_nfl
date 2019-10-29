@@ -172,6 +172,18 @@ train_batch_size: 64
 train_params:
   epochs: 10  # number of epochs to train
   time_limit: 32400
+  model_checkpoint_params:
+    metric: loss
+    minimize: True
+    dirname: ../checkpoint
+    filename_prefix: "%Y-%m-%dT%H-%M-%S"
+    offset_hours: 8
+    score_name: loss
+    n_saved: 20
+    atomic: True
+    require_empty: True
+    create_dir: True
+    save_as_state_dict: False
   early_stopping_params:
     metric: loss
     minimize: True
@@ -217,7 +229,7 @@ train_params:
     weight_decay:
       obj: truediv
       arg:
-        - 0.001
+        - 0.0001
         - obj: train_batch_size
   loss_fn:
     obj: kaggle_nfl.kaggle_nfl.NflCrpsLossFunc
@@ -229,6 +241,8 @@ train_params:
       obj: ignite.metrics.Loss
       loss_fn:
         obj: kaggle_nfl.kaggle_nfl.nfl_crps_loss
+  train_dataset_size_limit: 128
+  val_dataset_size_limit: 128
   train_data_loader_params:
     batch_size:
       obj: train_batch_size

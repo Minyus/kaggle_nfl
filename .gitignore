@@ -173,6 +173,8 @@ catboost_info
 *.twb
 *.twbr
 *.pickle
+*.pt
+*.pth
 
 test.csv.encrypted
 sample_submission.csv.encrypted

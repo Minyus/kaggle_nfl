@@ -1062,8 +1062,21 @@ if __name__ == "__main__":
 
     train_batch_size = 64
     train_params = dict(
-        epochs=10,  # number of epochs to train
+        epochs=14,  # number of epochs to train
         time_limit=12600,  # 3.5 hours
+        model_checkpoint_params=dict(
+            metric="loss",
+            minimize=True,
+            dirname="checkpoint",
+            filename_prefix="%Y-%m-%dT%H-%M-%S",
+            offset_hours=8,
+            score_name="loss",
+            n_saved=20,
+            atomic=True,
+            require_empty=True,
+            create_dir=True,
+            save_as_state_dict=False,
+        ),
         early_stopping_params=dict(metric="loss", minimize=True, patience=1000),
         scheduler=ignite.contrib.handlers.param_scheduler.LinearCyclicalScheduler,
         scheduler_params=dict(
@@ -1077,7 +1090,7 @@ if __name__ == "__main__":
             save_history=False,
         ),
         optimizer=torch.optim.Adam,
-        optimizer_params=dict(weight_decay=0.001 / train_batch_size),
+        optimizer_params=dict(weight_decay=0.0001 / train_batch_size),
         loss_fn=NflCrpsLossFunc(min=-4, max=29),
         metrics=dict(loss=ignite.metrics.Loss(loss_fn=nfl_crps_loss)),
         train_data_loader_params=dict(batch_size=train_batch_size, num_workers=1),
