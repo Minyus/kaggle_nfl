@@ -206,19 +206,19 @@ train_params:
     minimize: True
     patience: 1000
   scheduler:
-    obj: ignite.contrib.handlers.param_scheduler.LinearCyclicalScheduler
-#    obj: ignite.contrib.handlers.param_scheduler.CosineAnnealingScheduler
+#    obj: ignite.contrib.handlers.param_scheduler.LinearCyclicalScheduler
+    obj: ignite.contrib.handlers.param_scheduler.CosineAnnealingScheduler
   scheduler_params:
     param_name: lr
     start_value:
       obj: mul
       arg:
-        - 0.000_005
+        - 0.000_002
         - obj: train_batch_size
     end_value:
       obj: mul
       arg:
-        - 0.000_05
+        - 0.000_02
         - obj: train_batch_size
     cycle_epochs: 2  # cycle_size: int(cycle_epochs * len(train_loader))
     cycle_mult: 1.0
@@ -246,7 +246,7 @@ train_params:
     weight_decay:
       obj: truediv
       arg:
-        - 0.001
+        - 0.0005
         - obj: train_batch_size
   loss_fn:
     obj: kaggle_nfl.kaggle_nfl.NflCrpsLossFunc
