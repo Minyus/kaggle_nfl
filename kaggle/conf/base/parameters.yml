@@ -229,7 +229,7 @@ train_params:
     weight_decay:
       obj: truediv
       arg:
-        - 0.0001
+        - 0.001
         - obj: train_batch_size
   loss_fn:
     obj: kaggle_nfl.kaggle_nfl.NflCrpsLossFunc

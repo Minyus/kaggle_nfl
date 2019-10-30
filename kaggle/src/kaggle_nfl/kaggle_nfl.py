@@ -1090,7 +1090,7 @@ if __name__ == "__main__":
             save_history=False,
         ),
         optimizer=torch.optim.Adam,
-        optimizer_params=dict(weight_decay=0.0001 / train_batch_size),
+        optimizer_params=dict(weight_decay=0.001 / train_batch_size),
         loss_fn=NflCrpsLossFunc(min=-4, max=29),
         metrics=dict(loss=ignite.metrics.Loss(loss_fn=nfl_crps_loss)),
         train_data_loader_params=dict(batch_size=train_batch_size, num_workers=1),
