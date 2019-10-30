@@ -1062,16 +1062,13 @@ if __name__ == "__main__":
 
     train_batch_size = 64
     train_params = dict(
-        epochs=14,  # number of epochs to train
+        epochs=10,  # number of epochs to train
         time_limit=12600,  # 3.5 hours
         model_checkpoint_params=dict(
-            metric="loss",
-            minimize=True,
             dirname="checkpoint",
             filename_prefix="%Y-%m-%dT%H-%M-%S",
             offset_hours=8,
-            score_name="loss",
-            n_saved=20,
+            n_saved=1,
             atomic=True,
             require_empty=True,
             create_dir=True,
@@ -1081,8 +1078,8 @@ if __name__ == "__main__":
         scheduler=ignite.contrib.handlers.param_scheduler.LinearCyclicalScheduler,
         scheduler_params=dict(
             param_name="lr",
-            start_value=0.000001 * train_batch_size,
-            end_value=0.00001 * train_batch_size,
+            start_value=0.000005 * train_batch_size,
+            end_value=0.00005 * train_batch_size,
             cycle_epochs=2,  # cycle_size: int(cycle_epochs * len(train_loader))
             cycle_mult=1.0,
             start_value_mult=1.0,
@@ -1092,7 +1089,7 @@ if __name__ == "__main__":
         optimizer=torch.optim.Adam,
         optimizer_params=dict(weight_decay=0.001 / train_batch_size),
         loss_fn=NflCrpsLossFunc(min=-4, max=29),
-        metrics=dict(loss=ignite.metrics.Loss(loss_fn=nfl_crps_loss)),
+        evaluation_metrics=dict(loss=ignite.metrics.Loss(loss_fn=nfl_crps_loss)),
         train_data_loader_params=dict(batch_size=train_batch_size, num_workers=1),
         evaluate_train_data="COMPLETED",
         progress_update=False,
@@ -1133,41 +1130,103 @@ if __name__ == "__main__":
                 ModuleConcat(
                     TensorSkip(),
                     # GaussianBlur2d(kernel_size=(15, 15), sigma=(5.0, 5.0)),
-                    torch.nn.Conv2d(in_channels=15, out_channels=5, kernel_size=3, padding=1),
-                    torch.nn.Conv2d(in_channels=15, out_channels=5, kernel_size=7, padding=3),
-                    torch.nn.Conv2d(in_channels=15, out_channels=5, kernel_size=(5, 15), padding=(2, 7)),
+                    # torch.nn.Conv2d(in_channels=15, out_channels=5, kernel_size=3, padding=1),
+                    # torch.nn.Conv2d(in_channels=15, out_channels=5, kernel_size=7, padding=3),
+                    # torch.nn.Conv2d(in_channels=15, out_channels=5, kernel_size=(5, 15), padding=(2, 7)),
+                    ModuleBottleneck2d(
+                        in_channels=15, out_channels=5, kernel_size=(3, 3), activation=torch.nn.CELU(alpha=1.0)
+                    ),
+                    ModuleBottleneck2d(
+                        in_channels=15, out_channels=5, kernel_size=(7, 7), activation=torch.nn.CELU(alpha=1.0)
+                    ),
+                    ModuleBottleneck2d(
+                        in_channels=15, out_channels=5, kernel_size=(5, 15), activation=torch.nn.CELU(alpha=1.0)
+                    ),
                 ),
                 torch.nn.CELU(alpha=1.0),
                 # torch.nn.Dropout(p=0.05),
                 ModuleConcat(
                     torch.nn.AvgPool2d(kernel_size=3, padding=1, stride=2),
-                    torch.nn.Conv2d(in_channels=30, out_channels=10, kernel_size=3, padding=1, stride=2),
-                    torch.nn.Conv2d(in_channels=30, out_channels=10, kernel_size=7, padding=3, stride=2),
-                    torch.nn.Conv2d(in_channels=30, out_channels=10, kernel_size=(5, 15), padding=(2, 7), stride=2),
+                    # torch.nn.Conv2d(in_channels=30, out_channels=10, kernel_size=3, padding=1, stride=2),
+                    # torch.nn.Conv2d(in_channels=30, out_channels=10, kernel_size=7, padding=3, stride=2),
+                    # torch.nn.Conv2d(in_channels=30, out_channels=10, kernel_size=(5, 15), padding=(2, 7), stride=2),
+                    ModuleBottleneck2d(
+                        stride=2,
+                        in_channels=30,
+                        out_channels=10,
+                        kernel_size=(3, 3),
+                        activation=torch.nn.CELU(alpha=1.0),
+                    ),
+                    ModuleBottleneck2d(
+                        stride=2,
+                        in_channels=30,
+                        out_channels=10,
+                        kernel_size=(7, 7),
+                        activation=torch.nn.CELU(alpha=1.0),
+                    ),
+                    ModuleBottleneck2d(
+                        stride=2,
+                        in_channels=30,
+                        out_channels=10,
+                        kernel_size=(5, 15),
+                        activation=torch.nn.CELU(alpha=1.0),
+                    ),
                 ),
                 torch.nn.CELU(alpha=1.0),
                 # torch.nn.Dropout(p=0.05),
                 ModuleConcat(
                     TensorSkip(),
                     # torch.nn.Conv2d(in_channels=60, out_channels=60, kernel_size=1, padding=0),
-                    torch.nn.Conv2d(in_channels=60, out_channels=20, kernel_size=3, padding=1),
-                    torch.nn.Conv2d(in_channels=60, out_channels=20, kernel_size=7, padding=3),
-                    torch.nn.Conv2d(in_channels=60, out_channels=20, kernel_size=(5, 15), padding=(2, 7)),
+                    # torch.nn.Conv2d(in_channels=60, out_channels=20, kernel_size=3, padding=1),
+                    # torch.nn.Conv2d(in_channels=60, out_channels=20, kernel_size=7, padding=3),
+                    # torch.nn.Conv2d(in_channels=60, out_channels=20, kernel_size=(5, 15), padding=(2, 7)),
+                    ModuleBottleneck2d(
+                        in_channels=60, out_channels=20, kernel_size=(3, 3), activation=torch.nn.CELU(alpha=1.0)
+                    ),
+                    ModuleBottleneck2d(
+                        in_channels=60, out_channels=20, kernel_size=(7, 7), activation=torch.nn.CELU(alpha=1.0)
+                    ),
+                    ModuleBottleneck2d(
+                        in_channels=60, out_channels=20, kernel_size=(5, 15), activation=torch.nn.CELU(alpha=1.0)
+                    ),
                 ),
                 torch.nn.CELU(alpha=1.0),
                 # torch.nn.Dropout(p=0.05),
                 ModuleConcat(
                     torch.nn.AvgPool2d(kernel_size=3, padding=1, stride=2),
-                    torch.nn.Conv2d(in_channels=120, out_channels=40, kernel_size=3, padding=1, stride=2),
-                    torch.nn.Conv2d(in_channels=120, out_channels=40, kernel_size=7, padding=3, stride=2),
-                    torch.nn.Conv2d(in_channels=120, out_channels=40, kernel_size=(5, 15), padding=(2, 7), stride=2),
+                    # torch.nn.Conv2d(in_channels=120, out_channels=40, kernel_size=3, padding=1, stride=2),
+                    # torch.nn.Conv2d(in_channels=120, out_channels=40, kernel_size=7, padding=3, stride=2),
+                    # torch.nn.Conv2d(in_channels=120, out_channels=40, kernel_size=(5, 15), padding=(2, 7), stride=2),
+                    ModuleBottleneck2d(
+                        stride=2,
+                        in_channels=120,
+                        out_channels=40,
+                        kernel_size=(3, 3),
+                        activation=torch.nn.CELU(alpha=1.0),
+                    ),
+                    ModuleBottleneck2d(
+                        stride=2,
+                        in_channels=120,
+                        out_channels=40,
+                        kernel_size=(7, 7),
+                        activation=torch.nn.CELU(alpha=1.0),
+                    ),
+                    ModuleBottleneck2d(
+                        stride=2,
+                        in_channels=120,
+                        out_channels=40,
+                        kernel_size=(5, 15),
+                        activation=torch.nn.CELU(alpha=1.0),
+                    ),
                 ),
                 torch.nn.CELU(alpha=1.0),
                 # torch.nn.Dropout(p=0.05),
                 ModuleConcat(
                     # ModuleSequential(torch.nn.AvgPool2d(kernel_size=(1, 15)), TensorFlatten()),
-                    ModuleSequential(torch.nn.AvgPool2d(kernel_size=(8, 15)), TensorFlatten()),
-                    ModuleSequential(torch.nn.AvgPool2d(kernel_size=(8, 15)), TensorFlatten()),
+                    # ModuleSequential(torch.nn.AvgPool2d(kernel_size=(8, 15)), TensorFlatten()),
+                    # ModuleSequential(torch.nn.AvgPool2d(kernel_size=(8, 15)), TensorFlatten()),
+                    TensorGlobalAvePool2d(),
+                    TensorGlobalMaxPool2d(),
                     ModuleSequential(
                         # ModuleConcat(
                         #     torch.nn.Conv2d(in_channels=240, out_channels=40, kernel_size=(1, 3), padding=(0, 1)),
@@ -1177,22 +1236,50 @@ if __name__ == "__main__":
                         # torch.nn.CELU(alpha=1.0),
                         # # torch.nn.Dropout(p=0.05),
                         ModuleConcat(
-                            torch.nn.Conv2d(
-                                in_channels=240, out_channels=80, kernel_size=(3, 3), padding=(1, 1), stride=(2, 2)
+                            # torch.nn.Conv2d(
+                            #     in_channels=240, out_channels=80, kernel_size=(3, 3), padding=(1, 1), stride=(2, 2)
+                            # ),
+                            # torch.nn.Conv2d(
+                            #     in_channels=240, out_channels=80, kernel_size=(5, 5), padding=(2, 2), stride=(2, 2)
+                            # ),
+                            # torch.nn.Conv2d(
+                            #     in_channels=240, out_channels=80, kernel_size=(7, 7), padding=(3, 3), stride=(2, 2)
+                            # ),
+                            ModuleBottleneck2d(
+                                stride=2,
+                                in_channels=240,
+                                out_channels=80,
+                                kernel_size=(3, 3),
+                                activation=torch.nn.CELU(alpha=1.0),
                             ),
-                            torch.nn.Conv2d(
-                                in_channels=240, out_channels=80, kernel_size=(5, 5), padding=(2, 2), stride=(2, 2)
+                            ModuleBottleneck2d(
+                                stride=2,
+                                in_channels=240,
+                                out_channels=80,
+                                kernel_size=(7, 7),
+                                activation=torch.nn.CELU(alpha=1.0),
                             ),
-                            torch.nn.Conv2d(
-                                in_channels=240, out_channels=80, kernel_size=(7, 7), padding=(3, 3), stride=(2, 2)
+                            ModuleBottleneck2d(
+                                stride=2,
+                                in_channels=240,
+                                out_channels=80,
+                                kernel_size=(5, 15),
+                                activation=torch.nn.CELU(alpha=1.0),
                             ),
                         ),
                         torch.nn.CELU(alpha=1.0),
                         # torch.nn.Dropout(p=0.05),
-                        ModuleConcat(
-                            torch.nn.Conv2d(
-                                in_channels=240, out_channels=120, kernel_size=(3, 3), padding=(1, 1), stride=(2, 2)
-                            )
+                        # ModuleConcat(
+                        #     torch.nn.Conv2d(
+                        #         in_channels=240, out_channels=120, kernel_size=(3, 3), padding=(1, 1), stride=(2, 2)
+                        #     )
+                        # ),
+                        ModuleBottleneck2d(
+                            stride=2,
+                            in_channels=240,
+                            out_channels=120,
+                            kernel_size=(3, 3),
+                            activation=torch.nn.CELU(alpha=1.0),
                         ),
                         torch.nn.CELU(alpha=1.0),
                         # torch.nn.Dropout(p=0.05),
