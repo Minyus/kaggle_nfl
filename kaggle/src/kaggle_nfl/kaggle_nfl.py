@@ -1121,7 +1121,7 @@ if __name__ == "__main__":
 
     pytorch_model = ModuleSequential(
         ModuleConcat(
-            TensorGlobalAvePool2d(keepdim=False),
+            TensorGlobalAvgPool2d(keepdim=False),
             TensorGlobalMaxPool2d(keepdim=False),
             TensorGlobalMinPool2d(keepdim=False),
             TensorGlobalRangePool2d(keepdim=False),
@@ -1225,7 +1225,7 @@ if __name__ == "__main__":
                     # ModuleSequential(torch.nn.AvgPool2d(kernel_size=(1, 15)), TensorFlatten()),
                     # ModuleSequential(torch.nn.AvgPool2d(kernel_size=(8, 15)), TensorFlatten()),
                     # ModuleSequential(torch.nn.AvgPool2d(kernel_size=(8, 15)), TensorFlatten()),
-                    TensorGlobalAvePool2d(),
+                    TensorGlobalAvgPool2d(),
                     TensorGlobalMaxPool2d(),
                     ModuleSequential(
                         # ModuleConcat(

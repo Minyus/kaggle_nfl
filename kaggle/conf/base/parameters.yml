@@ -50,7 +50,7 @@ pytorch_model:
     - obj: kedex.ModuleConcat
       modules:
 
-        - {obj: kedex.TensorGlobalAvePool2d, keepdim: False}
+        - {obj: kedex.TensorGlobalAvgPool2d, keepdim: False}
         - {obj: kedex.TensorGlobalMaxPool2d, keepdim: False}
         - {obj: kedex.TensorGlobalMinPool2d, keepdim: False}
         - {obj: kedex.TensorGlobalRangePool2d, keepdim: False}
@@ -126,7 +126,7 @@ pytorch_model:
 #                  modules:
 #                    - {obj: TensorAvgPool2d, kernel_size: [8, 15] }  # (240, 8, 15) -> (240, 1, 1)
 #                    - {obj: kedex.TensorFlatten, _: }  # (240, 1, 1) -> (240,)
-                - {obj: kedex.TensorGlobalAvePool2d, _: } # (240, 8, 15) -> (240,)
+                - {obj: kedex.TensorGlobalAvgPool2d, _: } # (240, 8, 15) -> (240,)
 
 #                - obj: kedex.ModuleSequential
 #                  modules:
