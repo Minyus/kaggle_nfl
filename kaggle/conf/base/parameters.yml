@@ -1,183 +1,185 @@
 #pytorch_model:
-#  obj: kedex.contrib.ops.pytorch_ops.ModuleSequential
+#  =: kedex.contrib.ops.pytorch_ops.ModuleSequential
 #  modules:
 #
-#    - obj: torchvision.models.resnet._resnet
+#    - =: torchvision.models.resnet._resnet
 #      arch: resnet9
 #      block:
-#        obj: torchvision.models.resnet.BasicBlock
+#        =: torchvision.models.resnet.BasicBlock
 #      layers: [1, 1, 1, 1]
 #      pretrained: False
 #      progress:  # None
 #      num_classes: 199
 #
-#    - obj: torch.nn.Dropout
+#    - =: torch.nn.Dropout
 #      p: 0.5
 #
-#    - obj: torch.nn.Linear
+#    - =: torch.nn.Linear
 #      in_features: 199
 #      out_features: 205  # 199 + 2 + 2 + 2
 #
-#    - obj: kedex.contrib.ops.pytorch_ops.TensorUnsqueeze
+#    - =: kedex.contrib.ops.pytorch_ops.TensorUnsqueeze
 #      dim: 1
 #
-#    - obj: torch.nn.AvgPool1d
+#    - =: torch.nn.AvgPool1d
 #      kernel_size: 3
 #      stride: 1
 #      padding: 0
 #
-#    - obj: torch.nn.AvgPool1d
+#    - =: torch.nn.AvgPool1d
 #      kernel_size: 3
 #      stride: 1
 #      padding: 0
 #
-#    - obj: torch.nn.AvgPool1d
+#    - =: torch.nn.AvgPool1d
 #      kernel_size: 3
 #      stride: 1
 #      padding: 0
 #
-#    - obj: kedex.contrib.ops.pytorch_ops.TensorSqueeze
+#    - =: kedex.contrib.ops.pytorch_ops.TensorSqueeze
 #      dim: 1
 #
-#    - obj: torch.nn.Sigmoid
+#    - =: torch.nn.Sigmoid
 #      _:  # dummy
 
 
 pytorch_model:
-  obj: kedex.ModuleSequential
+  =: kedex.ModuleSequential
   modules:
 
-    - obj: kedex.ModuleConcat
+    - =: kedex.ModuleConcat
       modules:
 
-        - {obj: kedex.TensorGlobalAvgPool2d, keepdim: False}
-        - {obj: kedex.TensorGlobalMaxPool2d, keepdim: False}
-        - {obj: kedex.TensorGlobalMinPool2d, keepdim: False}
-        - {obj: kedex.TensorGlobalRangePool2d, keepdim: False}
+        - {=: kedex.TensorGlobalAvgPool2d, keepdim: False}
+        - {=: kedex.TensorGlobalMaxPool2d, keepdim: False}
+        - {=: kedex.TensorGlobalMinPool2d, keepdim: False}
+        - {=: kedex.TensorGlobalRangePool2d, keepdim: False}
 
-        - obj: kedex.ModuleSequential
+        - =: kedex.ModuleSequential
           modules:
 
-#            - {obj: torch.nn.Dropout, p: 0.05}
+#            - {=: torch.nn.Dropout, p: 0.05}
 
-            - obj: kedex.ModuleConcat  # (15, 30, 60) -> (30, 30, 60)
+            - =: kedex.ModuleConcat  # (15, 30, 60) -> (30, 30, 60)
               modules:
-                - {obj: kedex.TensorSkip, _: }
-#                - {obj: kaggle_nfl.kaggle_nfl.GaussianBlur2d, kernel_size: "(15, 15)", sigma: "(5.0, 5.0)"}
-#                - {obj: torch.nn.Conv2d, in_channels: 15, out_channels: 5, kernel_size: 1, padding: 0 }
-#                - {obj: torch.nn.Conv2d, in_channels: 15, out_channels: 5, kernel_size: 3, padding: 1 }
-#                - {obj: torch.nn.Conv2d, in_channels: 15, out_channels: 5, kernel_size: 7, padding: 3 }
-#                - {obj: torch.nn.Conv2d, in_channels: 15, out_channels: 5, kernel_size: "(5, 15)", padding: "(2, 7)" }
-#                - {obj: torch.nn.Conv2d, in_channels: 15, out_channels: 5, kernel_size: "(9, 15)", padding: "(4, 7)" }
-#                - {obj: torch.nn.Conv2d, in_channels: 15, out_channels: 5, kernel_size: "(5, 29)", padding: "(2, 14)" }
-                - {obj: kedex.ModuleBottleneck2d, in_channels: 15, out_channels: 5, kernel_size: [3, 3], activation: {obj: torch.nn.CELU, alpha: 1.0}}
-                - {obj: kedex.ModuleBottleneck2d, in_channels: 15, out_channels: 5, kernel_size: [7, 7], activation: {obj: torch.nn.CELU, alpha: 1.0}}
-                - {obj: kedex.ModuleBottleneck2d, in_channels: 15, out_channels: 5, kernel_size: [5, 15], activation: {obj: torch.nn.CELU, alpha: 1.0}}
-            - {obj: torch.nn.CELU, alpha: 1.0}
-#            - {obj: torch.nn.Dropout, p: 0.05}
+#                - {=: kedex.TensorSkip, _: }
+                - {=: kedex.TensorIdentity, _: }
+#                - {=: kaggle_nfl.kaggle_nfl.GaussianBlur2d, kernel_size: "(15, 15)", sigma: "(5.0, 5.0)"}
+#                - {=: torch.nn.Conv2d, in_channels: 15, out_channels: 5, kernel_size: 1, padding: 0 }
+#                - {=: torch.nn.Conv2d, in_channels: 15, out_channels: 5, kernel_size: 3, padding: 1 }
+#                - {=: torch.nn.Conv2d, in_channels: 15, out_channels: 5, kernel_size: 7, padding: 3 }
+#                - {=: torch.nn.Conv2d, in_channels: 15, out_channels: 5, kernel_size: "(5, 15)", padding: "(2, 7)" }
+#                - {=: torch.nn.Conv2d, in_channels: 15, out_channels: 5, kernel_size: "(9, 15)", padding: "(4, 7)" }
+#                - {=: torch.nn.Conv2d, in_channels: 15, out_channels: 5, kernel_size: "(5, 29)", padding: "(2, 14)" }
+                - {=: kedex.ModuleBottleneck2d, in_channels: 15, out_channels: 5, kernel_size: [3, 3], activation: {=: torch.nn.CELU, alpha: 1.0}}
+                - {=: kedex.ModuleBottleneck2d, in_channels: 15, out_channels: 5, kernel_size: [7, 7], activation: {=: torch.nn.CELU, alpha: 1.0}}
+                - {=: kedex.ModuleBottleneck2d, in_channels: 15, out_channels: 5, kernel_size: [5, 15], activation: {=: torch.nn.CELU, alpha: 1.0}}
+            - {=: torch.nn.CELU, alpha: 1.0}
+#            - {=: torch.nn.Dropout, p: 0.05}
 
-            - obj: kedex.ModuleConcat  # (30, 30, 60) -> (60, 15, 30)
+            - =: kedex.ModuleConcat  # (30, 30, 60) -> (60, 15, 30)
               modules:
-                - {obj: torch.nn.AvgPool2d, stride: 2, kernel_size: 3, padding: 1}
-#                - {obj: torch.nn.Conv2d, in_channels: 30, out_channels: 10, kernel_size: 3, padding: 1, stride: 2 }
-#                - {obj: torch.nn.Conv2d, in_channels: 30, out_channels: 10, kernel_size: 7, padding: 3, stride: 2 }
-#                - {obj: torch.nn.Conv2d, in_channels: 30, out_channels: 10, kernel_size: "(5, 15)", padding: "(2, 7)", stride: 2 }
-                - {obj: kedex.ModuleBottleneck2d, stride: 2, in_channels: 30, out_channels: 10, kernel_size: [3, 3], activation: {obj: torch.nn.CELU, alpha: 1.0}}
-                - {obj: kedex.ModuleBottleneck2d, stride: 2, in_channels: 30, out_channels: 10, kernel_size: [7, 7], activation: {obj: torch.nn.CELU, alpha: 1.0}}
-                - {obj: kedex.ModuleBottleneck2d, stride: 2, in_channels: 30, out_channels: 10, kernel_size: [5, 15], activation: {obj: torch.nn.CELU, alpha: 1.0}}
-            - {obj: torch.nn.CELU, alpha: 1.0}
-#            - {obj: torch.nn.Dropout, p: 0.05}
+                - {=: torch.nn.AvgPool2d, stride: 2, kernel_size: 3, padding: 1}
+#                - {=: torch.nn.Conv2d, in_channels: 30, out_channels: 10, kernel_size: 3, padding: 1, stride: 2 }
+#                - {=: torch.nn.Conv2d, in_channels: 30, out_channels: 10, kernel_size: 7, padding: 3, stride: 2 }
+#                - {=: torch.nn.Conv2d, in_channels: 30, out_channels: 10, kernel_size: "(5, 15)", padding: "(2, 7)", stride: 2 }
+                - {=: kedex.ModuleBottleneck2d, stride: 2, in_channels: 30, out_channels: 10, kernel_size: [3, 3], activation: {=: torch.nn.CELU, alpha: 1.0}}
+                - {=: kedex.ModuleBottleneck2d, stride: 2, in_channels: 30, out_channels: 10, kernel_size: [7, 7], activation: {=: torch.nn.CELU, alpha: 1.0}}
+                - {=: kedex.ModuleBottleneck2d, stride: 2, in_channels: 30, out_channels: 10, kernel_size: [5, 15], activation: {=: torch.nn.CELU, alpha: 1.0}}
+            - {=: torch.nn.CELU, alpha: 1.0}
+#            - {=: torch.nn.Dropout, p: 0.05}
 
-            - obj: kedex.ModuleConcat  # (60, 15, 30) -> (120, 15, 30)
+            - =: kedex.ModuleConcat  # (60, 15, 30) -> (120, 15, 30)
               modules:
-                - {obj: kedex.TensorSkip, _: }
-#                - {obj: torch.nn.Conv2d, in_channels: 60, out_channels: 60, kernel_size: 1, padding: 0 }
-#                - {obj: torch.nn.Conv2d, in_channels: 60, out_channels: 20, kernel_size: 3, padding: 1 }
-#                - {obj: torch.nn.Conv2d, in_channels: 60, out_channels: 20, kernel_size: 7, padding: 3 }
-#                - {obj: torch.nn.Conv2d, in_channels: 60, out_channels: 20, kernel_size: "(5, 15)", padding: "(2, 7)"  }
-                - {obj: kedex.ModuleBottleneck2d, in_channels: 60, out_channels: 20, kernel_size: [3, 3], activation: {obj: torch.nn.CELU, alpha: 1.0}}
-                - {obj: kedex.ModuleBottleneck2d, in_channels: 60, out_channels: 20, kernel_size: [7, 7], activation: {obj: torch.nn.CELU, alpha: 1.0}}
-                - {obj: kedex.ModuleBottleneck2d, in_channels: 60, out_channels: 20, kernel_size: [5, 15], activation: {obj: torch.nn.CELU, alpha: 1.0}}
-            - {obj: torch.nn.CELU, alpha: 1.0}
-#            - {obj: torch.nn.Dropout, p: 0.05}
+#                - {=: kedex.TensorSkip, _: }
+                - {=: kedex.TensorIdentity, _: }
+#                - {=: torch.nn.Conv2d, in_channels: 60, out_channels: 60, kernel_size: 1, padding: 0 }
+#                - {=: torch.nn.Conv2d, in_channels: 60, out_channels: 20, kernel_size: 3, padding: 1 }
+#                - {=: torch.nn.Conv2d, in_channels: 60, out_channels: 20, kernel_size: 7, padding: 3 }
+#                - {=: torch.nn.Conv2d, in_channels: 60, out_channels: 20, kernel_size: "(5, 15)", padding: "(2, 7)"  }
+                - {=: kedex.ModuleBottleneck2d, in_channels: 60, out_channels: 20, kernel_size: [3, 3], activation: {=: torch.nn.CELU, alpha: 1.0}}
+                - {=: kedex.ModuleBottleneck2d, in_channels: 60, out_channels: 20, kernel_size: [7, 7], activation: {=: torch.nn.CELU, alpha: 1.0}}
+                - {=: kedex.ModuleBottleneck2d, in_channels: 60, out_channels: 20, kernel_size: [5, 15], activation: {=: torch.nn.CELU, alpha: 1.0}}
+            - {=: torch.nn.CELU, alpha: 1.0}
+#            - {=: torch.nn.Dropout, p: 0.05}
 
-            - obj: kedex.ModuleConcat  # (120, 15, 30) -> (240, 8, 15)
+            - =: kedex.ModuleConcat  # (120, 15, 30) -> (240, 8, 15)
               modules:
-                - {obj: torch.nn.AvgPool2d, stride: 2, kernel_size: 3, padding: 1}
-#                - {obj: torch.nn.Conv2d, in_channels: 120, out_channels: 40, kernel_size: 3, padding: 1, stride: 2 }
-#                - {obj: torch.nn.Conv2d, in_channels: 120, out_channels: 40, kernel_size: 7, padding: 3, stride: 2 }
-#                - {obj: torch.nn.Conv2d, in_channels: 120, out_channels: 40, kernel_size: "(5, 15)", padding: "(2, 7)", stride: 2 }
-                - {obj: kedex.ModuleBottleneck2d, stride: 2, in_channels: 120, out_channels: 40, kernel_size: [3, 3], activation: {obj: torch.nn.CELU, alpha: 1.0}}
-                - {obj: kedex.ModuleBottleneck2d, stride: 2, in_channels: 120, out_channels: 40, kernel_size: [7, 7], activation: {obj: torch.nn.CELU, alpha: 1.0}}
-                - {obj: kedex.ModuleBottleneck2d, stride: 2, in_channels: 120, out_channels: 40, kernel_size: [5, 15], activation: {obj: torch.nn.CELU, alpha: 1.0}}
+                - {=: torch.nn.AvgPool2d, stride: 2, kernel_size: 3, padding: 1}
+#                - {=: torch.nn.Conv2d, in_channels: 120, out_channels: 40, kernel_size: 3, padding: 1, stride: 2 }
+#                - {=: torch.nn.Conv2d, in_channels: 120, out_channels: 40, kernel_size: 7, padding: 3, stride: 2 }
+#                - {=: torch.nn.Conv2d, in_channels: 120, out_channels: 40, kernel_size: "(5, 15)", padding: "(2, 7)", stride: 2 }
+                - {=: kedex.ModuleBottleneck2d, stride: 2, in_channels: 120, out_channels: 40, kernel_size: [3, 3], activation: {=: torch.nn.CELU, alpha: 1.0}}
+                - {=: kedex.ModuleBottleneck2d, stride: 2, in_channels: 120, out_channels: 40, kernel_size: [7, 7], activation: {=: torch.nn.CELU, alpha: 1.0}}
+                - {=: kedex.ModuleBottleneck2d, stride: 2, in_channels: 120, out_channels: 40, kernel_size: [5, 15], activation: {=: torch.nn.CELU, alpha: 1.0}}
 
-            - {obj: torch.nn.CELU, alpha: 1.0}
-#            - {obj: torch.nn.Dropout, p: 0.05}
+            - {=: torch.nn.CELU, alpha: 1.0}
+#            - {=: torch.nn.Dropout, p: 0.05}
 
-            - obj: kedex.ModuleConcat  # (240, 8, 15) -> (1440,)
+            - =: kedex.ModuleConcat  # (240, 8, 15) -> (1440,)
               modules:
 
-#                - obj: kedex.ModuleSequential
+#                - =: kedex.ModuleSequential
 #                  modules:
-#                    - {obj: torch.nn.AvgPool2d, kernel_size: "(1, 15)" }  # (240, 8, 15) -> (240, 8, 1)
-#                    - {obj: kedex.TensorFlatten, _: }  # (240, 8, 1) -> (1920,)
+#                    - {=: torch.nn.AvgPool2d, kernel_size: "(1, 15)" }  # (240, 8, 15) -> (240, 8, 1)
+#                    - {=: kedex.TensorFlatten, _: }  # (240, 8, 1) -> (1920,)
 
-#                - obj: kedex.ModuleSequential
+#                - =: kedex.ModuleSequential
 #                  modules:
-#                    - {obj: TensorAvgPool2d, kernel_size: [8, 15] }  # (240, 8, 15) -> (240, 1, 1)
-#                    - {obj: kedex.TensorFlatten, _: }  # (240, 1, 1) -> (240,)
-                - {obj: kedex.TensorGlobalAvgPool2d, _: } # (240, 8, 15) -> (240,)
+#                    - {=: TensorAvgPool2d, kernel_size: [8, 15] }  # (240, 8, 15) -> (240, 1, 1)
+#                    - {=: kedex.TensorFlatten, _: }  # (240, 1, 1) -> (240,)
+                - {=: kedex.TensorGlobalAvgPool2d, _: } # (240, 8, 15) -> (240,)
 
-#                - obj: kedex.ModuleSequential
+#                - =: kedex.ModuleSequential
 #                  modules:
-#                    - {obj: torch.nn.MaxPool2d, kernel_size: "(8, 15)" }  # (240, 8, 15) -> (240, 1, 1)
-#                    - {obj: kedex.TensorFlatten, _: }  # (240, 1, 1) -> (240,)
-                - {obj: kedex.TensorGlobalMaxPool2d, _: } # (240, 8, 15) -> (240,)
+#                    - {=: torch.nn.MaxPool2d, kernel_size: "(8, 15)" }  # (240, 8, 15) -> (240, 1, 1)
+#                    - {=: kedex.TensorFlatten, _: }  # (240, 1, 1) -> (240,)
+                - {=: kedex.TensorGlobalMaxPool2d, _: } # (240, 8, 15) -> (240,)
 
-                - obj: kedex.ModuleSequential
+                - =: kedex.ModuleSequential
                   modules:
 
-#                    - obj: kedex.ModuleConcat  # (240, 8, 15) -> (120, 8, 15)
+#                    - =: kedex.ModuleConcat  # (240, 8, 15) -> (120, 8, 15)
 #                      modules:
-#                        - {obj: torch.nn.Conv2d, in_channels: 240, out_channels: 40, kernel_size: "(1, 3)", padding: "(0, 1)" }
-#                        - {obj: torch.nn.Conv2d, in_channels: 240, out_channels: 40, kernel_size: "(1, 7)", padding: "(0, 3)" }
-#                        - {obj: torch.nn.Conv2d, in_channels: 240, out_channels: 40, kernel_size: "(1, 15)", padding: "(0, 7)"  }
-#                    - {obj: torch.nn.CELU, alpha: 1.0}
-#        #            - {obj: torch.nn.Dropout, p: 0.05}
+#                        - {=: torch.nn.Conv2d, in_channels: 240, out_channels: 40, kernel_size: "(1, 3)", padding: "(0, 1)" }
+#                        - {=: torch.nn.Conv2d, in_channels: 240, out_channels: 40, kernel_size: "(1, 7)", padding: "(0, 3)" }
+#                        - {=: torch.nn.Conv2d, in_channels: 240, out_channels: 40, kernel_size: "(1, 15)", padding: "(0, 7)"  }
+#                    - {=: torch.nn.CELU, alpha: 1.0}
+#        #            - {=: torch.nn.Dropout, p: 0.05}
 
-                    - obj: kedex.ModuleConcat  # (240, 8, 15) -> (240, 4, 8)
+                    - =: kedex.ModuleConcat  # (240, 8, 15) -> (240, 4, 8)
                       modules:
-#                        - {obj: torch.nn.Conv2d, in_channels: 240, out_channels: 80, kernel_size: "(3, 3)", padding: "(1, 1)", stride: "(2, 2)" }
-#                        - {obj: torch.nn.Conv2d, in_channels: 240, out_channels: 80, kernel_size: "(5, 5)", padding: "(2, 2)", stride: "(2, 2)" }
-#                        - {obj: torch.nn.Conv2d, in_channels: 240, out_channels: 80, kernel_size: "(7, 7)", padding: "(3, 3)", stride: "(2, 2)" }
-                        - {obj: kedex.ModuleBottleneck2d, stride: 2, in_channels: 240, out_channels: 80, kernel_size: [3, 3], activation: {obj: torch.nn.CELU, alpha: 1.0}}
-                        - {obj: kedex.ModuleBottleneck2d, stride: 2, in_channels: 240, out_channels: 80, kernel_size: [5, 5], activation: {obj: torch.nn.CELU, alpha: 1.0}}
-                        - {obj: kedex.ModuleBottleneck2d, stride: 2, in_channels: 240, out_channels: 80, kernel_size: [7, 7], activation: {obj: torch.nn.CELU, alpha: 1.0}}
+#                        - {=: torch.nn.Conv2d, in_channels: 240, out_channels: 80, kernel_size: "(3, 3)", padding: "(1, 1)", stride: "(2, 2)" }
+#                        - {=: torch.nn.Conv2d, in_channels: 240, out_channels: 80, kernel_size: "(5, 5)", padding: "(2, 2)", stride: "(2, 2)" }
+#                        - {=: torch.nn.Conv2d, in_channels: 240, out_channels: 80, kernel_size: "(7, 7)", padding: "(3, 3)", stride: "(2, 2)" }
+                        - {=: kedex.ModuleBottleneck2d, stride: 2, in_channels: 240, out_channels: 80, kernel_size: [3, 3], activation: {=: torch.nn.CELU, alpha: 1.0}}
+                        - {=: kedex.ModuleBottleneck2d, stride: 2, in_channels: 240, out_channels: 80, kernel_size: [5, 5], activation: {=: torch.nn.CELU, alpha: 1.0}}
+                        - {=: kedex.ModuleBottleneck2d, stride: 2, in_channels: 240, out_channels: 80, kernel_size: [7, 7], activation: {=: torch.nn.CELU, alpha: 1.0}}
 
-                    - {obj: torch.nn.CELU, alpha: 1.0}
-        #            - {obj: torch.nn.Dropout, p: 0.05}
+                    - {=: torch.nn.CELU, alpha: 1.0}
+        #            - {=: torch.nn.Dropout, p: 0.05}
 
-                    - obj: kedex.ModuleConcat  # (240, 4, 8) -> (120, 2, 4)
+                    - =: kedex.ModuleConcat  # (240, 4, 8) -> (120, 2, 4)
                       modules:
-#                        - {obj: torch.nn.Conv2d, in_channels: 240, out_channels: 120, kernel_size: "(3, 3)", padding: "(1, 1)", stride: "(2, 2)" }
-                        - {obj: kedex.ModuleBottleneck2d, stride: 2, in_channels: 240, out_channels: 120, kernel_size: [3, 3], activation: {obj: torch.nn.CELU, alpha: 1.0}}
-                    - {obj: torch.nn.CELU, alpha: 1.0}
-        #            - {obj: torch.nn.Dropout, p: 0.05}
+#                        - {=: torch.nn.Conv2d, in_channels: 240, out_channels: 120, kernel_size: "(3, 3)", padding: "(1, 1)", stride: "(2, 2)" }
+                        - {=: kedex.ModuleBottleneck2d, stride: 2, in_channels: 240, out_channels: 120, kernel_size: [3, 3], activation: {=: torch.nn.CELU, alpha: 1.0}}
+                    - {=: torch.nn.CELU, alpha: 1.0}
+        #            - {=: torch.nn.Dropout, p: 0.05}
 
-                    - {obj: kedex.TensorFlatten, _: }  # (120, 2, 4) -> (960,)
+                    - {=: kedex.TensorFlatten, _: }  # (120, 2, 4) -> (960,)
 
-    - obj: torch.nn.Linear
+    - =: torch.nn.Linear
       in_features: 1500  # 15 * 4 + 1440
       out_features: 56  # 50 + 2 + 2 + 2
 
-    - {obj: kedex.TensorUnsqueeze, dim: 1}
-    - {obj: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
-    - {obj: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
-    - {obj: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
-    - {obj: kedex.TensorSqueeze, dim: 1}
-    - {obj: kedex.TensorNearestPad, lower: 89, upper: 60}  # 199 = 89 + 50 + 60
-    - {obj: torch.nn.Softmax, dim: 1}
-    - {obj: kedex.TensorCumsum, dim: 1}
+    - {=: kedex.TensorUnsqueeze, dim: 1}
+    - {=: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
+    - {=: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
+    - {=: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
+    - {=: kedex.TensorSqueeze, dim: 1}
+    - {=: kedex.TensorNearestPad, lower: 89, upper: 60}  # 199 = 89 + 50 + 60
+    - {=: torch.nn.Softmax, dim: 1}
+    - {=: kedex.TensorCumsum, dim: 1}
 
 
 augmentation:
@@ -206,67 +208,67 @@ train_params:
     minimize: True
     patience: 1000
   scheduler:
-#    obj: ignite.contrib.handlers.param_scheduler.LinearCyclicalScheduler
-    obj: ignite.contrib.handlers.param_scheduler.CosineAnnealingScheduler
+#    =: ignite.contrib.handlers.param_scheduler.LinearCyclicalScheduler
+    =: ignite.contrib.handlers.param_scheduler.CosineAnnealingScheduler
   scheduler_params:
     param_name: lr
     start_value:
-      obj: mul
-      arg:
+      =: operator.mul
+      _:
         - 0.000_002
-        - obj: train_batch_size
+        - =: train_batch_size
     end_value:
-      obj: mul
-      arg:
+      =: operator.mul
+      _:
         - 0.000_02
-        - obj: train_batch_size
+        - =: train_batch_size
     cycle_epochs: 2  # cycle_size: int(cycle_epochs * len(train_loader))
     cycle_mult: 1.0
     start_value_mult: 1.0
     end_value_mult: 1.0
     save_history: False
   optimizer:
-    obj: torch.optim.Adam
+    =: torch.optim.Adam
 #  optimizer:
-#    obj: torch.optim.SGD
+#    =: torch.optim.SGD
   optimizer_params:
 #    lr:  # learning rate
-#      obj: truediv
-#      arg:
-#        - obj: train_batch_size
+#      =: operator.truediv
+#      _:
+#        - =: train_batch_size
 #        - 1000
 #    momentum:
-#      obj: sub
+#      =: sub
 #      arg:
 #        - 1
-#        - obj: truediv
-#          arg:
-#            - obj: train_batch_size
+#        - =: operator.truediv
+#          _:
+#            - =: train_batch_size
 #            - 2000
     weight_decay:
-      obj: truediv
-      arg:
+      =: operator.truediv
+      _:
         - 0.0005
-        - obj: train_batch_size
+        - =: train_batch_size
   loss_fn:
-    obj: kaggle_nfl.kaggle_nfl.NflCrpsLossFunc
+    =: kaggle_nfl.kaggle_nfl.NflCrpsLossFunc
     min: -4 # -15
     max: 29 # 25
 #    desc_penalty: 10.0
   evaluation_metrics:
     loss:
-      obj: ignite.metrics.Loss
+      =: ignite.metrics.Loss
       loss_fn:
-        obj: kaggle_nfl.kaggle_nfl.nfl_crps_loss
-#  train_dataset_size_limit: 128
-#  val_dataset_size_limit: 128
+        =: kaggle_nfl.kaggle_nfl.nfl_crps_loss
+  train_dataset_size_limit: 128
+  val_dataset_size_limit: 128
   train_data_loader_params:
     batch_size:
-      obj: train_batch_size
+      =: train_batch_size
     num_workers: 1
   val_data_loader_params:
     batch_size:
-     obj: train_batch_size
+     =: train_batch_size
     num_workers: 1
   evaluate_train_data: COMPLETED
   evaluate_val_data: EPOCH_COMPLETED
@@ -290,7 +292,7 @@ MLFLOW_LOGGING_CONFIG:
   
 PIPELINES:
   __default__:
-    obj: kedex.pipeline.KedexPipeline
+    =: kedex.pipeline.KedexPipeline
     parameters_in_inputs: True
     module: kaggle_nfl.kaggle_nfl
     decorator: kedex.contrib.decorators.log_time
@@ -298,7 +300,7 @@ PIPELINES:
 
       - inputs: train
 #        func:
-#          - obj: kedex.df_sample
+#          - =: kedex.df_sample
 #            frac: 0.1
 #            random_state: 191024
 #            col_sample: PlayId
@@ -314,25 +316,25 @@ PIPELINES:
 
       - inputs: df_030
         func:
-          obj: kedex.df_query
+          =: kedex.df_query
           expr: 'PlayerCategory == 0'
         outputs: describe_cat0
 
       - inputs: df_030
         func:
-          obj: kedex.df_query
+          =: kedex.df_query
           expr: 'PlayerCategory == 1'
         outputs: describe_cat1
 
       - inputs: df_030
         func:
-          obj: kedex.df_query
+          =: kedex.df_query
           expr: 'PlayerCategory == 2'
         outputs: describe_cat2
 
       - inputs: df_030
         func:
-          obj: kedex.df_sample
+          =: kedex.df_sample
           frac: 0.5
           random_state: 191024
           col_sample: PlayId
@@ -349,7 +351,7 @@ PIPELINES:
 #
 #      - inputs: df_030
 #        func:
-#          obj: kedex.df_sample
+#          =: kedex.df_sample
 #          frac: 0.01
 #          random_state: 191024
 #          col_sample: PlayId
@@ -360,9 +362,9 @@ PIPELINES:
 
       - inputs: parameters
         func:
-          obj: pass_func
+          =: pass_func
           arg:
-            obj: pytorch_model
+            =: pytorch_model
         outputs: initial_model
 
       - inputs: df_040
@@ -376,9 +378,9 @@ PIPELINES:
           - train_dataset
           - val_dataset
         func:
-          obj: kedex.neural_network_train
+          =: kedex.neural_network_train
           train_params:
-            obj: train_params
+            =: train_params
           mlflow_logging: True
         outputs: pytorch_model
 

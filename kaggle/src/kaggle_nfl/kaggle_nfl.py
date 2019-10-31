@@ -1129,7 +1129,8 @@ if __name__ == "__main__":
             ModuleSequential(
                 # torch.nn.Dropout(p=0.05),
                 ModuleConcat(
-                    TensorSkip(),
+                    # TensorSkip(),
+                    TensorIdentity(),
                     # GaussianBlur2d(kernel_size=(15, 15), sigma=(5.0, 5.0)),
                     # torch.nn.Conv2d(in_channels=15, out_channels=5, kernel_size=3, padding=1),
                     # torch.nn.Conv2d(in_channels=15, out_channels=5, kernel_size=7, padding=3),
@@ -1176,7 +1177,8 @@ if __name__ == "__main__":
                 torch.nn.CELU(alpha=1.0),
                 # torch.nn.Dropout(p=0.05),
                 ModuleConcat(
-                    TensorSkip(),
+                    # TensorSkip(),
+                    TensorIdentity(),
                     # torch.nn.Conv2d(in_channels=60, out_channels=60, kernel_size=1, padding=0),
                     # torch.nn.Conv2d(in_channels=60, out_channels=20, kernel_size=3, padding=1),
                     # torch.nn.Conv2d(in_channels=60, out_channels=20, kernel_size=7, padding=3),
