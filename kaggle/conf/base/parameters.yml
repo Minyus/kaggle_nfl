@@ -1,6 +1,6 @@
 #pytorch_model:
-#  =: kedex.contrib.ops.pytorch_ops.ModuleSequential
-#  modules:
+#  =: torch.nn.Sequential
+#  _:
 #
 #    - =: torchvision.models.resnet._resnet
 #      arch: resnet9
@@ -44,24 +44,24 @@
 
 
 pytorch_model:
-  =: kedex.ModuleSequential
-  modules:
+  =: torch.nn.Sequential
+  _:
 
     - =: kedex.ModuleConcat
-      modules:
+      _:
 
         - {=: kedex.TensorGlobalAvgPool2d, keepdim: False}
         - {=: kedex.TensorGlobalMaxPool2d, keepdim: False}
         - {=: kedex.TensorGlobalMinPool2d, keepdim: False}
         - {=: kedex.TensorGlobalRangePool2d, keepdim: False}
 
-        - =: kedex.ModuleSequential
-          modules:
+        - =: torch.nn.Sequential
+          _:
 
 #            - {=: torch.nn.Dropout, p: 0.05}
 
             - =: kedex.ModuleConcat  # (15, 30, 60) -> (30, 30, 60)
-              modules:
+              _:
 #                - {=: kedex.TensorSkip, _: }
                 - {=: kedex.TensorIdentity, _: }
 #                - {=: kaggle_nfl.kaggle_nfl.GaussianBlur2d, kernel_size: "(15, 15)", sigma: "(5.0, 5.0)"}
@@ -78,7 +78,7 @@ pytorch_model:
 #            - {=: torch.nn.Dropout, p: 0.05}
 
             - =: kedex.ModuleConcat  # (30, 30, 60) -> (60, 15, 30)
-              modules:
+              _:
                 - {=: torch.nn.AvgPool2d, stride: 2, kernel_size: 3, padding: 1}
 #                - {=: torch.nn.Conv2d, in_channels: 30, out_channels: 10, kernel_size: 3, padding: 1, stride: 2 }
 #                - {=: torch.nn.Conv2d, in_channels: 30, out_channels: 10, kernel_size: 7, padding: 3, stride: 2 }
@@ -90,7 +90,7 @@ pytorch_model:
 #            - {=: torch.nn.Dropout, p: 0.05}
 
             - =: kedex.ModuleConcat  # (60, 15, 30) -> (120, 15, 30)
-              modules:
+              _:
 #                - {=: kedex.TensorSkip, _: }
                 - {=: kedex.TensorIdentity, _: }
 #                - {=: torch.nn.Conv2d, in_channels: 60, out_channels: 60, kernel_size: 1, padding: 0 }
@@ -104,7 +104,7 @@ pytorch_model:
 #            - {=: torch.nn.Dropout, p: 0.05}
 
             - =: kedex.ModuleConcat  # (120, 15, 30) -> (240, 8, 15)
-              modules:
+              _:
                 - {=: torch.nn.AvgPool2d, stride: 2, kernel_size: 3, padding: 1}
 #                - {=: torch.nn.Conv2d, in_channels: 120, out_channels: 40, kernel_size: 3, padding: 1, stride: 2 }
 #                - {=: torch.nn.Conv2d, in_channels: 120, out_channels: 40, kernel_size: 7, padding: 3, stride: 2 }
@@ -117,27 +117,27 @@ pytorch_model:
 #            - {=: torch.nn.Dropout, p: 0.05}
 
             - =: kedex.ModuleConcat  # (240, 8, 15) -> (1440,)
-              modules:
+              _:
 
-#                - =: kedex.ModuleSequential
-#                  modules:
+#                - =: torch.nn.Sequential
+#                  _:
 #                    - {=: torch.nn.AvgPool2d, kernel_size: "(1, 15)" }  # (240, 8, 15) -> (240, 8, 1)
 #                    - {=: kedex.TensorFlatten, _: }  # (240, 8, 1) -> (1920,)
 
-#                - =: kedex.ModuleSequential
-#                  modules:
+#                - =: torch.nn.Sequential
+#                  _:
 #                    - {=: TensorAvgPool2d, kernel_size: [8, 15] }  # (240, 8, 15) -> (240, 1, 1)
 #                    - {=: kedex.TensorFlatten, _: }  # (240, 1, 1) -> (240,)
                 - {=: kedex.TensorGlobalAvgPool2d, _: } # (240, 8, 15) -> (240,)
 
-#                - =: kedex.ModuleSequential
-#                  modules:
+#                - =: torch.nn.Sequential
+#                  _:
 #                    - {=: torch.nn.MaxPool2d, kernel_size: "(8, 15)" }  # (240, 8, 15) -> (240, 1, 1)
 #                    - {=: kedex.TensorFlatten, _: }  # (240, 1, 1) -> (240,)
                 - {=: kedex.TensorGlobalMaxPool2d, _: } # (240, 8, 15) -> (240,)
 
-                - =: kedex.ModuleSequential
-                  modules:
+                - =: torch.nn.Sequential
+                  _:
 
 #                    - =: kedex.ModuleConcat  # (240, 8, 15) -> (120, 8, 15)
 #                      modules:
@@ -192,7 +192,7 @@ augmentation:
 train_batch_size: 64
 
 train_params:
-  epochs: 10  # number of epochs to train
+  epochs: 4  # number of epochs to train
   time_limit: 32400
   model_checkpoint_params:
     dirname: ../checkpoint
