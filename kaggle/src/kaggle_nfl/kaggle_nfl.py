@@ -1031,32 +1031,45 @@ def gaussian_blur2d(
 
 """ """
 
+
+logging_yaml = """
+version: 1
+disable_existing_loggers: False
+formatters:
+    simple:
+        format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+
+handlers:
+    console:
+        class: logging.StreamHandler
+        level: INFO
+        formatter: simple
+        stream: ext://sys.stdout
+
+root:
+    level: INFO
+    handlers: [console]
+"""
+
+
 if __name__ == "__main__":
     import ignite
     import logging.config
     import yaml
 
-    logging_yaml = """
-    version: 1
-    disable_existing_loggers: False
-    formatters:
-        simple:
-            format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    
-    
-    handlers:
-        console:
-            class: logging.StreamHandler
-            level: INFO
-            formatter: simple
-            stream: ext://sys.stdout
-    
-    root:
-        level: INFO
-        handlers: [console]
-    """
+    if ("ModuleConcat" not in dir()) or ("HatchDict" not in dir()):
+        from kedex import *
+
     conf_logging = yaml.safe_load(logging_yaml)
     logging.config.dictConfig(conf_logging)
+
+    parameters = yaml.safe_load(params_yaml)
+    parameters["MODULE_ALIASES"] = {"kedex": "__main__", "kaggle_nfl.kaggle_nfl": "__main__"}
+    train_params = HatchDict(parameters).get("train_params")
+    train_params["progress_update"] = False
+    pytorch_model = HatchDict(parameters).get("pytorch_model")
+    augmentation = HatchDict(parameters).get("augmentation")
 
     log.info("Read CSV file.")
     df = pd.read_csv("../input/nfl-big-data-bowl-2020/train.csv", low_memory=False)
@@ -1065,131 +1078,9 @@ if __name__ == "__main__":
     df = preprocess(df)
 
     log.info("Set up dataset.")
-
-    train_batch_size = 64
-    train_params = dict(
-        epochs=10,  # number of epochs to train
-        time_limit=12600,  # 3.5 hours
-        model_checkpoint_params=dict(
-            dirname="checkpoint",
-            filename_prefix="%Y-%m-%dT%H-%M-%S",
-            offset_hours=8,
-            n_saved=1,
-            atomic=True,
-            require_empty=True,
-            create_dir=True,
-            save_as_state_dict=False,
-        ),
-        early_stopping_params=dict(metric="loss", minimize=True, patience=1000),
-        scheduler=ignite.contrib.handlers.param_scheduler.LinearCyclicalScheduler,
-        # scheduler=ignite.contrib.handlers.param_scheduler.CosineAnnealingScheduler,
-        scheduler_params=dict(
-            param_name="lr",
-            start_value=0.000001 * train_batch_size,
-            end_value=0.00001 * train_batch_size,
-            cycle_epochs=2,  # cycle_size: int(cycle_epochs * len(train_loader))
-            cycle_mult=1.0,
-            start_value_mult=1.0,
-            end_value_mult=1.0,
-            save_history=False,
-        ),
-        optimizer=torch.optim.Adam,
-        optimizer_params=dict(weight_decay=0.001 / train_batch_size),
-        loss_fn=NflCrpsLossFunc(min=-4, max=29),
-        evaluation_metrics=dict(loss=ignite.metrics.Loss(loss_fn=nfl_crps_loss)),
-        train_data_loader_params=dict(batch_size=train_batch_size, num_workers=1),
-        evaluate_train_data="COMPLETED",
-        progress_update=False,
-        seed=0,  #
-    )
-
-    if "ModuleConcat" not in dir():
-        from kedex import *
-
-    # pytorch_model = torch.nn.Sequential(
-    #     torchvision.models.resnet._resnet(
-    #         arch="resnet9",
-    #         block=torchvision.models.resnet.BasicBlock,
-    #         layers=[1, 1, 1, 1],
-    #         pretrained=False,
-    #         progress=None,
-    #         num_classes=199,
-    #         # num_classes=2,
-    #     ),
-    #     torch.nn.Dropout(p=0.5),
-    #     torch.nn.Linear(in_features=199, out_features=205),  # 199 + 2 + 2 + 2 = 205
-    #     TensorUnsqueeze(dim=1),
-    #     torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
-    #     torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
-    #     torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
-    #     TensorSqueeze(dim=1),
-    #     torch.nn.Sigmoid()
-    # )
-
-    pytorch_model = torch.nn.Sequential(
-        ModuleConcat(
-            TensorGlobalAvgPool2d(keepdim=False),
-            TensorGlobalMaxPool2d(keepdim=False),
-            TensorGlobalMinPool2d(keepdim=False),
-            TensorGlobalRangePool2d(keepdim=False),
-            torch.nn.Sequential(
-                # torch.nn.Dropout(p=0.05),
-                ModuleConcat(
-                    # TensorIdentity(),
-                    GaussianBlur2d(kernel_size=(15, 15), sigma=(5.0, 5.0)),
-                    TensorConv2d(in_channels=15, out_channels=5, kernel_size=[3, 3]),
-                    TensorConv2d(in_channels=15, out_channels=5, kernel_size=[7, 7]),
-                    TensorConv2d(in_channels=15, out_channels=5, kernel_size=[5, 15]),
-                ),
-                torch.nn.CELU(alpha=1.0),
-                # torch.nn.Dropout(p=0.05),
-                ModuleConcat(
-                    TensorAvgPool2d(stride=2, kernel_size=[3, 3]),
-                    TensorConv2d(stride=2, in_channels=30, out_channels=10, kernel_size=[3, 3]),
-                    TensorConv2d(stride=2, in_channels=30, out_channels=10, kernel_size=[7, 7]),
-                    TensorConv2d(stride=2, in_channels=30, out_channels=10, kernel_size=[5, 15]),
-                ),
-                torch.nn.CELU(alpha=1.0),
-                # torch.nn.Dropout(p=0.05),
-                ModuleConcat(
-                    # TensorIdentity(),
-                    TensorConv2d(in_channels=60, out_channels=60, kernel_size=[1, 1]),
-                    TensorConv2d(in_channels=60, out_channels=20, kernel_size=[3, 3]),
-                    TensorConv2d(in_channels=60, out_channels=20, kernel_size=[7, 7]),
-                    TensorConv2d(in_channels=60, out_channels=20, kernel_size=[5, 15]),
-                ),
-                torch.nn.CELU(alpha=1.0),
-                # torch.nn.Dropout(p=0.05),
-                ModuleConcat(
-                    TensorAvgPool2d(stride=2, kernel_size=[3, 3]),
-                    TensorConv2d(stride=2, in_channels=120, out_channels=40, kernel_size=[3, 3]),
-                    TensorConv2d(stride=2, in_channels=120, out_channels=40, kernel_size=[7, 7]),
-                    TensorConv2d(stride=2, in_channels=120, out_channels=40, kernel_size=[5, 15]),
-                ),
-                torch.nn.CELU(alpha=1.0),
-                # torch.nn.Dropout(p=0.05),
-                ModuleConcat(TensorAvgPool2d(kernel_size=[1, 15]), TensorAvgPool2d(kernel_size=[1, 15])),
-                torch.nn.CELU(alpha=1.0),
-                # torch.nn.Dropout(p=0.05),
-                TensorFlatten(),
-            ),
-        ),
-        torch.nn.Linear(in_features=3900, out_features=56),
-        TensorUnsqueeze(dim=1),
-        torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
-        torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
-        torch.nn.AvgPool1d(kernel_size=3, stride=1, padding=0),
-        TensorSqueeze(dim=1),
-        TensorNearestPad(lower=89, upper=60),
-        torch.nn.Softmax(dim=1),
-        TensorCumsum(dim=1),
-    )
-
-    augmentation = dict()
     train_dataset = AugFieldImagesDataset(df, to_pytorch_tensor=True, **augmentation)
 
     log.info("Fit model.")
-
     model = neural_network_train(train_params=train_params, mlflow_logging=False)(pytorch_model, train_dataset)
 
     log.info("Infer.")

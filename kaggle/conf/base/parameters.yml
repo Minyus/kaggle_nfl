@@ -2,51 +2,6 @@
 #  =: torch.nn.Sequential
 #  _:
 #
-#    - =: torchvision.models.resnet._resnet
-#      arch: resnet9
-#      block:
-#        =: torchvision.models.resnet.BasicBlock
-#      layers: [1, 1, 1, 1]
-#      pretrained: False
-#      progress:  # None
-#      num_classes: 199
-#
-#    - =: torch.nn.Dropout
-#      p: 0.5
-#
-#    - =: torch.nn.Linear
-#      in_features: 199
-#      out_features: 205  # 199 + 2 + 2 + 2
-#
-#    - =: kedex.contrib.ops.pytorch_ops.TensorUnsqueeze
-#      dim: 1
-#
-#    - =: torch.nn.AvgPool1d
-#      kernel_size: 3
-#      stride: 1
-#      padding: 0
-#
-#    - =: torch.nn.AvgPool1d
-#      kernel_size: 3
-#      stride: 1
-#      padding: 0
-#
-#    - =: torch.nn.AvgPool1d
-#      kernel_size: 3
-#      stride: 1
-#      padding: 0
-#
-#    - =: kedex.contrib.ops.pytorch_ops.TensorSqueeze
-#      dim: 1
-#
-#    - =: torch.nn.Sigmoid
-#      _:  # dummy
-
-
-#pytorch_model:
-#  =: torch.nn.Sequential
-#  _:
-#
 #    - =: kedex.ModuleConcat
 #      _:
 #
@@ -347,10 +302,10 @@ MLFLOW_LOGGING_CONFIG:
   
 PIPELINES:
   __default__:
-    =: kedex.pipeline.KedexPipeline
+    =: kedex.KedexPipeline
     parameters_in_inputs: True
     module: kaggle_nfl.kaggle_nfl
-    decorator: kedex.contrib.decorators.log_time
+    decorator: kedex.log_time
     nodes:
 
       - inputs: train
