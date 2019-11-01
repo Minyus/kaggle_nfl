@@ -263,8 +263,8 @@ train_params:
     minimize: True
     patience: 1000
   scheduler:
-#    =: ignite.contrib.handlers.param_scheduler.LinearCyclicalScheduler
-    =: ignite.contrib.handlers.param_scheduler.CosineAnnealingScheduler
+    =: ignite.contrib.handlers.param_scheduler.LinearCyclicalScheduler
+#    =: ignite.contrib.handlers.param_scheduler.CosineAnnealingScheduler
   scheduler_params:
     param_name: lr
     start_value:

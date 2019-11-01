@@ -1081,8 +1081,8 @@ if __name__ == "__main__":
             save_as_state_dict=False,
         ),
         early_stopping_params=dict(metric="loss", minimize=True, patience=1000),
-        # scheduler=ignite.contrib.handlers.param_scheduler.LinearCyclicalScheduler,
-        scheduler=ignite.contrib.handlers.param_scheduler.CosineAnnealingScheduler,
+        scheduler=ignite.contrib.handlers.param_scheduler.LinearCyclicalScheduler,
+        # scheduler=ignite.contrib.handlers.param_scheduler.CosineAnnealingScheduler,
         scheduler_params=dict(
             param_name="lr",
             start_value=0.000001 * train_batch_size,
