@@ -1068,6 +1068,8 @@ if __name__ == "__main__":
     parameters["MODULE_ALIASES"] = {"kedex": "__main__", "kaggle_nfl.kaggle_nfl": "__main__"}
     train_params = HatchDict(parameters).get("train_params")
     train_params["progress_update"] = False
+    train_params.pop("val_data_loader_params")
+    train_params.pop("evaluate_val_data")
     pytorch_model = HatchDict(parameters).get("pytorch_model")
     augmentation = HatchDict(parameters).get("augmentation")
 
