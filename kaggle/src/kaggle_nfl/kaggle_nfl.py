@@ -58,10 +58,12 @@ def preprocess(df, parameters=None):
     df["Dir_std"] = df["Dir_rad"]
     df.loc[df["ToLeft"], "Dir_std"] = np.mod(np.pi + df.loc[df["ToLeft"], "Dir_rad"], 2 * np.pi)
 
-    # df.rename(columns=dict(S="_S", A="_A"), inplace=True)
-    df["is2017"] = df["Season"] == 2017
-    df["_S"] = df["S"] / df.groupby(["is2017"])["S"].transform("mean")
-    df["_A"] = df["A"] / df.groupby(["is2017"])["A"].transform("mean")
+    df.rename(columns=dict(S="_S", A="_A"), inplace=True)
+    # df["is2017"] = df["Season"] == 2017
+    # df["_S"] = df["S"] / df.groupby(["is2017"])["S"].transform("mean")
+    # df["_A"] = df["A"] / df.groupby(["is2017"])["A"].transform("mean")
+    # df["_S"] = df.groupby(["is2017"])["S"].rank(pct=True)
+    # df["_A"] = df.groupby(["is2017"])["A"].rank(pct=True)
 
     radius_cols = ["_S"]
     dir_cols = []
@@ -1066,7 +1068,7 @@ if __name__ == "__main__":
 
     train_batch_size = 64
     train_params = dict(
-        epochs=14,  # number of epochs to train
+        epochs=10,  # number of epochs to train
         time_limit=12600,  # 3.5 hours
         model_checkpoint_params=dict(
             dirname="checkpoint",
@@ -1083,8 +1085,8 @@ if __name__ == "__main__":
         scheduler=ignite.contrib.handlers.param_scheduler.CosineAnnealingScheduler,
         scheduler_params=dict(
             param_name="lr",
-            start_value=0.000002 * train_batch_size,
-            end_value=0.00002 * train_batch_size,
+            start_value=0.000001 * train_batch_size,
+            end_value=0.00001 * train_batch_size,
             cycle_epochs=2,  # cycle_size: int(cycle_epochs * len(train_loader))
             cycle_mult=1.0,
             start_value_mult=1.0,
@@ -1092,7 +1094,7 @@ if __name__ == "__main__":
             save_history=False,
         ),
         optimizer=torch.optim.Adam,
-        optimizer_params=dict(weight_decay=0.0005 / train_batch_size),
+        optimizer_params=dict(weight_decay=0.001 / train_batch_size),
         loss_fn=NflCrpsLossFunc(min=-4, max=29),
         evaluation_metrics=dict(loss=ignite.metrics.Loss(loss_fn=nfl_crps_loss)),
         train_data_loader_params=dict(batch_size=train_batch_size, num_workers=1),

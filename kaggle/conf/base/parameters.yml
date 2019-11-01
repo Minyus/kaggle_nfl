@@ -247,7 +247,7 @@ augmentation:
 train_batch_size: 64
 
 train_params:
-  epochs: 4  # number of epochs to train
+  epochs: 10  # number of epochs to train
   time_limit: 32400
   model_checkpoint_params:
     dirname: ../checkpoint
@@ -270,12 +270,12 @@ train_params:
     start_value:
       =: operator.mul
       _:
-        - 0.000_002
+        - 0.000_001
         - =: train_batch_size
     end_value:
       =: operator.mul
       _:
-        - 0.000_02
+        - 0.000_01
         - =: train_batch_size
     cycle_epochs: 2  # cycle_size: int(cycle_epochs * len(train_loader))
     cycle_mult: 1.0
@@ -303,7 +303,7 @@ train_params:
     weight_decay:
       =: operator.truediv
       _:
-        - 0.0005
+        - 0.001
         - =: train_batch_size
   loss_fn:
     =: kaggle_nfl.kaggle_nfl.NflCrpsLossFunc
