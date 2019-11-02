@@ -58,21 +58,48 @@ def preprocess(df, parameters=None):
     df["Dir_std"] = df["Dir_rad"]
     df.loc[df["ToLeft"], "Dir_std"] = np.mod(np.pi + df.loc[df["ToLeft"], "Dir_rad"], 2 * np.pi)
 
-    df.rename(columns=dict(S="_S", A="_A"), inplace=True)
+    # df.rename(columns=dict(S="_S", A="_A"), inplace=True)
     # df["is2017"] = df["Season"] == 2017
     # df["_S"] = df["S"] / df.groupby(["is2017"])["S"].transform("mean")
     # df["_A"] = df["A"] / df.groupby(["is2017"])["A"].transform("mean")
     # df["_S"] = df.groupby(["is2017"])["S"].rank(pct=True)
     # df["_A"] = df.groupby(["is2017"])["A"].rank(pct=True)
+    # df = df.query("Season > 2017")
+    # df = df.query("Season > 2017").copy()
+    # df["_S"] = df["S"] / df.groupby(["PlayId"])["S"].transform("mean")
+    # df["_A"] = df["A"] / df.groupby(["PlayId"])["A"].transform("mean")
+
+    df["_S"] = (df["S"] / 20).astype(np.float32)
+    df["_A"] = (df["A"] / 20).astype(np.float32)
 
     radius_cols = ["_S"]
     dir_cols = []
     for c in radius_cols:
         for i in range(2):
             dir_col = "{}{}".format(c, i)
-            df[dir_col] = df[c] * np.cos(df["Dir_std"] - i * np.pi / 2)
+            df[dir_col] = (df[c] * np.cos(df["Dir_std"] - i * np.pi / 2)).astype(np.float32)
             # df[dir_col] = (df[c] * np.cos(df["Dir_std"] + i * np.pi / 2)).clip(lower=0)
             dir_cols.append(dir_col)
+
+    """ """
+    df["ScaledSeason"] = (df["Season"] - 2017).astype(np.float32)
+    df.loc[:, "ScaledDown"] = (df["Down"] / 4.0).astype(np.float32)
+    df.loc[:, "ScaledDistance"] = (df["Distance"] / 10.0).astype(np.float32)
+
+    df["ScaledDefendersInTheBox"] = (df["DefendersInTheBox"].fillna(6.94302) / 11.0).astype(np.float32)
+
+    df["ScaledRelativeOffenseScore"] = ((df["HomeScoreBeforePlay"] - df["VisitorScoreBeforePlay"]) / 100.0).astype(
+        np.float32
+    )
+    df.loc[(df["PossessionTeam"] != df["HomeTeamAbbr"]), "OffenseScore"] = -df["ScaledRelativeOffenseScore"]
+
+    try:
+        df["ScaledRelativeHandoff"] = (
+            (pd.to_datetime(df["TimeHandoff"]) - pd.to_datetime(df["TimeSnap"])).dt.total_seconds() / 10.0
+        ).astype(np.float32)
+    except:
+        log.warning("Failed to compute ScaledRelativeHandoff.")
+        df["ScaledRelativeHandoff"] = 0.2 * np.ones(len(df)).astype(np.float32)
 
     """ """
 
@@ -90,12 +117,12 @@ def preprocess(df, parameters=None):
         "NflId",
         # 'DisplayName',
         # 'JerseyNumber',
-        "Season",
+        # "Season",
         "YardLine",
-        "Quarter",
+        # "Quarter",
         # 'GameClock',
         # 'PossessionTeam',
-        "Down",
+        # "Down",
         # "Distance",
         # "FieldPosition",
         # "HomeScoreBeforePlay",
@@ -109,14 +136,14 @@ def preprocess(df, parameters=None):
         # 'TimeHandoff',
         # 'TimeSnap',
         "Yards",
-        "PlayerHeight",
-        "PlayerWeight",
+        # "PlayerHeight",
+        # "PlayerWeight",
         # 'PlayerBirthDate',
         # 'PlayerCollegeName',
-        "Position",
+        # "Position",
         # "HomeTeamAbbr",
         # "VisitorTeamAbbr",
-        "Week",
+        # "Week",
         # 'Stadium',
         # 'Location',
         # 'StadiumType',
@@ -139,6 +166,12 @@ def preprocess(df, parameters=None):
         "Y_int",
         "_S",
         "_A",
+        "ScaledSeason",
+        "ScaledDown",
+        "ScaledDistance",
+        "ScaledDefendersInTheBox",
+        "ScaledRelativeOffenseScore",
+        "ScaledRelativeHandoff",
     ]
     cols = cols + dir_cols
     df = df.filter(items=cols)
@@ -197,9 +230,16 @@ class FieldImagesDataset:
             # "_A2",
             # "_A3",
         ],
-        float_scale=None,
         to_pytorch_tensor=False,
         store_as_sparse_tensor=False,
+        spatial_independent_cols=[
+            "ScaledSeason",
+            "ScaledDown",
+            "ScaledDistance",
+            "ScaledDefendersInTheBox",
+            "ScaledRelativeOffenseScore",
+            "ScaledRelativeHandoff",
+        ],
         random_horizontal_flip=dict(p=0),
         random_horizontal_shift=dict(p=0, max_shift=1),
         transform=None,
@@ -218,17 +258,19 @@ class FieldImagesDataset:
         play_index_dict = {v: k for k, v in play_id_dict.items()}
         df["PlayIndex"] = df["PlayId"].map(play_index_dict)
 
+        if spatial_independent_cols:
+            si_df = (
+                df[["PlayId"] + spatial_independent_cols].drop_duplicates().reset_index(drop=True).set_index("PlayId")
+            )
+
         df["_count"] = 1
 
         count_df = df.groupby(["PlayIndex", "PlayerCategory", "X_int", "Y_int"], as_index=False)[value_cols].sum()
 
-        if (float_scale is None and to_pytorch_tensor) or float_scale == True:
-            float_scale = 1.0 / 255
-
-        if float_scale:
-            count_df.loc[:, "_count"] = count_df["_count"].astype(np.float32) * np.float32(float_scale)
-        else:
-            count_df.loc[:, "_count"] = count_df["_count"].astype(np.uint8)
+        if 1:
+            count_df.loc[:, "_count"] = (count_df["_count"] * 11.0).astype(np.float32)
+        # else:
+        #     count_df.loc[:, "_count"] = count_df["_count"].astype(np.uint8)
 
         if to_pytorch_tensor:
 
@@ -250,11 +292,15 @@ class FieldImagesDataset:
             coo_dict = dict()
             for pi in play_id_dict.keys():
                 play_df = melted_df.xs(pi)
-                coo_3d = f(
-                    values=torch.from_numpy(play_df["value"].values),
-                    indices=torch.from_numpy(play_df[dim_cols_].values.transpose()),
-                    size=dim_sizes_,
-                )
+                values = play_df["value"].values
+                indices = play_df[dim_cols_].values.transpose()
+                size = dim_sizes_
+                if spatial_independent_cols:
+                    play_si_df = si_df.xs(play_id_dict[pi])
+                    spatial_independent = np.squeeze(play_si_df.values)
+                    coo_3d = f(values=values, indices=indices, size=size, spatial_independent=spatial_independent)
+                else:
+                    coo_3d = f(values=values, indices=indices, size=size)
                 coo_dict[pi] = coo_3d
 
         else:
@@ -289,7 +335,11 @@ class FieldImagesDataset:
         play_coo_3d = self.coo_dict[index]
 
         if self.to_pytorch_tensor:
+            si_1darr = None
             if not self.store_as_sparse_tensor:
+                si_1darr = play_coo_3d.pop("spatial_independent", None)
+                play_coo_3d["values"] = torch.from_numpy(play_coo_3d["values"])
+                play_coo_3d["indices"] = torch.from_numpy(play_coo_3d["indices"])
                 _random_horizontal_flip(
                     indices=play_coo_3d["indices"], size=play_coo_3d.get("size"), p=self.random_horizontal_flip.get("p")
                 )
@@ -301,6 +351,10 @@ class FieldImagesDataset:
                 )
                 play_coo_3d = torch.sparse_coo_tensor(**play_coo_3d)
             img = play_coo_3d.to_dense()
+            if si_1darr is not None:
+                si_1dtt = torch.from_numpy(si_1darr)
+                si_3dtt = si_1dtt.unsqueeze(dim=-1).unsqueeze(dim=-1).expand(-1, img.size(1), img.size(2))
+                img = torch.cat([img, si_3dtt], dim=0)
         else:
             play_coo_dict = play_coo_3d
             img_ch_2darr_list = [play_coo_dict[ci].toarray() for ci in range(3)]
