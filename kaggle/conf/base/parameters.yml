@@ -140,20 +140,34 @@
 pytorch_model:
   =: torch.nn.Sequential
   _:
-    - =: kedex.ModuleConcat
+    - =: kedex.ModuleConcat  # -> [3891]
       _:
-        - {=: kedex.TensorGlobalAvgPool2d, keepdim: False}
-        - {=: kedex.TensorGlobalMaxPool2d, keepdim: False}
-        - {=: kedex.TensorGlobalMinPool2d, keepdim: False}
-        - {=: kedex.TensorGlobalRangePool2d, keepdim: False}
         - =: torch.nn.Sequential
           _:
+            - {=: kedex.TensorSlice, start: 10}
+            - {=: kedex.TensorGlobalSumPool2d, keepdim: False}  # -> [11]
+            - {=: torch.nn.Linear, in_features: 11, out_features: 11}
+            - {=: torch.nn.CELU, alpha: 1.0}
+        - =: torch.nn.Sequential
+          _:
+            - {=: kedex.TensorSlice, end: 10}
+            - =: kedex.ModuleConcat
+              _:
+                - {=: kedex.TensorGlobalSumPool2d, keepdim: False}  # -> [10]
+                - {=: kedex.TensorGlobalMaxPool2d, keepdim: False}  # -> [10]
+                - {=: kedex.TensorGlobalMinPool2d, keepdim: False}  # -> [10]
+                - {=: kedex.TensorGlobalRangePool2d, keepdim: False}  # -> [10]
+            - {=: torch.nn.Linear, in_features: 40, out_features: 40}
+            - {=: torch.nn.CELU, alpha: 1.0}
+        - =: torch.nn.Sequential  # -> [3840]
+          _:
+            - {=: kedex.TensorSlice, end: 15}
             - =: kedex.ModuleConcat
               _:
                 - {=: kaggle_nfl.kaggle_nfl.GaussianBlur2d, kernel_size: "(15, 15)", sigma: "(5.0, 5.0)"}
-                - {=: kedex.TensorConv2d, in_channels: 21, out_channels: 3, kernel_size: [3, 3]}
-                - {=: kedex.TensorConv2d, in_channels: 21, out_channels: 3, kernel_size: [7, 7]}
-                - {=: kedex.TensorConv2d, in_channels: 21, out_channels: 3, kernel_size: [5, 15]}
+                - {=: kedex.TensorConv2d, in_channels: 15, out_channels: 5, kernel_size: [3, 3]}
+                - {=: kedex.TensorConv2d, in_channels: 15, out_channels: 5, kernel_size: [7, 7]}
+                - {=: kedex.TensorConv2d, in_channels: 15, out_channels: 5, kernel_size: [5, 15]}
             - {=: torch.nn.CELU, alpha: 1.0}
             - =: kedex.ModuleConcat
               _:
@@ -182,7 +196,9 @@ pytorch_model:
                 - {=: kedex.TensorMaxPool2d, kernel_size: [1, 15]}
             - {=: torch.nn.CELU, alpha: 1.0}
             - {=: kedex.TensorFlatten, _: }
-    - {=: torch.nn.Linear, in_features: 3924, out_features: 56}
+    - {=: torch.nn.Linear, in_features: 3891, out_features: 205}
+    - {=: torch.nn.CELU, alpha: 1.0}
+    - {=: torch.nn.Linear, in_features: 205, out_features: 56}
     - {=: kedex.TensorUnsqueeze, dim: 1}
     - {=: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
     - {=: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}

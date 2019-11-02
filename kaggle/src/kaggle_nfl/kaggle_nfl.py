@@ -82,24 +82,24 @@ def preprocess(df, parameters=None):
             dir_cols.append(dir_col)
 
     """ """
-    df["ScaledSeason"] = (df["Season"] - 2017).astype(np.float32)
-    df.loc[:, "ScaledDown"] = (df["Down"] / 4.0).astype(np.float32)
-    df.loc[:, "ScaledDistance"] = (df["Distance"] / 10.0).astype(np.float32)
+    df["ScaledSeason"] = ((df["Season"] - 2017) / 2000.0).astype(np.float32)
+    df.loc[:, "ScaledDown"] = (df["Down"] / 8000.0).astype(np.float32)
+    df.loc[:, "ScaledDistance"] = (df["Distance"] / 20000.0).astype(np.float32)
 
-    df["ScaledDefendersInTheBox"] = (df["DefendersInTheBox"].fillna(6.94302) / 11.0).astype(np.float32)
+    df["ScaledDefendersInTheBox"] = (df["DefendersInTheBox"].fillna(6.94302) / 20000.0).astype(np.float32)
 
-    df["ScaledRelativeOffenseScore"] = ((df["HomeScoreBeforePlay"] - df["VisitorScoreBeforePlay"]) / 100.0).astype(
+    df["ScaledRelativeOffenseScore"] = ((df["HomeScoreBeforePlay"] - df["VisitorScoreBeforePlay"]) / 200000.0).astype(
         np.float32
     )
     df.loc[(df["PossessionTeam"] != df["HomeTeamAbbr"]), "OffenseScore"] = -df["ScaledRelativeOffenseScore"]
 
     try:
         df["ScaledRelativeHandoff"] = (
-            (pd.to_datetime(df["TimeHandoff"]) - pd.to_datetime(df["TimeSnap"])).dt.total_seconds() / 10.0
+            (pd.to_datetime(df["TimeHandoff"]) - pd.to_datetime(df["TimeSnap"])).dt.total_seconds() / 20000.0
         ).astype(np.float32)
     except:
         log.warning("Failed to compute ScaledRelativeHandoff.")
-        df["ScaledRelativeHandoff"] = 0.2 * np.ones(len(df)).astype(np.float32)
+        df["ScaledRelativeHandoff"] = 0.0001 * np.ones(len(df)).astype(np.float32)
 
     """ """
 
@@ -276,7 +276,7 @@ class FieldImagesDataset:
 
             melted_df = count_df.melt(id_vars=["PlayIndex"] + dim_cols)
             value_cols_dict = {value_cols[i]: i for i in range(len(value_cols))}
-            melted_df["Channel"] = melted_df["variable"].map(value_cols_dict) * 3 + melted_df[dim_cols[0]]
+            melted_df["Channel"] = melted_df[dim_cols[0]] * len(value_cols) + melted_df["variable"].map(value_cols_dict)
 
             dim_cols_ = dim_cols.copy()
             dim_sizes_ = dim_sizes.copy()
