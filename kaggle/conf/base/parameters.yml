@@ -205,14 +205,12 @@ pytorch_model:
                 - {=: kedex.TensorMaxPool2d, kernel_size: [1, 15]}
             - {=: torch.nn.CELU, alpha: 1.0}
             - {=: kedex.TensorFlatten, _: }
-    - {=: torch.nn.Linear, in_features: 3900, out_features: 56}
-#    - {=: torch.nn.CELU, alpha: 1.0}
-#    - {=: torch.nn.Linear, in_features: 205, out_features: 56}
-    - {=: kedex.TensorUnsqueeze, dim: 1}
-    - {=: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
-    - {=: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
-    - {=: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
-    - {=: kedex.TensorSqueeze, dim: 1}
+    - {=: torch.nn.Linear, in_features: 3900, out_features: 50}
+#    - {=: kedex.TensorUnsqueeze, dim: 1}
+#    - {=: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
+#    - {=: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
+#    - {=: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
+#    - {=: kedex.TensorSqueeze, dim: 1}
     - {=: kedex.TensorNearestPad, lower: 89, upper: 60}  # 199 = 89 + 50 + 60
     - {=: torch.nn.Softmax, dim: 1}
     - {=: kedex.TensorCumsum, dim: 1}

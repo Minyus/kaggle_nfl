@@ -268,7 +268,7 @@ class FieldImagesDataset:
         count_df = df.groupby(["PlayIndex", "PlayerCategory", "X_int", "Y_int"], as_index=False)[value_cols].sum()
 
         if 1:
-            count_df.loc[:, "_count"] = (count_df["_count"] * 11.0).astype(np.float32)
+            count_df.loc[:, "_count"] = (count_df["_count"] / 255.0).astype(np.float32)
         # else:
         #     count_df.loc[:, "_count"] = count_df["_count"].astype(np.uint8)
 
