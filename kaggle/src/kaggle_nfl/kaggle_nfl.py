@@ -58,7 +58,7 @@ def preprocess(df, parameters=None):
     df["Dir_std"] = df["Dir_rad"]
     df.loc[df["ToLeft"], "Dir_std"] = np.mod(np.pi + df.loc[df["ToLeft"], "Dir_rad"], 2 * np.pi)
 
-    # df.rename(columns=dict(S="_S", A="_A"), inplace=True)
+    df.rename(columns=dict(S="_S", A="_A"), inplace=True)
     # df["is2017"] = df["Season"] == 2017
     # df["_S"] = df["S"] / df.groupby(["is2017"])["S"].transform("mean")
     # df["_A"] = df["A"] / df.groupby(["is2017"])["A"].transform("mean")
@@ -69,8 +69,8 @@ def preprocess(df, parameters=None):
     # df["_S"] = df["S"] / df.groupby(["PlayId"])["S"].transform("mean")
     # df["_A"] = df["A"] / df.groupby(["PlayId"])["A"].transform("mean")
 
-    df["_S"] = (df["S"] / 20).astype(np.float32)
-    df["_A"] = (df["A"] / 20).astype(np.float32)
+    # df["_S"] = (df["S"] / 20).astype(np.float32)
+    # df["_A"] = (df["A"] / 20).astype(np.float32)
 
     radius_cols = ["_S"]
     dir_cols = []
