@@ -236,7 +236,7 @@ class FieldImagesDataset:
             # "ScaledSeason",
             "ScaledDown",
             # "ScaledDistance",
-            # "ScaledDefendersInTheBox",
+            "ScaledDefendersInTheBox",
             "ScaledRelativeOffenseScore",
             # "ScaledRelativeHandoff",
         ],
