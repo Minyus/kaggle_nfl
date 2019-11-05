@@ -243,6 +243,7 @@ pytorch_model:
                   _:
                     - {=: kedex.TensorGlobalMaxPool2d, keepdim: False}
                     - {=: torch.nn.CELU, _: }
+    - {=: torch.nn.Dropout, p: 0.2}
     - {=: torch.nn.Linear, in_features: 1050, out_features: 50}
 #    - {=: kedex.TensorUnsqueeze, dim: 1}
 #    - {=: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
