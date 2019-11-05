@@ -146,17 +146,32 @@ pytorch_model:
           _:
             - {=: kedex.TensorSlice, start: 15}
             - {=: kedex.TensorGlobalSumPool2d, keepdim: False}
-            - {=: torch.nn.Linear, in_features: 3, out_features: 3}
+            - {=: torch.nn.Linear, in_features: 2, out_features: 2}
             - {=: torch.nn.Sigmoid, _: }
         - =: torch.nn.Sequential
           _:
             - {=: kedex.TensorSlice, end: 15}
-            - =: kedex.ModuleConcat
-              _:
-                - {=: kedex.TensorGlobalAvgPool2d, keepdim: False}
-                - {=: kedex.TensorGlobalMaxPool2d, keepdim: False}
-                - {=: kedex.TensorGlobalMinPool2d, keepdim: False}
-                - {=: kedex.TensorGlobalRangePool2d, keepdim: False}
+            - {=: kedex.TensorGlobalAvgPool2d, keepdim: False}
+            - {=: torch.nn.Linear, in_features: 15, out_features: 15}
+            - {=: torch.nn.CELU, alpha: 1.0}
+        - =: torch.nn.Sequential
+          _:
+            - {=: kedex.TensorSlice, end: 15}
+            - {=: kedex.TensorGlobalMaxPool2d, keepdim: False}
+            - {=: torch.nn.Linear, in_features: 15, out_features: 15}
+            - {=: torch.nn.Sigmoid, _: }
+        - =: torch.nn.Sequential
+          _:
+            - {=: kedex.TensorSlice, end: 15}
+            - {=: kedex.TensorGlobalMinPool2d, keepdim: False}
+            - {=: torch.nn.Linear, in_features: 15, out_features: 15}
+            - {=: torch.nn.Sigmoid, _: }
+        - =: torch.nn.Sequential
+          _:
+            - {=: kedex.TensorSlice, end: 15}
+            - {=: kedex.TensorGlobalRangePool2d, keepdim: False}
+            - {=: torch.nn.Linear, in_features: 15, out_features: 15}
+            - {=: torch.nn.Sigmoid, _: }
 #        - =: torch.nn.Sequential
 #          _:
 #            - {=: kedex.TensorSlice, start: 10}
@@ -228,7 +243,7 @@ pytorch_model:
                   _:
                     - {=: kedex.TensorGlobalMaxPool2d, keepdim: False}
                     - {=: torch.nn.CELU, _: }
-    - {=: torch.nn.Linear, in_features: 1023, out_features: 50}
+    - {=: torch.nn.Linear, in_features: 1022, out_features: 50}
 #    - {=: kedex.TensorUnsqueeze, dim: 1}
 #    - {=: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
 #    - {=: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
@@ -237,6 +252,7 @@ pytorch_model:
     - {=: kedex.TensorNearestPad, lower: 89, upper: 60}  # 199 = 89 + 50 + 60
     - {=: torch.nn.Softmax, dim: 1}
     - {=: kedex.TensorCumsum, dim: 1}
+    - {=: kedex.TensorClamp, min: 0.0, max: 1.0}
 
 augmentation:
   random_horizontal_flip:
@@ -304,7 +320,7 @@ train_params:
     weight_decay:
       =: operator.truediv
       _:
-        - 0.001
+        - 0.002
         - =: train_batch_size
   loss_fn:
     =: kaggle_nfl.kaggle_nfl.NflCrpsLossFunc
