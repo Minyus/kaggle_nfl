@@ -4,13 +4,34 @@ import pandas as pd
 import numpy as np
 import random
 from collections import OrderedDict
-import torch
 import math
-
 
 import logging
 
 log = logging.getLogger(__name__)
+
+
+def df_concat(**kwargs):
+    def _df_concat(df_0, df_1, *argsignore, **kwargsignore):
+        new_col_values = kwargs.get("new_col_values")  # type: List[str]
+        new_col_name = kwargs.get("new_col_name")  # type: str
+        col_id = kwargs.get("col_id")  # type: str
+        sort = kwargs.get("sort", False)  # type: bool
+
+        if col_id:
+            df_0.set_index(keys=col_id, inplace=True)
+            df_1.set_index(keys=col_id, inplace=True)
+        else:
+            col_id = df_0.index.name
+
+        assert (isinstance(new_col_values, list) and len(new_col_values) == 2) or (new_col_values is None)
+        names = [new_col_name, col_id] if new_col_name else col_id
+        df_0 = pd.concat([df_0, df_1], sort=sort, verify_integrity=bool(col_id), keys=new_col_values, names=names)
+        if new_col_name:
+            df_0.reset_index(inplace=True, level=new_col_name)
+        return df_0
+
+    return _df_concat
 
 
 def preprocess(df, parameters=None):
@@ -47,16 +68,23 @@ def preprocess(df, parameters=None):
     """ """
     df["PlayerCategory"] = df["IsOnOffense"].astype(np.uint8)
     df.loc[df["IsBallCarrier"], "PlayerCategory"] = 2
-    # df["X_int"] = np.floor(df["X_std"] + 10).clip(lower=0, upper=119).astype(np.uint8)
+
+    X_float = df["X_std"] - df["YardsFromOwnGoal"] + 10
+    Y_float = df["Y_std"]
+
     len_x = 30
-    df["X_int"] = np.floor(df["X_std"] - df["YardsFromOwnGoal"] + 10).clip(lower=0, upper=(len_x - 1)).astype(np.uint8)
     len_y = 60
-    df["Y_int"] = np.floor(df["Y_std"]).clip(lower=0, upper=(len_y - 1)).astype(np.uint8)
+
+    df["X_int"] = np.floor(X_float).clip(lower=0, upper=(len_x - 1)).astype(np.uint8)
+    df["Y_int"] = np.floor(Y_float).clip(lower=0, upper=(len_y - 1)).astype(np.uint8)
 
     """ """
-    df["Dir_rad"] = np.mod(90 - df["Dir"], 360) * math.pi / 180.0
-    df["Dir_std"] = df["Dir_rad"]
-    df.loc[df["ToLeft"], "Dir_std"] = np.mod(np.pi + df.loc[df["ToLeft"], "Dir_rad"], 2 * np.pi)
+    # df["Dir_rad"] = np.mod(90 - df["Dir"], 360) * math.pi / 180.0
+    # df["Dir_std"] = df["Dir_rad"]
+    # df.loc[df["ToLeft"], "Dir_std"] = np.mod(np.pi + df.loc[df["ToLeft"], "Dir_rad"], 2 * np.pi)
+    df["Dir_std_2"] = df["Dir"] - 180 * df["ToLeft"].astype(np.float32)
+    df["Dir_std_2"].fillna(90, inplace=True)
+    df["Dir_std"] = df["Dir_std_2"] * math.pi / 180.0
 
     df.rename(columns=dict(S="_S", A="_A"), inplace=True)
     # df["is2017"] = df["Season"] == 2017
@@ -74,12 +102,21 @@ def preprocess(df, parameters=None):
 
     radius_cols = ["_S"]
     dir_cols = []
-    for c in radius_cols:
-        for i in range(2):
-            dir_col = "{}{}".format(c, i)
-            df[dir_col] = (df[c] * np.cos(df["Dir_std"] - i * np.pi / 2)).astype(np.float32)
-            # df[dir_col] = (df[c] * np.cos(df["Dir_std"] + i * np.pi / 2)).clip(lower=0)
-            dir_cols.append(dir_col)
+    # for c in radius_cols:
+    #     for i in range(2):
+    #         dir_col = "{}{}".format(c, i)
+    #         df[dir_col] = (df[c] * np.cos(df["Dir_std"] - i * np.pi / 2)).astype(np.float32)
+    #         dir_cols.append(dir_col)
+
+    motion_coef = 1.0
+    motion_sr = motion_coef * df["_S"]
+
+    df["X_int_t1"] = (
+        np.floor(X_float + motion_sr * np.sin(df["Dir_std"])).clip(lower=0, upper=(len_x - 1)).astype(np.uint8)
+    )
+    df["Y_int_t1"] = (
+        np.floor(Y_float + motion_sr * np.cos(df["Dir_std"])).clip(lower=0, upper=(len_y - 1)).astype(np.uint8)
+    )
 
     """ """
     df["ScaledSeason"] = ((df["Season"] - 2017) / 2000.0).astype(np.float32)
@@ -164,6 +201,8 @@ def preprocess(df, parameters=None):
         "PlayerCategory",
         "X_int",
         "Y_int",
+        "X_int_t1",
+        "Y_int_t1",
         "_S",
         "_A",
         "ScaledSeason",
@@ -173,7 +212,7 @@ def preprocess(df, parameters=None):
         "ScaledRelativeOffenseScore",
         "ScaledRelativeHandoff",
     ]
-    cols = cols + dir_cols
+    # cols = cols + dir_cols
     df = df.filter(items=cols)
 
     return df
@@ -215,13 +254,13 @@ class FieldImagesDataset:
     def __init__(
         self,
         df,
-        dim_cols=["PlayerCategory", "X_int", "Y_int"],
-        dim_sizes=[3, 30, 60],
+        coo_cols_list=[["X_int", "Y_int"], ["X_int_t1", "Y_int_t1"]],
+        coo_size=[30, 60],
         value_cols=[
             "_count",
             "_S",
-            "_S0",
-            "_S1",
+            # "_S0",
+            # "_S1",
             # "_S2",
             # "_S3",
             "_A",
@@ -263,31 +302,36 @@ class FieldImagesDataset:
                 df[["PlayId"] + spatial_independent_cols].drop_duplicates().reset_index(drop=True).set_index("PlayId")
             )
 
-        df["_count"] = 1
+        df["_count"] = np.float32(1 / 255.0)
 
-        count_df = df.groupby(["PlayIndex", "PlayerCategory", "X_int", "Y_int"], as_index=False)[value_cols].sum()
-
-        if 1:
-            count_df.loc[:, "_count"] = (count_df["_count"] / 255.0).astype(np.float32)
-        # else:
-        #     count_df.loc[:, "_count"] = count_df["_count"].astype(np.uint8)
+        dim_col = "PlayerCategory"
+        dim_size = 3
 
         if to_pytorch_tensor:
+            coo_cols_ = ["H", "W"]
+            dim_cols_ = ["Channel"] + coo_cols_
+            agg_df_list = []
+            for coo_cols in coo_cols_list:
+                agg_df = df.groupby(["PlayIndex", dim_col] + coo_cols, as_index=False)[value_cols].sum()
+                agg_df.rename(columns={coo_cols[0]: coo_cols_[0], coo_cols[1]: coo_cols_[1]}, inplace=True)
+                agg_df_list.append(agg_df)
+            agg_df = df_concat(new_col_name="T", new_col_values=[0, 1])(agg_df_list[0], agg_df_list[1])
 
-            melted_df = count_df.melt(id_vars=["PlayIndex"] + dim_cols)
+            melted_df = agg_df.melt(id_vars=["PlayIndex", "T", dim_col] + coo_cols_)
             value_cols_dict = {value_cols[i]: i for i in range(len(value_cols))}
-            melted_df["Channel"] = melted_df[dim_cols[0]] * len(value_cols) + melted_df["variable"].map(value_cols_dict)
-
-            dim_cols_ = dim_cols.copy()
-            dim_sizes_ = dim_sizes.copy()
-
-            dim_cols_[0] = "Channel"
-            dim_sizes_[0] = dim_sizes_[0] * len(value_cols)
+            melted_df["Channel"] = (
+                melted_df["T"] * dim_size * len(value_cols)
+                + melted_df[dim_col] * len(value_cols)
+                + melted_df["variable"].map(value_cols_dict)
+            )
 
             melted_df.loc[:, dim_cols_] = melted_df[dim_cols_].astype(np.int64)
             melted_df.loc[:, "value"] = melted_df["value"].astype(np.float32)
 
             melted_df.set_index("PlayIndex", inplace=True)
+
+            dim_sizes_ = [dim_size * len(value_cols) * len(coo_cols_list)] + coo_size
+
             f = torch.sparse_coo_tensor if store_as_sparse_tensor else dict
             coo_dict = dict()
             for pi in play_id_dict.keys():
