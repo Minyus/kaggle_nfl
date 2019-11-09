@@ -83,6 +83,19 @@
       - 0.9
       - 0.99
 
+../load/df_031_val.csv:
+  type: kedex.PandasDescribeDataSet
+  describe_args: # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.describe.html
+    include: all
+    percentiles:
+      - 0.01
+      - 0.1
+      - 0.25
+      - 0.5
+      - 0.75
+      - 0.9
+      - 0.99
+
 #../load/images_4darr.pickle:
 #  type: PickleLocalDataSet
 #  load_args:  # None

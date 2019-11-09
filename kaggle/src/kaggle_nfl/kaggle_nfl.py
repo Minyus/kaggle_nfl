@@ -89,9 +89,9 @@ def preprocess(df, parameters=None):
     # df.rename(columns=dict(S="_S", A="_A"), inplace=True)
     df["_S"] = df["S"].astype(np.float32)
     df["_A"] = df["A"].astype(np.float32)
-    is2017_sr = df["Season"] == 2017
-    df.loc[is2017_sr, "_S"] = df["_S"] * np.float32(2.7570316419451517 / 2.435519556913685)
-    df.loc[is2017_sr, "_A"] = df["_A"] * np.float32(1.7819953460610594 / 1.5895792207792045)
+    # is2017_sr = df["Season"] == 2017
+    # df.loc[is2017_sr, "_S"] = df["_S"] * np.float32(2.7570316419451517 / 2.435519556913685)
+    # df.loc[is2017_sr, "_A"] = df["_A"] * np.float32(1.7819953460610594 / 1.5895792207792045)
 
     motion_coef = 1.0
     motion_sr = motion_coef * df["_S"]
@@ -208,7 +208,7 @@ def preprocess(df, parameters=None):
         # "DefendersInTheBox",
         # "DefensePersonnel",
         # 'PlayDirection',
-        # 'TimeHandoff',
+        "TimeHandoff",
         # 'TimeSnap',
         "Yards",
         # "PlayerHeight",
@@ -530,11 +530,9 @@ def generate_datasets(df, parameters=None):
 
     log.info("Setting up train_dataset from df shape: {}".format(fit_df.shape))
     train_dataset = AugFieldImagesDataset(fit_df, to_pytorch_tensor=True, **augmentation)
-    # train_dataset = FieldImagesDataset(fit_df, transform=ToTensor())
 
     log.info("Setting up val_dataset from df shape: {}".format(vali_df.shape))
     val_dataset = AugFieldImagesDataset(vali_df, to_pytorch_tensor=True, **augmentation)
-    # val_dataset = FieldImagesDataset(vali_df, transform=ToTensor())
 
     return train_dataset, val_dataset
 

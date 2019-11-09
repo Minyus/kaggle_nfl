@@ -143,7 +143,7 @@ augmentation:
     p: 0
     max_shift: 0
 
-train_batch_size: 64
+train_batch_size: 32
 
 train_params:
   epochs: 10  # number of epochs to train
@@ -265,14 +265,41 @@ PIPELINES:
           - preprocess
         outputs: df_030
 
+#      - inputs: df_030
+#        func:
+#          =: kedex.df_sample
+#          frac: 0.5
+#          random_state: 191024
+#          col_sample: PlayId
+#          col_assign: Validation
+#        outputs: df_040
+
       - inputs: df_030
         func:
-          =: kedex.df_sample
-          frac: 0.5
-          random_state: 191024
-          col_sample: PlayId
-          col_assign: Validation
+          - =: kedex.df_query
+            expr: "TimeHandoff < '2018-11-30T08:00:00'"
+        outputs: df_031_train
+
+      - inputs: df_030
+        func:
+          - =: kedex.df_query
+            expr: "'2018-11-30T08:00:00' <= TimeHandoff"
+        outputs: df_031_val
+
+      - inputs:
+          - df_031_train
+          - df_031_val
+        func:
+          =: kedex.df_concat
+          new_col_name: Validation
+          new_col_values: [0, 1]
         outputs: df_040
+
+      - inputs: df_040
+        func: generate_datasets
+        outputs:
+          - train_dataset
+          - val_dataset
 
       - inputs: parameters
         func:
@@ -280,12 +307,6 @@ PIPELINES:
           arg:
             =: pytorch_model
         outputs: initial_model
-
-      - inputs: df_040
-        func: generate_datasets
-        outputs:
-          - train_dataset
-          - val_dataset
 
       - inputs:
           - initial_model
