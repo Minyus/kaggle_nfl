@@ -60,12 +60,6 @@ def preprocess(df, parameters=None):
     df.loc[df["ToLeft"], "Y_std"] = -df["Y"] + 160 / 3
 
     """ """
-    df["RelativeDefenceMeanYards"] = df["X_std"]
-    df.loc[df["IsOnOffense"], "RelativeDefenceMeanYards"] = np.nan
-    df["RelativeDefenceMeanYards"] = (
-        df.groupby(["PlayId"])["RelativeDefenceMeanYards"].transform("mean") - df["YardsFromOwnGoal"]
-    )
-    """ """
     df["PlayerCategory"] = df["IsOnOffense"].astype(np.uint8)
     df.loc[df["IsBallCarrier"], "PlayerCategory"] = 2
 
@@ -159,27 +153,24 @@ def preprocess(df, parameters=None):
     )
     df["SeasonCode"] = ((df["Season"].clip(lower=2017, upper=2018) - 2017)).astype(np.uint8)  # 2
     df["DownCode"] = (df["Down"].clip(lower=1, upper=4) - 1).astype(np.uint8)  # 4
-    df["ScoreDiffCode"] = (
-        np.floor((df["HomeScoreBeforePlay"] - df["VisitorScoreBeforePlay"]).clip(lower=-35, upper=35) / 10) + 4
-    ).astype(
-        np.uint8
-    )  # 8
 
     df["HomeOnOffense"] = df["PossessionTeam"] == df["HomeTeamAbbr"]
     df["HomeOnOffenseCode"] = df["HomeOnOffense"].astype(np.uint8)  # 2
 
-    df["TeamAbbrOnOffence"] = df["VisitorTeamAbbr"]
-    df.loc[df["HomeOnOffense"], "TeamAbbrOnOffence"] = df["HomeTeamAbbr"]
-    df["OffenceTeamCode"] = (df["TeamAbbrOnOffence"].replace(team_code_dict)).astype(np.uint8)  # 32
+    df["OffenceTeamCode"] = df["PossessionTeam"].replace(team_code_dict).astype(np.uint8)
 
-    df["TeamAbbrOnDefence"] = df["HomeTeamAbbr"]
-    df.loc[df["HomeOnOffense"], "TeamAbbrOnDefence"] = df["VisitorTeamAbbr"]
-    df["DefenceTeamCode"] = (df["TeamAbbrOnDefence"].replace(team_code_dict)).astype(np.uint8)  # 32
+    df["DefenceTeamAbbr"] = df["HomeTeamAbbr"]
+    df.loc[df["HomeOnOffense"], "DefenceTeamAbbr"] = df["VisitorTeamAbbr"]
+    df["DefenceTeamCode"] = df["DefenceTeamAbbr"].replace(team_code_dict).astype(np.uint8)
+
+    df["ScoreDiff"] = df["VisitorScoreBeforePlay"] - df["HomeScoreBeforePlay"]
+    df.loc[df["HomeOnOffense"], "ScoreDiff"] = -df["ScoreDiff"]
+    df["ScoreDiffCode"] = (np.floor(df["ScoreDiff"].clip(lower=-35, upper=35) / 10) + 4).astype(np.uint8)  # 8
 
     """ """
 
     cols = [
-        # "GameId",
+        "GameId",
         "PlayId",
         # 'Team',
         # 'X',
@@ -231,11 +222,10 @@ def preprocess(df, parameters=None):
         # 'ToLeft',
         # 'IsBallCarrier',
         # 'TeamOnOffense',
-        "IsOnOffense",
+        # "IsOnOffense",
         "YardsFromOwnGoal",
         # "X_std",
         # "Y_std",
-        "RelativeDefenceMeanYards",
         "PlayerCategory",
         "X_int",
         "Y_int",
@@ -565,111 +555,6 @@ def generate_field_images(df, parameters=None):
     img_4darr = np.stack(img_3darr_list, axis=0)
     images = dict(images=img_4darr, names=names)
     return images
-
-
-def fit_base_model(df, parameters=None):
-
-    from mlflow import log_metrics, log_params
-
-    from scaler.skew_scaler import SkewScaler
-
-    model = SkewScaler()
-
-    if "Validation" in df.columns:
-        fit_df = df.query("Validation == 0").drop(columns=["Validation"])
-        log.info("Fitting model using data shape: {}".format(fit_df.shape))
-    else:
-        fit_df = df
-
-    fit_df = preprocess(fit_df)
-    fit_play_df = fit_df.drop_duplicates(subset="PlayId")
-    outcome_sr = _relative_values(fit_play_df["Yards"], fit_play_df["RelativeDefenceMeanYards"])
-    model.fit(outcome_sr)
-
-    if "Validation" in df.columns:
-        log.info("Validating...")
-        vali_df = df.query("Validation == 1").drop(columns=["Validation"])
-
-        play_crps_dict = {}
-
-        play_dfs = PlayDfsDataset(vali_df)
-        total = len(play_dfs)
-
-        vali_df.set_index("PlayId", inplace=True)
-
-        use_tqdm = True
-        if use_tqdm:
-            from tqdm import trange
-
-            play_index_iter = trange(total)
-        else:
-            play_index_iter = range(total)
-        for i in play_index_iter:
-            play_df = play_dfs[i]
-            last = i == total - 1
-
-            play_id = play_df["PlayId"].iloc[0]
-            y_true = play_df["Yards"].iloc[0]
-            cdf_arr = _predict_cdf(play_df, model)
-
-            h_arr = np.ones(199)
-            h_arr[: (99 + y_true)] = 0
-            play_crps = ((cdf_arr - h_arr) ** 2).mean()
-            play_crps_dict[play_id] = play_crps
-
-            if (not (i % 100)) or last:
-                play_crps_arr = np.array(list(play_crps_dict.values()))
-                metrics_orddict = OrderedDict(
-                    [
-                        ("crps_mean", play_crps_arr.mean()),
-                        ("crps_std", play_crps_arr.std()),
-                        ("crps_max", play_crps_arr.max()),
-                    ]
-                )
-
-                crps_max_play_id = max(play_crps_dict, key=play_crps_dict.get)
-                crps_max_play_df = vali_df.xs(key=crps_max_play_id, drop_level=False).reset_index()
-                crps_max_play_orddict = (
-                    crps_max_play_df.query("NflIdRusher == NflId")
-                    .astype(str)
-                    .to_dict(orient="records", into=OrderedDict)[0]
-                )
-
-                report_orddict = OrderedDict([])
-                report_orddict.update(metrics_orddict)
-                report_orddict.update(crps_max_play_orddict)
-                if hasattr(play_index_iter, "set_postfix"):
-                    play_index_iter.set_postfix(ordered_dict=report_orddict, refresh=True)
-                else:
-                    print(report_orddict)
-            assert not np.isnan(play_crps)
-
-        log.info(metrics_orddict)
-        log.info(crps_max_play_orddict)
-        log_metrics(dict(metrics_orddict))
-        log_params(dict(crps_max_play_orddict))
-
-    return model
-
-
-# def _predict_cdf(test_df, model):
-#
-#     yards_abs = test_df["YardsFromOwnGoal"].iloc[0]
-#
-#     pred_arr = np.zeros(199)
-#     pred_arr[-100:] = np.ones(100)
-#
-#     target_yards_sr = pd.Series(np.arange(-yards_abs, 100 - yards_abs, 1))
-#     outcome_sr = _relative_values(target_yards_sr, test_df["RelativeDefenceMeanYards"])
-#     assert not outcome_sr.isna().any()
-#     cdf_arr = model.cdf(outcome_sr)
-#     assert not np.isnan(cdf_arr).any()
-#     cdf_arr = np.maximum.accumulate(cdf_arr)
-#     # for i in range(len(cdf_arr) - 1):
-#     #     cdf_arr[i + 1] = max(cdf_arr[i + 1], cdf_arr[i])
-#
-#     pred_arr[(99 - yards_abs) : (199 - yards_abs)] = cdf_arr
-#     return pred_arr
 
 
 def _predict_cdf(test_df, pytorch_model):

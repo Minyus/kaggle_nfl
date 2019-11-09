@@ -231,14 +231,15 @@ train_params:
 
 
 RUN_CONFIG:
-  tags: # None
+  pipeline_name: __default__
+  only_missing: True
   runner: SequentialRunner # None
+  tags: # None
   node_names: # None
   from_nodes: # None
   to_nodes: # None
   from_inputs: # None
   load_versions: # None
-  pipeline_name: __default__
 
 MLFLOW_LOGGING_CONFIG:
   offset_hours: 8
@@ -253,11 +254,6 @@ PIPELINES:
     nodes:
 
       - inputs: train
-#        func:
-#          - =: kedex.df_sample
-#            frac: 0.2
-#            random_state: 191024
-#            col_sample: PlayId
         outputs: df_020
 
       - inputs: df_020
@@ -349,3 +345,31 @@ PIPELINES:
           =: kedex.df_query
           expr: 'Season == 2018'
         outputs: describe_prep_s2018
+
+      - inputs: df_030
+        func:
+          - =: kedex.df_filter
+            items:
+              [
+                "GameId",
+                "PlayId",
+                "Season",
+                "YardLine",
+                "TimeHandoff",
+                "Yards",
+                "YardsFromOwnGoal",
+                "DownCode",
+                "ScoreDiffCode",
+                "HomeOnOffenseCode",
+                "OffenceTeamCode",
+                "DefenceTeamCode",
+              ]
+          - =: kedex.df_drop_duplicates
+            _:
+        outputs: play_df
+
+      - inputs: play_df
+        func:
+          =: kedex.df_drop
+          columns: TimeHandoff
+        outputs: pairplot
