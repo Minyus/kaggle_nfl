@@ -143,7 +143,7 @@ augmentation:
     p: 0
     max_shift: 0
 
-train_batch_size: 32
+train_batch_size: 64
 
 train_params:
   epochs: 10  # number of epochs to train
