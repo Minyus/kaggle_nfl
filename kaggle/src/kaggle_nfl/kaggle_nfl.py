@@ -86,27 +86,12 @@ def preprocess(df, parameters=None):
     df["Dir_std_2"].fillna(90, inplace=True)
     df["Dir_std"] = df["Dir_std_2"] * math.pi / 180.0
 
-    df.rename(columns=dict(S="_S", A="_A"), inplace=True)
-    # df["is2017"] = df["Season"] == 2017
-    # df["_S"] = df["S"] / df.groupby(["is2017"])["S"].transform("mean")
-    # df["_A"] = df["A"] / df.groupby(["is2017"])["A"].transform("mean")
-    # df["_S"] = df.groupby(["is2017"])["S"].rank(pct=True)
-    # df["_A"] = df.groupby(["is2017"])["A"].rank(pct=True)
-    # df = df.query("Season > 2017")
-    # df = df.query("Season > 2017").copy()
-    # df["_S"] = df["S"] / df.groupby(["PlayId"])["S"].transform("mean")
-    # df["_A"] = df["A"] / df.groupby(["PlayId"])["A"].transform("mean")
-
-    # df["_S"] = (df["S"] / 20).astype(np.float32)
-    # df["_A"] = (df["A"] / 20).astype(np.float32)
-
-    radius_cols = ["_S"]
-    dir_cols = []
-    # for c in radius_cols:
-    #     for i in range(2):
-    #         dir_col = "{}{}".format(c, i)
-    #         df[dir_col] = (df[c] * np.cos(df["Dir_std"] - i * np.pi / 2)).astype(np.float32)
-    #         dir_cols.append(dir_col)
+    # df.rename(columns=dict(S="_S", A="_A"), inplace=True)
+    df["_S"] = df["S"].astype(np.float32)
+    df["_A"] = df["A"].astype(np.float32)
+    is2017_sr = df["Season"] == 2017
+    df.loc[is2017_sr, "_S"] = df["_S"] * np.float32(2.7570316419451517 / 2.435519556913685)
+    df.loc[is2017_sr, "_A"] = df["_A"] * np.float32(1.7819953460610594 / 1.5895792207792045)
 
     motion_coef = 1.0
     motion_sr = motion_coef * df["_S"]
@@ -207,7 +192,7 @@ def preprocess(df, parameters=None):
         "NflId",
         # 'DisplayName',
         # 'JerseyNumber',
-        # "Season",
+        "Season",
         "YardLine",
         # "Quarter",
         # 'GameClock',

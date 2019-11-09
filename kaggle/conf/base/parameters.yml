@@ -266,27 +266,6 @@ PIPELINES:
         outputs: df_030
 
       - inputs: df_030
-        outputs: describe
-
-      - inputs: df_030
-        func:
-          =: kedex.df_query
-          expr: 'PlayerCategory == 0'
-        outputs: describe_cat0
-
-      - inputs: df_030
-        func:
-          =: kedex.df_query
-          expr: 'PlayerCategory == 1'
-        outputs: describe_cat1
-
-      - inputs: df_030
-        func:
-          =: kedex.df_query
-          expr: 'PlayerCategory == 2'
-        outputs: describe_cat2
-
-      - inputs: df_030
         func:
           =: kedex.df_sample
           frac: 0.5
@@ -294,25 +273,6 @@ PIPELINES:
           col_sample: PlayId
           col_assign: Validation
         outputs: df_040
-
-#      - inputs: df_040
-#        func: fit_base_model
-#        outputs: base_model
-#
-#      - inputs: base_model
-#        func: infer
-#        outputs: infered_first_iter
-#
-#      - inputs: df_030
-#        func:
-#          =: kedex.df_sample
-#          frac: 0.01
-#          random_state: 191024
-#          col_sample: PlayId
-#        outputs: df_031
-#
-#      - inputs: df_030
-#        outputs: describe
 
       - inputs: parameters
         func:
@@ -341,3 +301,30 @@ PIPELINES:
       - inputs: pytorch_model
         func: infer
         outputs: infered_first_iter
+
+      - inputs: df_020
+        outputs: describe
+
+      - inputs: df_020
+        func:
+          =: kedex.df_query
+          expr: 'Season == 2017'
+        outputs: describe_s2017
+
+      - inputs: df_020
+        func:
+          =: kedex.df_query
+          expr: 'Season == 2018'
+        outputs: describe_s2018
+
+      - inputs: df_030
+        func:
+          =: kedex.df_query
+          expr: 'Season == 2017'
+        outputs: describe_prep_s2017
+
+      - inputs: df_030
+        func:
+          =: kedex.df_query
+          expr: 'Season == 2018'
+        outputs: describe_prep_s2018
