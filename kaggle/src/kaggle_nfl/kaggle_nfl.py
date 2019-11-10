@@ -83,9 +83,9 @@ def preprocess(df, parameters=None):
     # df.rename(columns=dict(S="_S", A="_A"), inplace=True)
     df["_S"] = df["S"].astype(np.float32)
     df["_A"] = df["A"].astype(np.float32)
-    # is2017_sr = df["Season"] == 2017
-    # df.loc[is2017_sr, "_S"] = df["_S"] * np.float32(2.7570316419451517 / 2.435519556913685)
-    # df.loc[is2017_sr, "_A"] = df["_A"] * np.float32(1.7819953460610594 / 1.5895792207792045)
+    is2017_sr = df["Season"] == 2017
+    df.loc[is2017_sr, "_S"] = df["_S"] * np.float32(2.7570316419451517 / 2.435519556913685)
+    df.loc[is2017_sr, "_A"] = df["_A"] * np.float32(1.7819953460610594 / 1.5895792207792045)
 
     motion_coef = 1.0
     motion_sr = motion_coef * df["_S"]
@@ -167,6 +167,7 @@ def preprocess(df, parameters=None):
     df.loc[df["HomeOnOffense"], "ScoreDiff"] = -df["ScoreDiff"]
     df["ScoreDiffCode"] = (np.floor(df["ScoreDiff"].clip(lower=-35, upper=35) / 10) + 4).astype(np.uint8)  # 8
 
+    df["YardsToGoalCode"] = np.floor((100 - df["YardsFromOwnGoal"].clip(lower=1, upper=99)) / 2).astype(np.uint8)
     """ """
 
     cols = [
@@ -223,7 +224,7 @@ def preprocess(df, parameters=None):
         # 'IsBallCarrier',
         # 'TeamOnOffense',
         # "IsOnOffense",
-        "YardsFromOwnGoal",
+        # "YardsFromOwnGoal",
         # "X_std",
         # "Y_std",
         "PlayerCategory",
@@ -233,6 +234,7 @@ def preprocess(df, parameters=None):
         "Y_int_t1",
         "_S",
         "_A",
+        "YardsToGoalCode",
         "SeasonCode",
         "DownCode",
         "ScoreDiffCode",
@@ -310,6 +312,7 @@ class FieldImagesDataset:
         to_pytorch_tensor=False,
         store_as_sparse_tensor=False,
         spatial_independent_cols=[
+            "YardsToGoalCode",
             "SeasonCode",
             "DownCode",
             "ScoreDiffCode",

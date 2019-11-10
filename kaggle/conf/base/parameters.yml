@@ -357,7 +357,7 @@ PIPELINES:
                 "YardLine",
                 "TimeHandoff",
                 "Yards",
-                "YardsFromOwnGoal",
+                "YardsToGoalCode",
                 "DownCode",
                 "ScoreDiffCode",
                 "HomeOnOffenseCode",
