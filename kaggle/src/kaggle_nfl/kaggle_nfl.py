@@ -69,8 +69,10 @@ def preprocess(df, parameters=None):
     len_x = 30
     len_y = 60
 
-    df["X_int"] = np.floor(X_float).clip(lower=0, upper=(len_x - 1)).astype(np.uint8)
-    df["Y_int"] = np.floor(Y_float).clip(lower=0, upper=(len_y - 1)).astype(np.uint8)
+    # df["X_int"] = np.floor(X_float).clip(lower=0, upper=(len_x - 1)).astype(np.uint8)
+    # df["Y_int"] = np.floor(Y_float).clip(lower=0, upper=(len_y - 1)).astype(np.uint8)
+    df["X_int"] = X_float
+    df["Y_int"] = Y_float
 
     """ """
     # df["Dir_rad"] = np.mod(90 - df["Dir"], 360) * math.pi / 180.0
@@ -90,12 +92,14 @@ def preprocess(df, parameters=None):
     motion_coef = 1.0
     motion_sr = motion_coef * df["_S"]
 
-    df["X_int_t1"] = (
-        np.floor(X_float + motion_sr * np.sin(df["Dir_std"])).clip(lower=0, upper=(len_x - 1)).astype(np.uint8)
-    )
-    df["Y_int_t1"] = (
-        np.floor(Y_float + motion_sr * np.cos(df["Dir_std"])).clip(lower=0, upper=(len_y - 1)).astype(np.uint8)
-    )
+    # df["X_int_t1"] = (
+    #     np.floor(X_float + motion_sr * np.sin(df["Dir_std"])).clip(lower=0, upper=(len_x - 1)).astype(np.uint8)
+    # )
+    # df["Y_int_t1"] = (
+    #     np.floor(Y_float + motion_sr * np.cos(df["Dir_std"])).clip(lower=0, upper=(len_y - 1)).astype(np.uint8)
+    # )
+    df["X_int_t1"] = X_float + motion_sr * np.sin(df["Dir_std"])
+    df["Y_int_t1"] = Y_float + motion_sr * np.cos(df["Dir_std"])
 
     """ """
     # df["ScaledSeason"] = ((df["Season"] - 2017) / 2000.0).astype(np.float32)
@@ -224,7 +228,7 @@ def preprocess(df, parameters=None):
         # 'IsBallCarrier',
         # 'TeamOnOffense',
         # "IsOnOffense",
-        # "YardsFromOwnGoal",
+        "YardsFromOwnGoal",
         # "X_std",
         # "Y_std",
         "PlayerCategory",
@@ -290,6 +294,10 @@ def ordinal_dict(ls):
     return {ls[i]: i for i in range(len(ls))}
 
 
+def add_standard_normal_noise(a, stdev=1.0):
+    return a + stdev * np.random.standard_normal(size=a.shape)
+
+
 class FieldImagesDataset:
     def __init__(
         self,
@@ -326,6 +334,7 @@ class FieldImagesDataset:
             # "ScaledRelativeOffenseScore",
             # "ScaledRelativeHandoff",
         ],
+        random_noise_std=0,
         random_horizontal_flip=dict(p=0),
         random_horizontal_shift=dict(p=0, max_shift=1),
         transform=None,
@@ -349,7 +358,7 @@ class FieldImagesDataset:
         dim_col = "PlayerCategory"
         dim_size = 3
 
-        if to_pytorch_tensor:
+        if 1:  # to_pytorch_tensor:
             coo_cols_ = ["H", "W"]
             dim_cols_ = ["Channel"] + coo_cols_
             agg_df_list = []
@@ -367,8 +376,12 @@ class FieldImagesDataset:
                 + melted_df["variable"].map(value_cols_dict)
             )
 
+            melted_df.loc[:, "value"] = melted_df["value"].astype(np.float32)
+            melted_df.set_index("PlayIndex", inplace=True)
+
             dim_sizes_ = [dim_size * len(value_cols) * len(coo_cols_list)] + coo_size
 
+            melted_si_df = None
             if spatial_independent_cols:
                 spatial_independent_dict = ordinal_dict(spatial_independent_cols)
                 agg_si_df = df[["PlayIndex"] + spatial_independent_cols].drop_duplicates().reset_index(drop=True)
@@ -377,50 +390,31 @@ class FieldImagesDataset:
                 melted_si_df.rename(columns={"variable": "H", "value": "W"}, inplace=True)
                 melted_si_df.loc[:, "H"] = melted_si_df["H"].map(spatial_independent_dict)
                 melted_si_df["value"] = 1.0
-
-                melted_df = pd.concat([melted_df, melted_si_df], sort=False)
+                # melted_df = pd.concat([melted_df, melted_si_df], sort=False)
+                melted_si_df.loc[:, "value"] = melted_si_df["value"].astype(np.float32)
+                melted_si_df.set_index("PlayIndex", inplace=True)
                 dim_sizes_[0] += 1
-
-            melted_df.loc[:, dim_cols_] = melted_df[dim_cols_].astype(np.int64)
-            melted_df.loc[:, "value"] = melted_df["value"].astype(np.float32)
-            melted_df.set_index("PlayIndex", inplace=True)
 
             f = torch.sparse_coo_tensor if store_as_sparse_tensor else dict
             coo_dict = dict()
             for pi in play_id_dict.keys():
                 play_df = melted_df.xs(pi)
                 values = play_df["value"].values
-                indices = play_df[dim_cols_].values.transpose()
-                size = dim_sizes_
-                # if spatial_independent_cols:
-                # play_si_df = si_df.xs(play_id_dict[pi])
-                # spatial_independent = np.squeeze(play_si_df.values)
-                # coo_3d = f(values=values, indices=indices, size=size, spatial_independent=spatial_independent)
-                if 1:  # else:
-                    coo_3d = f(values=values, indices=indices, size=size)
+                indices = play_df[dim_cols_].values
+                if melted_si_df is not None:
+                    play_si_df = melted_si_df.xs(pi)
+                    indices_si = play_si_df[dim_cols_].values
+                    coo_3d = f(values=values, indices=indices, indices_si=indices_si, size=dim_sizes_)
+                else:
+                    coo_3d = f(values=values, indices=indices, size=dim_sizes_)
                 coo_dict[pi] = coo_3d
-
-        else:
-            count_df.set_index(["PlayIndex", dim_cols[0]], inplace=True)
-            from scipy.sparse import coo_matrix
-
-            coo_dict = dict()
-            for pi in play_id_dict.keys():
-                play_coo_2d_dict = dict()
-                for ci in range(3):
-                    ch_df = count_df.xs([pi, ci])
-                    coo_2d = coo_matrix(
-                        (ch_df["_count"].values, (ch_df[dim_cols[1]].values, ch_df[dim_cols[2]].values)),
-                        shape=tuple(dim_sizes[1:]),
-                    )
-                    play_coo_2d_dict[ci] = coo_2d
-                coo_dict[pi] = play_coo_2d_dict
 
         self.coo_dict = coo_dict
 
         self.to_pytorch_tensor = to_pytorch_tensor
         self.store_as_sparse_tensor = store_as_sparse_tensor
 
+        self.random_noise_std = random_noise_std or 0
         self.random_horizontal_flip = random_horizontal_flip or dict()
         self.random_horizontal_shift = random_horizontal_shift or dict()
 
@@ -432,20 +426,35 @@ class FieldImagesDataset:
         play_coo_3d = self.coo_dict[index]
 
         if self.to_pytorch_tensor:
-            si_1darr = None
+
             if not self.store_as_sparse_tensor:
-                # si_1darr = play_coo_3d.pop("spatial_independent", None)
-                play_coo_3d["values"] = torch.from_numpy(play_coo_3d["values"])
-                play_coo_3d["indices"] = torch.from_numpy(play_coo_3d["indices"])
+                size = play_coo_3d.get("size")
+                indices_arr = play_coo_3d["indices"]
+                if self.random_noise_std > 0:
+                    indices_arr[:, 1:] = add_standard_normal_noise(indices_arr[:, 1:], self.random_noise_std)
+                indices_si_arr = play_coo_3d.pop("indices_si", None)
+                if indices_si_arr is not None:
+                    indices_arr = np.concatenate([indices_arr, indices_si_arr], axis=0)
+                indices_arr[:, 1] = indices_arr[:, 1].clip(0, size[1] - 1)
+                indices_arr[:, 2] = indices_arr[:, 2].clip(0, size[2] - 1)
+
+                indices_arr = np.floor(indices_arr).astype(np.int64)
+                play_coo_3d["indices"] = torch.from_numpy(indices_arr.transpose())
                 _random_horizontal_flip(
                     indices=play_coo_3d["indices"], size=play_coo_3d.get("size"), p=self.random_horizontal_flip.get("p")
                 )
                 _random_horizontal_shift(
                     indices=play_coo_3d["indices"],
-                    size=play_coo_3d.get("size"),
+                    size=size,
                     p=self.random_horizontal_shift.get("p"),
                     max_shift=self.random_horizontal_shift.get("max_shift"),
                 )
+
+                values_arr = play_coo_3d.get("values")
+                if indices_si_arr is not None:
+                    values_si_arr = np.ones(shape=indices_si_arr.shape[0], dtype=np.float32)
+                    values_arr = np.concatenate([values_arr, values_si_arr], axis=0)
+                play_coo_3d["values"] = torch.from_numpy(values_arr)
                 play_coo_3d = torch.sparse_coo_tensor(**play_coo_3d)
             img = play_coo_3d.to_dense()
             # if si_1darr is not None:
@@ -501,17 +510,6 @@ def _random_vertical_shift(indices, size, p=None, max_shift=1):
     _random_shift(indices, size, p, max_shift, dim=1)
 
 
-class AugFieldImagesDataset(FieldImagesDataset):
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(
-    #         *args,
-    #         random_horizontal_flip=dict(p=0.5),
-    #         random_horizontal_shift=dict(p=1, max_shift=1),
-    #         **kwargs
-    #     )
-    pass
-
-
 def generate_datasets(df, parameters=None):
 
     if "Validation" in df.columns:
@@ -524,10 +522,10 @@ def generate_datasets(df, parameters=None):
     augmentation = parameters.get("augmentation", dict())
 
     log.info("Setting up train_dataset from df shape: {}".format(fit_df.shape))
-    train_dataset = AugFieldImagesDataset(fit_df, to_pytorch_tensor=True, **augmentation)
+    train_dataset = FieldImagesDataset(fit_df, to_pytorch_tensor=True, **augmentation)
 
     log.info("Setting up val_dataset from df shape: {}".format(vali_df.shape))
-    val_dataset = AugFieldImagesDataset(vali_df, to_pytorch_tensor=True, **augmentation)
+    val_dataset = FieldImagesDataset(vali_df, to_pytorch_tensor=True)
 
     return train_dataset, val_dataset
 
@@ -562,18 +560,21 @@ def generate_field_images(df, parameters=None):
     return images
 
 
-def _predict_cdf(test_df, pytorch_model):
+def _predict_cdf(test_df, pytorch_model, tta=None):
     yards_abs = test_df["YardsFromOwnGoal"].iloc[0]
-
-    imgs_3dtt, _ = FieldImagesDataset(test_df, to_pytorch_tensor=True)[0]
-    # img_3darr, _ = FieldImagesDataset(test_df, to_pytorch_tensor=True)[0]
-    # imgs_3dtt = ToTensor()(img_3darr)
 
     pytorch_model.eval()
     with torch.no_grad():
-        imgs_4dtt = torch.unsqueeze(imgs_3dtt, 0)  # instead of DataLoader
-        out_2dtt = pytorch_model(imgs_4dtt)
-        pred_arr = torch.squeeze(out_2dtt).numpy()
+        if tta:
+            imgs_3dtt_list = [FieldImagesDataset(test_df, to_pytorch_tensor=True)[0][0] for _ in range(tta)]
+            imgs_4dtt = torch.stack(imgs_3dtt_list, dim=0)
+            out_2dtt = pytorch_model(imgs_4dtt)
+            pred_arr = torch.mean(out_2dtt, dim=0).numpy()
+        else:
+            imgs_3dtt, _ = FieldImagesDataset(test_df, to_pytorch_tensor=True)[0]
+            imgs_4dtt = torch.unsqueeze(imgs_3dtt, 0)  # instead of DataLoader
+            out_2dtt = pytorch_model(imgs_4dtt)
+            pred_arr = torch.squeeze(out_2dtt).numpy()
 
     pred_arr = np.maximum.accumulate(pred_arr)
     pred_arr[: (99 - yards_abs)] = 0.0
@@ -645,13 +646,14 @@ def tensor_shift(tt, offset=1):
 #         # return torch.distributions.normal.Normal(loc=loc, scale=scale).cdf(self.value)
 
 
-def infer(model, parameters=None):
+def infer(model, parameters={}):
+    tta = parameters.get("tta")
     from kaggle.competitions import nflrush
 
     env = nflrush.make_env()
     for (test_df, sample_prediction_df) in env.iter_test():
         test_df = preprocess(test_df)
-        sample_prediction_df.iloc[0, :] = _predict_cdf(test_df, model)
+        sample_prediction_df.iloc[0, :] = _predict_cdf(test_df, model, tta)
         env.predict(sample_prediction_df)
         if parameters:
             return sample_prediction_df
@@ -1124,12 +1126,12 @@ if __name__ == "__main__":
     df = preprocess(df)
 
     log.info("Set up dataset.")
-    train_dataset = AugFieldImagesDataset(df, to_pytorch_tensor=True, **augmentation)
+    train_dataset = FieldImagesDataset(df, to_pytorch_tensor=True, **augmentation)
 
     log.info("Fit model.")
     model = neural_network_train(train_params=train_params, mlflow_logging=False)(pytorch_model, train_dataset)
 
     log.info("Infer.")
-    infer(model)
+    infer(model, parameters)
 
     log.info("Completed.")
