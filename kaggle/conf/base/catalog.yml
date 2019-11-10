@@ -14,26 +14,27 @@
 ../model/pytorch_model.pickle:
   mlflow_logging: True
 
-../load/infered_first_iter.csv:
-  type: CSVLocalDataSet
+#../load/infered_first_iter.csv:
+#  type: CSVLocalDataSet
+#  mlflow_logging: True
+
+..load/report.json:
+  type: JSONLocalDataSet
   mlflow_logging: True
 
 ../load/play_df.csv:
   type: CSVLocalDataSet
 
-../load/pairplot.png:
-  type: kedex.SeabornPairPlotDataSet
-  save_args: # https://seaborn.pydata.org/generated/seaborn.pairplot.html
-    x_vars:
-      - Yards
-    aspect: 4
-    chunk_size: 4 # Use if there are many columns
-    hue: Season
-    plot_kws:
-      s: 20
-#  sample_args:
-#    n: 10000
-#    random_state: 0
+#../load/pairplot.png:
+#  type: kedex.SeabornPairPlotDataSet
+#  save_args: # https://seaborn.pydata.org/generated/seaborn.pairplot.html
+#    x_vars:
+#      - Yards
+#    aspect: 4
+#    chunk_size: 4 # Use if there are many columns
+#    hue: Season
+#    plot_kws:
+#      s: 20
 
 ../load/describe.csv:
   type: kedex.PandasDescribeDataSet

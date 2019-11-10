@@ -340,6 +340,9 @@ class FieldImagesDataset:
         transform=None,
         target_transform=None,
     ):
+        # log.info("random_noise_std: {}".format(random_noise_std))
+        # log.info("random_horizontal_flip: {}".format(random_horizontal_flip))
+        # log.info("random_horizontal_shift: {}".format(random_horizontal_shift))
 
         if "Yards" not in df.columns:
             df["Yards"] = np.nan
@@ -432,19 +435,19 @@ class FieldImagesDataset:
                 indices_arr = play_coo_3d["indices"]
                 if self.random_noise_std > 0:
                     indices_arr[:, 1:] = add_standard_normal_noise(indices_arr[:, 1:], self.random_noise_std)
-                indices_si_arr = play_coo_3d.pop("indices_si", None)
+                indices_si_arr = play_coo_3d.get("indices_si", None)
                 if indices_si_arr is not None:
                     indices_arr = np.concatenate([indices_arr, indices_si_arr], axis=0)
                 indices_arr[:, 1] = indices_arr[:, 1].clip(0, size[1] - 1)
                 indices_arr[:, 2] = indices_arr[:, 2].clip(0, size[2] - 1)
 
                 indices_arr = np.floor(indices_arr).astype(np.int64)
-                play_coo_3d["indices"] = torch.from_numpy(indices_arr.transpose())
-                _random_horizontal_flip(
-                    indices=play_coo_3d["indices"], size=play_coo_3d.get("size"), p=self.random_horizontal_flip.get("p")
+                indices_2dtt = torch.from_numpy(indices_arr.transpose())
+                indices_2dtt = _random_horizontal_flip(
+                    indices=indices_2dtt, size=size, p=self.random_horizontal_flip.get("p")
                 )
-                _random_horizontal_shift(
-                    indices=play_coo_3d["indices"],
+                indices_2dtt = _random_horizontal_shift(
+                    indices=indices_2dtt,
                     size=size,
                     p=self.random_horizontal_shift.get("p"),
                     max_shift=self.random_horizontal_shift.get("max_shift"),
@@ -454,13 +457,10 @@ class FieldImagesDataset:
                 if indices_si_arr is not None:
                     values_si_arr = np.ones(shape=indices_si_arr.shape[0], dtype=np.float32)
                     values_arr = np.concatenate([values_arr, values_si_arr], axis=0)
-                play_coo_3d["values"] = torch.from_numpy(values_arr)
-                play_coo_3d = torch.sparse_coo_tensor(**play_coo_3d)
-            img = play_coo_3d.to_dense()
-            # if si_1darr is not None:
-            #     si_1dtt = torch.from_numpy(si_1darr)
-            #     si_3dtt = si_1dtt.unsqueeze(dim=-1).unsqueeze(dim=-1).expand(-1, img.size(1), img.size(2))
-            #     img = torch.cat([img, si_3dtt], dim=0)
+                values_1dtt = torch.from_numpy(values_arr)
+                play_coo_3dtt = torch.sparse_coo_tensor(indices=indices_2dtt, values=values_1dtt, size=size)
+            img = play_coo_3dtt.to_dense()
+
         else:
             play_coo_dict = play_coo_3d
             img_ch_2darr_list = [play_coo_dict[ci].toarray() for ci in range(3)]
@@ -486,28 +486,30 @@ def _random_cond(p=None):
 def _random_flip(indices, size, p, dim):
     if _random_cond(p):
         indices[dim, :].mul_(-1).add_(size[dim] - 1)
+    return indices
 
 
 def _random_horizontal_flip(indices, size, p=None):
-    _random_flip(indices, size, p, dim=2)
+    return _random_flip(indices, size, p, dim=2)
 
 
 def _random_vertical_flip(indices, size, p=None):
-    _random_flip(indices, size, p, dim=1)
+    return _random_flip(indices, size, p, dim=1)
 
 
 def _random_shift(indices, size, p, max_shift, dim):
     if _random_cond(p):
         shift = int(max_shift * random.uniform(-1, 1))
         indices[dim, :].add_(shift).clamp_(min=0, max=size[dim] - 1)
+    return indices
 
 
 def _random_horizontal_shift(indices, size, p=None, max_shift=1):
-    _random_shift(indices, size, p, max_shift, dim=2)
+    return _random_shift(indices, size, p, max_shift, dim=2)
 
 
 def _random_vertical_shift(indices, size, p=None, max_shift=1):
-    _random_shift(indices, size, p, max_shift, dim=1)
+    return _random_shift(indices, size, p, max_shift, dim=1)
 
 
 def generate_datasets(df, parameters=None):
@@ -560,16 +562,22 @@ def generate_field_images(df, parameters=None):
     return images
 
 
-def _predict_cdf(test_df, pytorch_model, tta=None):
+def _predict_cdf(test_df, pytorch_model, parameters=None):
+
+    tta = parameters.get("tta")
+    augmentation = parameters.get("augmentation")
+
     yards_abs = test_df["YardsFromOwnGoal"].iloc[0]
 
     pytorch_model.eval()
     with torch.no_grad():
         if tta:
-            imgs_3dtt_list = [FieldImagesDataset(test_df, to_pytorch_tensor=True)[0][0] for _ in range(tta)]
+            imgs_3dtt_list = [
+                FieldImagesDataset(test_df, to_pytorch_tensor=True, **augmentation)[0][0] for _ in range(tta)
+            ]
             imgs_4dtt = torch.stack(imgs_3dtt_list, dim=0)
             out_2dtt = pytorch_model(imgs_4dtt)
-            pred_arr = torch.mean(out_2dtt, dim=0).numpy()
+            pred_arr = torch.mean(out_2dtt, dim=0, keepdim=False).numpy()
         else:
             imgs_3dtt, _ = FieldImagesDataset(test_df, to_pytorch_tensor=True)[0]
             imgs_4dtt = torch.unsqueeze(imgs_3dtt, 0)  # instead of DataLoader
@@ -626,41 +634,62 @@ def tensor_shift(tt, offset=1):
     return out_tt
 
 
-# class PytorchLogNormalCDF(torch.nn.Module):
-#     def __init__(self, x_start=1, x_end=200, x_step=1, x_scale=0.01):
-#         value = torch.log(
-#             torch.arange(start=x_start, end=x_end, step=x_step, dtype=torch.float32)
-#             * x_scale
-#         )
-#         value = torch.unsqueeze(value, 0)
-#         value.requires_grad = False
-#         self.value = value
-#         super().__init__()
-#
-#     def forward(self, x):
-#         loc = torch.unsqueeze(x[:, 0], 1)
-#         reciprocal_sqrt2_scale = torch.unsqueeze(torch.exp(x[:, 1]), 1)
-#         # scale = torch.unsqueeze(torch.exp(x[:, 1]), 1)
-#         # reciprocal_sqrt2_scale = scale.reciprocal() / math.sqrt(2)
-#         return 0.5 * (1 + torch.erf((self.value - loc) * reciprocal_sqrt2_scale))
-#         # return torch.distributions.normal.Normal(loc=loc, scale=scale).cdf(self.value)
-
-
 def infer(model, parameters={}):
-    tta = parameters.get("tta")
     from kaggle.competitions import nflrush
 
     env = nflrush.make_env()
     for (test_df, sample_prediction_df) in env.iter_test():
         test_df = preprocess(test_df)
-        sample_prediction_df.iloc[0, :] = _predict_cdf(test_df, model, tta)
+        sample_prediction_df.iloc[0, :] = _predict_cdf(test_df, model, parameters)
         env.predict(sample_prediction_df)
-        if parameters:
-            return sample_prediction_df
 
     env.write_submission_file()
 
-    return None
+    return sample_prediction_df
+
+
+def final_validation(dataset, pytorch_model, parameters={}):
+    tta = parameters.get("tta", 1)
+    augmentation = parameters.get("augmentation")
+    dataset.random_noise_std = augmentation.get("random_noise_std")
+    dataset.random_horizontal_flip = augmentation.get("random_horizontal_flip")
+    dataset.random_horizontal_shift = augmentation.get("random_horizontal_shift")
+
+    loss_0dtt_list = []
+
+    from tqdm import trange
+
+    pytorch_model.eval()
+    with torch.no_grad():
+        for i in trange(len(dataset)):
+            imgs_3dtt_list = []
+            target_0dtt_list = []
+            for _ in range(tta):
+                imgs_3dtt, target = dataset[i]
+                imgs_3dtt_list.append(imgs_3dtt)
+                target_0dtt = torch.tensor(target)
+                target_0dtt_list.append(target_0dtt)
+
+            imgs_4dtt = torch.stack(imgs_3dtt_list, dim=0)
+            out_2dtt = pytorch_model(imgs_4dtt)
+
+            target_1dtt = torch.stack(target_0dtt_list, dim=0)
+            loss_0dtt = nfl_crps_loss(out_2dtt, target_1dtt)
+            loss_0dtt_list.append(loss_0dtt)
+        loss_1dtt = torch.stack(loss_0dtt_list, dim=0)
+        loss_mean = float(torch.mean(loss_1dtt).numpy())
+        loss_std = float(torch.std(loss_1dtt).numpy())
+        final_dict = dict(final_loss_mean=loss_mean, final_loss_std=loss_std)
+
+    log.info("{}".format(final_dict))
+    try:
+        from mlflow import log_metrics
+
+        log_metrics(final_dict)
+    except:
+        log.warning("Failed to log final loss mean and std.")
+
+    return final_dict
 
 
 """
@@ -1117,7 +1146,7 @@ if __name__ == "__main__":
     train_params.pop("val_data_loader_params")
     train_params.pop("evaluate_val_data")
     pytorch_model = HatchDict(parameters).get("pytorch_model")
-    augmentation = HatchDict(parameters).get("augmentation")
+    augmentation = parameters.get("augmentation")
 
     log.info("Read CSV file.")
     df = pd.read_csv("../input/nfl-big-data-bowl-2020/train.csv", low_memory=False)

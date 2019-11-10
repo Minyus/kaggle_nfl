@@ -318,9 +318,16 @@ PIPELINES:
           mlflow_logging: True
         outputs: pytorch_model
 
-      - inputs: pytorch_model
-        func: infer
-        outputs: infered_first_iter
+#      - inputs: pytorch_model
+#        func: infer
+#        outputs: infered_first_iter
+
+      - inputs:
+          - val_dataset
+          - pytorch_model
+          - parameters
+        func: final_validation
+        outputs: report
 
       - inputs: df_020
         outputs: describe
@@ -371,8 +378,8 @@ PIPELINES:
             _:
         outputs: play_df
 
-      - inputs: play_df
-        func:
-          =: kedex.df_drop
-          columns: TimeHandoff
-        outputs: pairplot
+#      - inputs: play_df
+#        func:
+#          =: kedex.df_drop
+#          columns: TimeHandoff
+#        outputs: pairplot
