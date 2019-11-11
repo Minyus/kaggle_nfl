@@ -294,10 +294,6 @@ def ordinal_dict(ls):
     return {ls[i]: i for i in range(len(ls))}
 
 
-def add_standard_normal_noise(a, stdev=1.0):
-    return a + stdev * np.random.standard_normal(size=a.shape)
-
-
 class FieldImagesDataset:
     def __init__(
         self,
@@ -334,15 +330,10 @@ class FieldImagesDataset:
             # "ScaledRelativeOffenseScore",
             # "ScaledRelativeHandoff",
         ],
-        random_noise_std=0,
-        random_horizontal_flip=dict(p=0),
-        random_horizontal_shift=dict(p=0, max_shift=1),
+        augmentation={},
         transform=None,
         target_transform=None,
     ):
-        # log.info("random_noise_std: {}".format(random_noise_std))
-        # log.info("random_horizontal_flip: {}".format(random_horizontal_flip))
-        # log.info("random_horizontal_shift: {}".format(random_horizontal_shift))
 
         if "Yards" not in df.columns:
             df["Yards"] = np.nan
@@ -417,9 +408,8 @@ class FieldImagesDataset:
         self.to_pytorch_tensor = to_pytorch_tensor
         self.store_as_sparse_tensor = store_as_sparse_tensor
 
-        self.random_noise_std = random_noise_std or 0
-        self.random_horizontal_flip = random_horizontal_flip or dict()
-        self.random_horizontal_shift = random_horizontal_shift or dict()
+        assert isinstance(augmentation, dict)
+        self.augmentation = augmentation
 
         self.transform = transform
         self.target_transform = target_transform
@@ -433,8 +423,18 @@ class FieldImagesDataset:
             if not self.store_as_sparse_tensor:
                 size = play_coo_3d.get("size")
                 indices_arr = play_coo_3d["indices"]
-                if self.random_noise_std > 0:
-                    indices_arr[:, 1:] = add_standard_normal_noise(indices_arr[:, 1:], self.random_noise_std)
+
+                if self.augmentation:
+                    horizontal_flip_proba = self.augmentation.get("horizontal_flip_proba")
+                    horizontal_shift_std = self.augmentation.get("horizontal_shift_std")
+                    vertical_shift_std = self.augmentation.get("vertical_shift_std")
+                    if horizontal_flip_proba:
+                        indices_arr = _add_horizontal_flip(indices_arr, horizontal_flip_proba, size)
+                    if horizontal_shift_std:
+                        indices_arr = _add_normal_horizontal_shift(indices_arr, horizontal_shift_std)
+                    if vertical_shift_std:
+                        indices_arr = _add_normal_vertical_shift(indices_arr, vertical_shift_std)
+
                 indices_si_arr = play_coo_3d.get("indices_si", None)
                 if indices_si_arr is not None:
                     indices_arr = np.concatenate([indices_arr, indices_si_arr], axis=0)
@@ -443,15 +443,6 @@ class FieldImagesDataset:
 
                 indices_arr = np.floor(indices_arr).astype(np.int64)
                 indices_2dtt = torch.from_numpy(indices_arr.transpose())
-                indices_2dtt = _random_horizontal_flip(
-                    indices=indices_2dtt, size=size, p=self.random_horizontal_flip.get("p")
-                )
-                indices_2dtt = _random_horizontal_shift(
-                    indices=indices_2dtt,
-                    size=size,
-                    p=self.random_horizontal_shift.get("p"),
-                    max_shift=self.random_horizontal_shift.get("max_shift"),
-                )
 
                 values_arr = play_coo_3d.get("values")
                 if indices_si_arr is not None:
@@ -479,37 +470,41 @@ class FieldImagesDataset:
         return self.len
 
 
+def _add_normal_shift(a, stdev=1.0, size=(1,)):
+    return a + stdev * np.random.standard_normal(size=size)
+
+
+def _add_normal_horizontal_shift(indices_arr, horizontal_shift_std):
+    indices_arr[:, 2:] = _add_normal_shift(indices_arr[:, 2:], horizontal_shift_std)
+    return indices_arr
+
+
+def _add_normal_vertical_shift(indices_arr, vertical_shift_std):
+    indices_arr[:, 1:2] = _add_normal_shift(indices_arr[:, 1:2], vertical_shift_std)
+    return indices_arr
+
+
 def _random_cond(p=None):
     return p and random.random() < p
 
 
-def _random_flip(indices, size, p, dim):
+def _random_flip(indices_arr, p, size, dim):
+    assert isinstance(indices_arr, np.ndarray)
     if _random_cond(p):
-        indices[dim, :].mul_(-1).add_(size[dim] - 1)
-    return indices
+        indices_arr[:, dim] = (size[dim] - 1) - indices_arr[:, dim]
+    return indices_arr
 
 
-def _random_horizontal_flip(indices, size, p=None):
-    return _random_flip(indices, size, p, dim=2)
+def _add_horizontal_flip(indices_arr, horizontal_flip_proba, size):
+    if _random_cond(horizontal_flip_proba):
+        indices_arr = _random_flip(indices_arr, p=horizontal_flip_proba, size=size, dim=2)
+    return indices_arr
 
 
-def _random_vertical_flip(indices, size, p=None):
-    return _random_flip(indices, size, p, dim=1)
-
-
-def _random_shift(indices, size, p, max_shift, dim):
-    if _random_cond(p):
-        shift = int(max_shift * random.uniform(-1, 1))
-        indices[dim, :].add_(shift).clamp_(min=0, max=size[dim] - 1)
-    return indices
-
-
-def _random_horizontal_shift(indices, size, p=None, max_shift=1):
-    return _random_shift(indices, size, p, max_shift, dim=2)
-
-
-def _random_vertical_shift(indices, size, p=None, max_shift=1):
-    return _random_shift(indices, size, p, max_shift, dim=1)
+def _add_vertical_flip(indices_arr, horizontal_flip_proba, size):
+    if _random_cond(horizontal_flip_proba):
+        indices_arr = _random_flip(indices_arr, p=horizontal_flip_proba, size=size, dim=1)
+    return indices_arr
 
 
 def generate_datasets(df, parameters=None):
@@ -524,7 +519,7 @@ def generate_datasets(df, parameters=None):
     augmentation = parameters.get("augmentation", dict())
 
     log.info("Setting up train_dataset from df shape: {}".format(fit_df.shape))
-    train_dataset = FieldImagesDataset(fit_df, to_pytorch_tensor=True, **augmentation)
+    train_dataset = FieldImagesDataset(fit_df, to_pytorch_tensor=True, augmentation=augmentation)
 
     log.info("Setting up val_dataset from df shape: {}".format(vali_df.shape))
     val_dataset = FieldImagesDataset(vali_df, to_pytorch_tensor=True)
@@ -573,7 +568,7 @@ def _predict_cdf(test_df, pytorch_model, parameters=None):
     with torch.no_grad():
         if tta:
             imgs_3dtt_list = [
-                FieldImagesDataset(test_df, to_pytorch_tensor=True, **augmentation)[0][0] for _ in range(tta)
+                FieldImagesDataset(test_df, to_pytorch_tensor=True, augmentation=augmentation)[0][0] for _ in range(tta)
             ]
             imgs_4dtt = torch.stack(imgs_3dtt_list, dim=0)
             out_2dtt = pytorch_model(imgs_4dtt)
@@ -649,12 +644,11 @@ def infer(model, parameters={}):
 
 
 def final_validation(dataset, pytorch_model, parameters={}):
-    # tta = 1
-    tta = parameters.get("tta", 1)
-    augmentation = parameters.get("augmentation", {})
-    dataset.random_noise_std = augmentation.get("random_noise_std")
-    dataset.random_horizontal_flip = augmentation.get("random_horizontal_flip")
-    dataset.random_horizontal_shift = augmentation.get("random_horizontal_shift")
+    tta = parameters.get("tta")
+    if tta:
+        dataset.augmentation = parameters.get("augmentation", {})
+    else:
+        tta = 1
 
     train_params = parameters.get("train_params", {})
     val_dataset_size_limit = train_params.get("val_dataset_size_limit")
@@ -1168,7 +1162,7 @@ if __name__ == "__main__":
     df = preprocess(df)
 
     log.info("Set up dataset.")
-    train_dataset = FieldImagesDataset(df, to_pytorch_tensor=True, **augmentation)
+    train_dataset = FieldImagesDataset(df, to_pytorch_tensor=True, augmentation=augmentation)
 
     log.info("Fit model.")
     model = neural_network_train(train_params=train_params, mlflow_logging=False)(pytorch_model, train_dataset)

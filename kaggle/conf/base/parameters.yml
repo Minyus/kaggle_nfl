@@ -137,14 +137,11 @@ pytorch_model:
     - {=: kedex.TensorClamp, min: 0.0, max: 1.0}
 
 augmentation:
-  random_noise_std: 1.0
-  random_horizontal_flip:
-    p: 0.3
-  random_horizontal_shift:
-    p: 0
-    max_shift: 0
+  horizontal_flip_proba: 0.4
+  horizontal_shift_std: 1.0
+  vertical_shift_std: 0.5
 
-tta: 10
+tta: 0 # None
 
 train_batch_size: 64
 
