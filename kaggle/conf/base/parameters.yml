@@ -9,7 +9,7 @@ pytorch_model:
             - {=: kedex.TensorSqueeze, dim: 1}
 #            - {=: kedex.TensorSlice, end: 30}
             - {=: kedex.TensorFlatten, _: }
-            - {=: torch.nn.Linear, in_features: 1800, out_features: 200}
+            - {=: torch.nn.Linear, in_features: 1620, out_features: 200}
             - {=: torch.nn.CELU, alpha: 1.0}
             - {=: torch.nn.Linear, in_features: 200, out_features: 200}
             - {=: torch.nn.CELU, alpha: 1.0}
@@ -84,47 +84,22 @@ pytorch_model:
                 - {=: kedex.TensorConv2d, stride: 2, in_channels: 60, out_channels: 20, kernel_size: [3, 3]}
                 - {=: kedex.TensorConv2d, stride: 2, in_channels: 60, out_channels: 20, kernel_size: [7, 7]}
                 - {=: kedex.TensorConv2d, stride: 2, in_channels: 60, out_channels: 20, kernel_size: [5, 15]}
-              # -> [120, 8, 15]
+              # -> [120, 8, 14]
             - {=: torch.nn.CELU, alpha: 1.0}
             - =: kedex.ModuleConcat
               _:
                 - =: torch.nn.Sequential
                   _:
-                    - {=: torch.nn.AvgPool2d, stride: 2, kernel_size: [3, 15]}
+                    - {=: torch.nn.AvgPool2d, stride: 2, kernel_size: [3, 14]}
                     - {=: kedex.TensorConv2d, in_channels: 120, out_channels: 20, kernel_size: [1, 1]}
                     - {=: kedex.TensorFlatten, _: }
                     - {=: torch.nn.CELU, _: }
                 - =: torch.nn.Sequential
                   _:
-                    - {=: torch.nn.MaxPool2d, stride: 2, kernel_size: [3, 15]}
+                    - {=: torch.nn.MaxPool2d, stride: 2, kernel_size: [3, 14]}
                     - {=: kedex.TensorConv2d, in_channels: 120, out_channels: 20, kernel_size: [1, 1]}
                     - {=: kedex.TensorFlatten, _: }
                     - {=: torch.nn.CELU, _: }
-#                - =: torch.nn.Sequential
-#                  _:
-#                    - {=: kedex.TensorConv2d, in_channels: 240, out_channels: 120, kernel_size: [1, 15], padding: 0}
-#                    - {=: kedex.TensorFlatten, _: }
-#                    - {=: torch.nn.CELU, _: }
-#                - =: torch.nn.Sequential
-#                  _:
-#                    - {=: torch.nn.AvgPool2d, kernel_size: [1, 15]}
-#                    - {=: kedex.TensorConv2d, in_channels: 240, out_channels: 30, kernel_size: [1, 1]}
-#                    - {=: kedex.TensorFlatten, _: }
-#                    - {=: torch.nn.CELU, alpha: 1.0}
-#                - =: torch.nn.Sequential
-#                  _:
-#                    - {=: torch.nn.MaxPool2d, kernel_size: [1, 15]}
-#                    - {=: kedex.TensorConv2d, in_channels: 240, out_channels: 30, kernel_size: [1, 1]}
-#                    - {=: kedex.TensorFlatten, _: }
-#                    - {=: torch.nn.CELU, _: }
-#                - =: torch.nn.Sequential
-#                  _:
-#                    - {=: kedex.TensorGlobalAvgPool2d, keepdim: False}
-#                    - {=: torch.nn.CELU, _: }
-#                - =: torch.nn.Sequential
-#                  _:
-#                    - {=: kedex.TensorGlobalMaxPool2d, keepdim: False}
-#                    - {=: torch.nn.CELU, _: }
     - {=: torch.nn.Linear, in_features: 380, out_features: 50}
 #    - {=: kedex.TensorUnsqueeze, dim: 1}
 #    - {=: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
@@ -383,3 +358,40 @@ PIPELINES:
 #          =: kedex.df_drop
 #          columns: TimeHandoff
 #        outputs: pairplot
+
+#      - inputs: parameters
+#        func: get_test_df
+#        outputs: test_df
+#
+#      - inputs:
+#          - train
+#          - test_df
+#        func:
+#          =: kedex.df_concat
+#          _:
+#        outputs: eda_df
+#
+#      - inputs: eda_df
+#        func:
+#          - =: kedex.df_filter
+#            items:
+#              - GameId
+#              - PlayId
+#              - X
+#              - Y
+#              - S
+#              - A
+#              - Dis
+#              - Dir
+#              - Season
+#              - YardLine
+#              - Quarter
+#              - PossessionTeam
+#              - Down
+#              - Distance
+#              - FieldPosition
+#              - PlayDirection
+#              - Yards
+#              - Week
+#        outputs: df_020_filtered
+#

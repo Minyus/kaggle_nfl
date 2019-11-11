@@ -119,7 +119,7 @@ def preprocess(df, parameters=None):
     df["X_std"] = df["X_std"] - 10
 
     df["Y_std"] = df["Y"]
-    df.loc[df["ToLeft"], "Y_std"] = -df["Y"] + 60 #  160 / 3
+    df.loc[df["ToLeft"], "Y_std"] = -df["Y"] + 53.6
 
     """ """
     df["PlayerCategory"] = df["IsOnOffense"].astype(np.uint8)
@@ -328,7 +328,7 @@ class FieldImagesDataset:
         self,
         df,
         coo_cols_list=[["X_int", "Y_int"], ["X_int_t1", "Y_int_t1"]],
-        coo_size=[30, 60],
+        coo_size=[30, 54],
         value_cols=[
             "_count",
             "_S",
@@ -668,6 +668,21 @@ def infer(model, parameters={}):
     env.write_submission_file()
 
     return sample_prediction_df
+
+
+def get_test_df(parameters={}):
+    from kaggle.competitions import nflrush
+
+    env = nflrush.make_env()
+
+    test_df_list = []
+    for (test_df, sample_prediction_df) in env.iter_test():
+        test_df_list.append(test_df)
+        env.predict(sample_prediction_df)
+
+    test_df = pd.concat(test_df_list)
+
+    return test_df
 
 
 def final_validation(dataset, pytorch_model, parameters={}):
