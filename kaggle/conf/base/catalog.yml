@@ -18,9 +18,8 @@
 #  type: CSVLocalDataSet
 #  mlflow_logging: True
 
-..load/report.json:
-  type: JSONLocalDataSet
-  mlflow_logging: True
+../load/loss_df.csv:
+  type: CSVLocalDataSet
 
 ../load/play_df.csv:
   type: CSVLocalDataSet

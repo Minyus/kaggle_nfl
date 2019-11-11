@@ -327,7 +327,7 @@ PIPELINES:
           - pytorch_model
           - parameters
         func: final_validation
-        outputs: report
+        outputs: loss_df
 
       - inputs: df_020
         outputs: describe

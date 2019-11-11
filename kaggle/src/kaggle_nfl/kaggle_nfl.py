@@ -649,34 +649,45 @@ def infer(model, parameters={}):
 
 
 def final_validation(dataset, pytorch_model, parameters={}):
+    # tta = 1
     tta = parameters.get("tta", 1)
-    augmentation = parameters.get("augmentation")
+    augmentation = parameters.get("augmentation", {})
     dataset.random_noise_std = augmentation.get("random_noise_std")
     dataset.random_horizontal_flip = augmentation.get("random_horizontal_flip")
     dataset.random_horizontal_shift = augmentation.get("random_horizontal_shift")
 
-    loss_0dtt_list = []
+    train_params = parameters.get("train_params", {})
+    val_dataset_size_limit = train_params.get("val_dataset_size_limit")
+    if val_dataset_size_limit and val_dataset_size_limit < len(dataset):
+        n_samples = val_dataset_size_limit
+    else:
+        n_samples = len(dataset)
 
     from tqdm import trange
 
     pytorch_model.eval()
     with torch.no_grad():
-        for i in trange(len(dataset)):
+        pred_1dtt_list = []
+        target_0dtt_list = []
+        for i in trange(n_samples):
             imgs_3dtt_list = []
-            target_0dtt_list = []
             for _ in range(tta):
                 imgs_3dtt, target = dataset[i]
                 imgs_3dtt_list.append(imgs_3dtt)
-                target_0dtt = torch.tensor(target)
-                target_0dtt_list.append(target_0dtt)
 
             imgs_4dtt = torch.stack(imgs_3dtt_list, dim=0)
             out_2dtt = pytorch_model(imgs_4dtt)
+            pred_1dtt = torch.mean(out_2dtt, dim=0, keepdim=False)
+            pred_1dtt_list.append(pred_1dtt)
 
-            target_1dtt = torch.stack(target_0dtt_list, dim=0)
-            loss_0dtt = nfl_crps_loss(out_2dtt, target_1dtt)
-            loss_0dtt_list.append(loss_0dtt)
-        loss_1dtt = torch.stack(loss_0dtt_list, dim=0)
+            target_0dtt = torch.tensor(target)
+            target_0dtt_list.append(target_0dtt)
+
+        pred_2dtt = torch.stack(pred_1dtt_list, dim=0)
+        target_1dtt = torch.stack(target_0dtt_list, dim=0)
+
+        loss_2dtt = crps_loss(pred_2dtt, target_1dtt, target_to_index=yards_to_index, reduction="none")
+        loss_1dtt = torch.mean(loss_2dtt, dim=1, keepdim=False)
         loss_mean = float(torch.mean(loss_1dtt).numpy())
         loss_std = float(torch.std(loss_1dtt).numpy())
         final_dict = dict(final_loss_mean=loss_mean, final_loss_std=loss_std)
@@ -689,7 +700,9 @@ def final_validation(dataset, pytorch_model, parameters={}):
     except:
         log.warning("Failed to log final loss mean and std.")
 
-    return final_dict
+    loss_df = pd.DataFrame(dict(loss=loss_1dtt.numpy()))
+
+    return loss_df
 
 
 """
