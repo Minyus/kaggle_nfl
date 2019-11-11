@@ -119,7 +119,7 @@ def preprocess(df, parameters=None):
     df["X_std"] = df["X_std"] - 10
 
     df["Y_std"] = df["Y"]
-    df.loc[df["ToLeft"], "Y_std"] = -df["Y"] + 160 / 3
+    df.loc[df["ToLeft"], "Y_std"] = -df["Y"] + 60 #  160 / 3
 
     """ """
     df["PlayerCategory"] = df["IsOnOffense"].astype(np.uint8)

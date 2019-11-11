@@ -137,7 +137,7 @@ pytorch_model:
     - {=: kedex.TensorClamp, min: 0.0, max: 1.0}
 
 augmentation:
-  horizontal_flip_proba: 0  # 0.4
+  horizontal_flip_proba: 0.5
   horizontal_shift_std: 0  # 1.0
   vertical_shift_std: 0  # 0.5
 
