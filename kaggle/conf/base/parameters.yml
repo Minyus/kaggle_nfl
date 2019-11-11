@@ -7,11 +7,11 @@ pytorch_model:
           _:
             - {=: kedex.TensorSlice, start: 18}
             - {=: kedex.TensorSqueeze, dim: 1}
-            - {=: kedex.TensorSlice, end: 5}
+#            - {=: kedex.TensorSlice, end: 30}
             - {=: kedex.TensorFlatten, _: }
-            - {=: torch.nn.Linear, in_features: 300, out_features: 100}
+            - {=: torch.nn.Linear, in_features: 1800, out_features: 200}
             - {=: torch.nn.CELU, alpha: 1.0}
-            - {=: torch.nn.Linear, in_features: 100, out_features: 100}
+            - {=: torch.nn.Linear, in_features: 200, out_features: 200}
             - {=: torch.nn.CELU, alpha: 1.0}
         - =: torch.nn.Sequential
           _:
@@ -125,7 +125,7 @@ pytorch_model:
 #                  _:
 #                    - {=: kedex.TensorGlobalMaxPool2d, keepdim: False}
 #                    - {=: torch.nn.CELU, _: }
-    - {=: torch.nn.Linear, in_features: 280, out_features: 50}
+    - {=: torch.nn.Linear, in_features: 380, out_features: 50}
 #    - {=: kedex.TensorUnsqueeze, dim: 1}
 #    - {=: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
 #    - {=: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
@@ -137,11 +137,11 @@ pytorch_model:
     - {=: kedex.TensorClamp, min: 0.0, max: 1.0}
 
 augmentation:
-  horizontal_flip_proba: 0.4
-  horizontal_shift_std: 1.0
-  vertical_shift_std: 0.5
+  horizontal_flip_proba: 0  # 0.4
+  horizontal_shift_std: 0  # 1.0
+  vertical_shift_std: 0  # 0.5
 
-tta: 0 # None
+tta: 0
 
 train_batch_size: 64
 
@@ -355,6 +355,8 @@ PIPELINES:
 
       - inputs: df_030
         func:
+          - =: kedex.df_query
+            expr: 'PlayerCategory == 2'
           - =: kedex.df_filter
             items:
               [
@@ -370,9 +372,10 @@ PIPELINES:
                 "HomeOnOffenseCode",
                 "OffenceTeamCode",
                 "DefenceTeamCode",
+                "OffenseFormationCode",
+                "DefendersInTheBoxCode",
+                "PositionCode",
               ]
-          - =: kedex.df_drop_duplicates
-            _:
         outputs: play_df
 
 #      - inputs: play_df

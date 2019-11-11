@@ -11,6 +11,68 @@ import logging
 log = logging.getLogger(__name__)
 
 
+TEAM_CODE_DICT = dict(
+    ARZ=0,
+    ATL=1,
+    BLT=2,
+    BUF=3,
+    CAR=4,
+    CHI=5,
+    CIN=6,
+    CLV=7,
+    DAL=8,
+    DEN=9,
+    DET=10,
+    GB=11,
+    HST=12,
+    IND=13,
+    JAX=14,
+    KC=15,
+    LA=16,
+    LAC=17,
+    MIA=18,
+    MIN=19,
+    NE=20,
+    NO=21,
+    NYG=22,
+    NYJ=23,
+    OAK=24,
+    PHI=25,
+    PIT=26,
+    SEA=27,
+    SF=28,
+    TB=29,
+    TEN=30,
+    WAS=31,
+)
+
+
+OFFENSE_FORMATION_LIST = r"""_
+ACE
+EMPTY
+I_FORM
+JUMBO
+PISTOL
+SHOTGUN
+SINGLEBACK
+WILDCAT
+""".splitlines()
+OFFENSE_FORMATION_DICT = {e: i for i, e in enumerate(OFFENSE_FORMATION_LIST)}
+
+POSITION_LIST = r"""_
+CB
+DE
+DT
+FB
+HB
+QB
+RB
+TE
+WR
+""".splitlines()
+POSITION_DICT = {e: i for i, e in enumerate(POSITION_LIST)}
+
+
 def df_concat(**kwargs):
     def _df_concat(df_0, df_1, *argsignore, **kwargsignore):
         new_col_values = kwargs.get("new_col_values")  # type: List[str]
@@ -46,7 +108,7 @@ def preprocess(df, parameters=None):
     df["HomeTeamAbbr"] = df["HomeTeamAbbr"].replace(team_abbr_dict)
 
     home_dict = {True: "home", False: "away"}
-    df["TeamOnOffense"] = (df["PossessionTeam"] == df["HomeTeamAbbr"]).replace(home_dict)
+    df["TeamOnOffense"] = (df["PossessionTeam"] == df["HomeTeamAbbr"]).map(home_dict)
 
     df["IsOnOffense"] = df["Team"] == df["TeamOnOffense"]
     df["YardsFromOwnGoal"] = -df["YardLine"] + 100
@@ -66,11 +128,6 @@ def preprocess(df, parameters=None):
     X_float = df["X_std"] - df["YardsFromOwnGoal"] + 10
     Y_float = df["Y_std"]
 
-    len_x = 30
-    len_y = 60
-
-    # df["X_int"] = np.floor(X_float).clip(lower=0, upper=(len_x - 1)).astype(np.uint8)
-    # df["Y_int"] = np.floor(Y_float).clip(lower=0, upper=(len_y - 1)).astype(np.uint8)
     df["X_int"] = X_float
     df["Y_int"] = Y_float
 
@@ -121,57 +178,32 @@ def preprocess(df, parameters=None):
     #     log.warning("Failed to compute ScaledRelativeHandoff.")
     #     df["ScaledRelativeHandoff"] = 0.0001 * np.ones(len(df)).astype(np.float32)
     """ """
-    team_code_dict = dict(
-        ARZ=0,
-        ATL=1,
-        BLT=2,
-        BUF=3,
-        CAR=4,
-        CHI=5,
-        CIN=6,
-        CLV=7,
-        DAL=8,
-        DEN=9,
-        DET=10,
-        GB=11,
-        HST=12,
-        IND=13,
-        JAX=14,
-        KC=15,
-        LA=16,
-        LAC=17,
-        MIA=18,
-        MIN=19,
-        NE=20,
-        NO=21,
-        NYG=22,
-        NYJ=23,
-        OAK=24,
-        PHI=25,
-        PIT=26,
-        SEA=27,
-        SF=28,
-        TB=29,
-        TEN=30,
-        WAS=31,
-    )
+
     df["SeasonCode"] = ((df["Season"].clip(lower=2017, upper=2019) - 2017)).astype(np.uint8)  # 3
     df["DownCode"] = (df["Down"].clip(lower=1, upper=4) - 1).astype(np.uint8)  # 4
 
     df["HomeOnOffense"] = df["PossessionTeam"] == df["HomeTeamAbbr"]
     df["HomeOnOffenseCode"] = df["HomeOnOffense"].astype(np.uint8)  # 2
 
-    df["OffenceTeamCode"] = df["PossessionTeam"].replace(team_code_dict).astype(np.uint8)
+    df["OffenceTeamCode"] = df["PossessionTeam"].map(TEAM_CODE_DICT).fillna(0).astype(np.uint8)
 
     df["DefenceTeamAbbr"] = df["HomeTeamAbbr"]
     df.loc[df["HomeOnOffense"], "DefenceTeamAbbr"] = df["VisitorTeamAbbr"]
-    df["DefenceTeamCode"] = df["DefenceTeamAbbr"].replace(team_code_dict).astype(np.uint8)
+    df["DefenceTeamCode"] = df["DefenceTeamAbbr"].map(TEAM_CODE_DICT).fillna(0).astype(np.uint8)
 
     df["ScoreDiff"] = df["VisitorScoreBeforePlay"] - df["HomeScoreBeforePlay"]
     df.loc[df["HomeOnOffense"], "ScoreDiff"] = -df["ScoreDiff"]
     df["ScoreDiffCode"] = (np.floor(df["ScoreDiff"].clip(lower=-35, upper=35) / 10) + 4).astype(np.uint8)  # 8
 
     df["YardsToGoalCode"] = np.floor((100 - df["YardsFromOwnGoal"].clip(lower=1, upper=99)) / 2).astype(np.uint8)
+
+    """ """
+
+    df["OffenseFormationCode"] = df["OffenseFormation"].map(OFFENSE_FORMATION_DICT).fillna(0).astype(np.uint8)
+
+    df["DefendersInTheBoxCode"] = df["DefendersInTheBox"].clip(lower=0, upper=11).fillna(0).astype(np.uint8)
+    df["PositionCode"] = df["Position"].map(POSITION_DICT).fillna(0).astype(np.uint8)
+
     """ """
 
     cols = [
@@ -199,10 +231,10 @@ def preprocess(df, parameters=None):
         # "HomeScoreBeforePlay",
         # "VisitorScoreBeforePlay",
         # 'NflIdRusher',
-        # "OffenseFormation",
-        # "OffensePersonnel",
-        # "DefendersInTheBox",
-        # "DefensePersonnel",
+        "OffenseFormation",
+        "OffensePersonnel",
+        "DefendersInTheBox",
+        "DefensePersonnel",
         # 'PlayDirection',
         "TimeHandoff",
         # 'TimeSnap',
@@ -245,12 +277,9 @@ def preprocess(df, parameters=None):
         "HomeOnOffenseCode",
         "OffenceTeamCode",
         "DefenceTeamCode",
-        # "ScaledSeason",
-        # "ScaledDown",
-        # "ScaledDistance",
-        # "ScaledDefendersInTheBox",
-        # "ScaledRelativeOffenseScore",
-        # "ScaledRelativeHandoff",
+        "OffenseFormationCode",
+        "DefendersInTheBoxCode",
+        "PositionCode",
     ]
     # cols = cols + dir_cols
     df = df.filter(items=cols)
@@ -323,12 +352,9 @@ class FieldImagesDataset:
             "HomeOnOffenseCode",
             "OffenceTeamCode",
             "DefenceTeamCode",
-            # "ScaledSeason",
-            # "ScaledDown",
-            # "ScaledDistance",
-            # "ScaledDefendersInTheBox",
-            # "ScaledRelativeOffenseScore",
-            # "ScaledRelativeHandoff",
+            "OffenseFormationCode",
+            "DefendersInTheBoxCode",
+            "PositionCode",
         ],
         augmentation={},
         transform=None,
@@ -378,7 +404,8 @@ class FieldImagesDataset:
             melted_si_df = None
             if spatial_independent_cols:
                 spatial_independent_dict = ordinal_dict(spatial_independent_cols)
-                agg_si_df = df[["PlayIndex"] + spatial_independent_cols].drop_duplicates().reset_index(drop=True)
+                agg_si_df = df.query("PlayerCategory == 2")  # Rusher
+                agg_si_df = agg_si_df[["PlayIndex"] + spatial_independent_cols].drop_duplicates().reset_index(drop=True)
                 melted_si_df = agg_si_df.melt(id_vars=["PlayIndex"])
                 melted_si_df["Channel"] = dim_sizes_[0]
                 melted_si_df.rename(columns={"variable": "H", "value": "W"}, inplace=True)
