@@ -633,7 +633,7 @@ def nfl_crps_loss(input, target):
 
 
 class NflCrpsLossFunc:
-    def __init__(self, min=-15, max=25, desc_penalty=None):
+    def __init__(self, min=None, max=None, desc_penalty=None):
         self.min = min
         self.max = max
         self.clip = (min is not None) or (max is not None)
