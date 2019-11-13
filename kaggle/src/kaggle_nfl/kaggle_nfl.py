@@ -96,6 +96,47 @@ def df_concat(**kwargs):
     return _df_concat
 
 
+def _groupby(df, groupby, columns):
+    if not isinstance(groupby, dict):
+        groupby = dict(by=groupby)
+    if groupby:
+        df = df.groupby(**groupby)
+    if columns:
+        df = df[columns]
+    return df
+
+
+def df_transform(groupby=None, columns=None, **kwargs):
+    def _df_transform(df, *argsignore, **kwargsignore):
+        df = _groupby(df, groupby, columns)
+        return df.transform(**kwargs)
+
+    return _df_transform
+
+
+def df_duplicate(**kwargs):
+    columns = kwargs.get("columns")
+    assert columns and isinstance(columns, dict)
+    col_list = list(columns.keys())
+
+    def _df_duplicate(df, *argsignore, **kwargsignore):
+        for col in col_list:
+            assert col in df.columns, "{} not in the data frame.".format(col)
+        new_df = df[col_list].rename(**kwargs)
+        df = pd.concat([df, new_df], axis=1, sort=False)
+        return df
+
+    return _df_duplicate
+
+
+def df_cond_replace(cond, columns, value=np.nan, **kwargs):
+    def _df_cond_replace(df, *argsignore, **kwargsignore):
+        df.loc[df.eval(cond), columns] = value
+        return df
+
+    return _df_cond_replace
+
+
 def preprocess(df, parameters=None):
     """ Reference:
     https://www.kaggle.com/statsbymichaellopez/nfl-tracking-initial-wrangling-voronoi-areas
@@ -149,34 +190,9 @@ def preprocess(df, parameters=None):
     motion_coef = 1.0
     motion_sr = motion_coef * df["_S"]
 
-    # df["X_int_t1"] = (
-    #     np.floor(X_float + motion_sr * np.sin(df["Dir_std"])).clip(lower=0, upper=(len_x - 1)).astype(np.uint8)
-    # )
-    # df["Y_int_t1"] = (
-    #     np.floor(Y_float + motion_sr * np.cos(df["Dir_std"])).clip(lower=0, upper=(len_y - 1)).astype(np.uint8)
-    # )
     df["X_int_t1"] = X_float + motion_sr * np.sin(df["Dir_std"])
     df["Y_int_t1"] = Y_float + motion_sr * np.cos(df["Dir_std"])
 
-    """ """
-    # df["ScaledSeason"] = ((df["Season"] - 2017) / 2000.0).astype(np.float32)
-    # df.loc[:, "ScaledDown"] = (df["Down"] / 8000.0).astype(np.float32)
-    # df.loc[:, "ScaledDistance"] = (df["Distance"] / 20000.0).astype(np.float32)
-    #
-    # df["ScaledDefendersInTheBox"] = (df["DefendersInTheBox"].fillna(6.94302) / 20000.0).astype(np.float32)
-    #
-    # df["ScaledRelativeOffenseScore"] = ((df["HomeScoreBeforePlay"] - df["VisitorScoreBeforePlay"]) / 200000.0).astype(
-    #     np.float32
-    # )
-    # df.loc[(df["PossessionTeam"] != df["HomeTeamAbbr"]), "OffenseScore"] = -df["ScaledRelativeOffenseScore"]
-    #
-    # try:
-    #     df["ScaledRelativeHandoff"] = (
-    #         (pd.to_datetime(df["TimeHandoff"]) - pd.to_datetime(df["TimeSnap"])).dt.total_seconds() / 20000.0
-    #     ).astype(np.float32)
-    # except:
-    #     log.warning("Failed to compute ScaledRelativeHandoff.")
-    #     df["ScaledRelativeHandoff"] = 0.0001 * np.ones(len(df)).astype(np.float32)
     """ """
 
     df["SeasonCode"] = ((df["Season"].clip(lower=2017, upper=2019) - 2017)).astype(np.uint8)  # 3
@@ -206,83 +222,14 @@ def preprocess(df, parameters=None):
 
     """ """
 
-    cols = [
-        "GameId",
-        "PlayId",
-        # 'Team',
-        # 'X',
-        # 'Y',
-        # 'S',
-        # 'A',
-        # 'Dis',
-        # 'Orientation',
-        # 'Dir',
-        # "NflId",
-        # 'DisplayName',
-        # 'JerseyNumber',
-        "Season",
-        # "YardLine",
-        # "Quarter",
-        # 'GameClock',
-        # 'PossessionTeam',
-        # "Down",
-        # "Distance",
-        # "FieldPosition",
-        # "HomeScoreBeforePlay",
-        # "VisitorScoreBeforePlay",
-        # 'NflIdRusher',
-        "OffenseFormation",
-        "OffensePersonnel",
-        "DefendersInTheBox",
-        "DefensePersonnel",
-        # 'PlayDirection',
-        "TimeHandoff",
-        # 'TimeSnap',
-        "Yards",
-        # "PlayerHeight",
-        # "PlayerWeight",
-        # 'PlayerBirthDate',
-        # 'PlayerCollegeName',
-        # "Position",
-        # "HomeTeamAbbr",
-        # "VisitorTeamAbbr",
-        # "Week",
-        # 'Stadium',
-        # 'Location',
-        # 'StadiumType',
-        # "Turf",
-        # "GameWeather",
-        # "Temperature",
-        # "Humidity",
-        # "WindSpeed",
-        # "WindDirection",
-        # 'ToLeft',
-        # 'IsBallCarrier',
-        # 'TeamOnOffense',
-        # "IsOnOffense",
-        "YardsFromOwnGoal",
-        # "X_std",
-        # "Y_std",
-        "PlayerCategory",
-        "X_int",
-        "Y_int",
-        "X_int_t1",
-        "Y_int_t1",
-        "_S",
-        "_A",
-        "YardsToGoalCode",
-        "SeasonCode",
-        "DownCode",
-        "ScoreDiffCode",
-        "HomeOnOffenseCode",
-        "OffenceTeamCode",
-        "DefenceTeamCode",
-        "OffenseFormationCode",
-        "DefendersInTheBoxCode",
-        "PositionCode",
-    ]
-    # cols = cols + dir_cols
-    df = df.filter(items=cols)
+    df = df_duplicate(columns={"Dir_std": "Rusher_Dir_std"})(df)
+    df = df_cond_replace(cond="IsBallCarrier == False", columns="Rusher_Dir_std", value=np.nan)(df)
+    df["Rusher_Dir_std"] = df_transform(groupby="PlayId", columns="Rusher_Dir_std", func="max")(df)
+
+    df["_RusherDirSimilarity"] = np.cos(df["Dir_std"] - df["Rusher_Dir_std"])
+    """ """
+
+    # df = df.filter(items=cols)
 
     return df
 
@@ -341,6 +288,7 @@ class FieldImagesDataset:
             # "_A1",
             # "_A2",
             # "_A3",
+            "_RusherDirSimilarity",
         ],
         to_pytorch_tensor=False,
         store_as_sparse_tensor=False,

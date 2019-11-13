@@ -1,3 +1,81 @@
+#cols:
+#  [
+#    "GameId",
+#    "PlayId",
+#    # 'Team',
+#    # 'X',
+#    # 'Y',
+#    # 'S',
+#    # 'A',
+#    # 'Dis',
+#    # 'Orientation',
+#    # 'Dir',
+#    # "NflId",
+#    # 'DisplayName',
+#    # 'JerseyNumber',
+#    "Season",
+#    # "YardLine",
+#    # "Quarter",
+#    # 'GameClock',
+#    # 'PossessionTeam',
+#    # "Down",
+#    # "Distance",
+#    # "FieldPosition",
+#    # "HomeScoreBeforePlay",
+#    # "VisitorScoreBeforePlay",
+#    # 'NflIdRusher',
+#    "OffenseFormation",
+#    "OffensePersonnel",
+#    "DefendersInTheBox",
+#    "DefensePersonnel",
+#    # 'PlayDirection',
+#    "TimeHandoff",
+#    # 'TimeSnap',
+#    "Yards",
+#    # "PlayerHeight",
+#    # "PlayerWeight",
+#    # 'PlayerBirthDate',
+#    # 'PlayerCollegeName',
+#    # "Position",
+#    # "HomeTeamAbbr",
+#    # "VisitorTeamAbbr",
+#    # "Week",
+#    # 'Stadium',
+#    # 'Location',
+#    # 'StadiumType',
+#    # "Turf",
+#    # "GameWeather",
+#    # "Temperature",
+#    # "Humidity",
+#    # "WindSpeed",
+#    # "WindDirection",
+#    # 'ToLeft',
+#    # 'IsBallCarrier',
+#    # 'TeamOnOffense',
+#    # "IsOnOffense",
+#    "YardsFromOwnGoal",
+#    # "X_std",
+#    # "Y_std",
+#    "PlayerCategory",
+#    "X_int",
+#    "Y_int",
+#    "X_int_t1",
+#    "Y_int_t1",
+#    "_S",
+#    "_A",
+#    "_RusherDirSimilarity",
+#    "YardsToGoalCode",
+#    "SeasonCode",
+#    "DownCode",
+#    "ScoreDiffCode",
+#    "HomeOnOffenseCode",
+#    "OffenceTeamCode",
+#    "DefenceTeamCode",
+#    "OffenseFormationCode",
+#    "DefendersInTheBoxCode",
+#    "PositionCode",
+#  ]
+
 pytorch_model:
   =: torch.nn.Sequential
   _:
@@ -5,7 +83,7 @@ pytorch_model:
       _:
         - =: torch.nn.Sequential
           _:
-            - {=: kedex.TensorSlice, start: 18}
+            - {=: kedex.TensorSlice, start: 24}
             - {=: kedex.TensorSqueeze, dim: 1}
 #            - {=: kedex.TensorSlice, end: 30}
             - {=: kedex.TensorFlatten, _: }
@@ -15,27 +93,27 @@ pytorch_model:
             - {=: torch.nn.CELU, alpha: 1.0}
         - =: torch.nn.Sequential
           _:
-            - {=: kedex.TensorSlice, end: 18}
+            - {=: kedex.TensorSlice, end: 24}
             - {=: kedex.TensorGlobalAvgPool2d, keepdim: False}
-            - {=: torch.nn.Linear, in_features: 18, out_features: 15}
+            - {=: torch.nn.Linear, in_features: 24, out_features: 15}
             - {=: torch.nn.CELU, alpha: 1.0}
         - =: torch.nn.Sequential
           _:
-            - {=: kedex.TensorSlice, end: 18}
+            - {=: kedex.TensorSlice, end: 24}
             - {=: kedex.TensorGlobalMaxPool2d, keepdim: False}
-            - {=: torch.nn.Linear, in_features: 18, out_features: 15}
+            - {=: torch.nn.Linear, in_features: 24, out_features: 15}
             - {=: torch.nn.Sigmoid, _: }
         - =: torch.nn.Sequential
           _:
-            - {=: kedex.TensorSlice, end: 18}
+            - {=: kedex.TensorSlice, end: 24}
             - {=: kedex.TensorGlobalMinPool2d, keepdim: False}
-            - {=: torch.nn.Linear, in_features: 18, out_features: 15}
+            - {=: torch.nn.Linear, in_features: 24, out_features: 15}
             - {=: torch.nn.Sigmoid, _: }
         - =: torch.nn.Sequential
           _:
-            - {=: kedex.TensorSlice, end: 18}
+            - {=: kedex.TensorSlice, end: 24}
             - {=: kedex.TensorGlobalRangePool2d, keepdim: False}
-            - {=: torch.nn.Linear, in_features: 18, out_features: 15}
+            - {=: torch.nn.Linear, in_features: 24, out_features: 15}
             - {=: torch.nn.Sigmoid, _: }
 #        - =: torch.nn.Sequential
 #          _:
@@ -56,20 +134,20 @@ pytorch_model:
 #            - {=: torch.nn.CELU, alpha: 1.0}
         - =: torch.nn.Sequential
           _:
-            - {=: kedex.TensorSlice, end: 18}
+            - {=: kedex.TensorSlice, end: 24}
             - =: kedex.ModuleConcat
               _:
                 - {=: kaggle_nfl.kaggle_nfl.GaussianBlur2d, kernel_size: "(15, 15)", sigma: "(5.0, 5.0)"}
-                - {=: kedex.TensorConv2d, in_channels: 18, out_channels: 4, kernel_size: [3, 3]}
-                - {=: kedex.TensorConv2d, in_channels: 18, out_channels: 4, kernel_size: [7, 7]}
-                - {=: kedex.TensorConv2d, in_channels: 18, out_channels: 4, kernel_size: [5, 15]}
+                - {=: kedex.TensorConv2d, in_channels: 24, out_channels: 4, kernel_size: [3, 3]}
+                - {=: kedex.TensorConv2d, in_channels: 24, out_channels: 4, kernel_size: [7, 7]}
+                - {=: kedex.TensorConv2d, in_channels: 24, out_channels: 4, kernel_size: [5, 15]}
             - {=: torch.nn.CELU, alpha: 1.0}
             - =: kedex.ModuleConcat
               _:
                 - {=: kedex.TensorAvgPool2d, stride: 2, kernel_size: [3, 3]}
-                - {=: kedex.TensorConv2d, stride: 2, in_channels: 30, out_channels: 10, kernel_size: [3, 3]}
-                - {=: kedex.TensorConv2d, stride: 2, in_channels: 30, out_channels: 10, kernel_size: [7, 7]}
-                - {=: kedex.TensorConv2d, stride: 2, in_channels: 30, out_channels: 10, kernel_size: [5, 15]}
+                - {=: kedex.TensorConv2d, stride: 2, in_channels: 36, out_channels: 8, kernel_size: [3, 3]}
+                - {=: kedex.TensorConv2d, stride: 2, in_channels: 36, out_channels: 8, kernel_size: [7, 7]}
+                - {=: kedex.TensorConv2d, stride: 2, in_channels: 36, out_channels: 8, kernel_size: [5, 15]}
             - {=: torch.nn.CELU, alpha: 1.0}
 #            - =: kedex.ModuleConcat
 #              _:
@@ -113,12 +191,12 @@ pytorch_model:
 
 augmentation:
   horizontal_flip_proba: 0
-  horizontal_shift_std: 2.0
-  vertical_shift_std: 0.5
+  horizontal_shift_std: 1.0
+  vertical_shift_std: 0
 
 tta: 0
 
-train_batch_size: 64
+train_batch_size: 32
 
 train_params:
   epochs: 10  # number of epochs to train
@@ -244,6 +322,13 @@ PIPELINES:
 #          col_sample: PlayId
 #          col_assign: Validation
 #        outputs: df_040
+
+      - inputs: df_030
+        func:
+          - =: kedex.df_head
+            groupby: Season
+            n: 22
+        outputs: df_031_head
 
       - inputs: df_030
         func:
