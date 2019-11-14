@@ -21,6 +21,9 @@
 ../load/loss_df.csv:
   type: CSVLocalDataSet
 
+../load/df_030.csv:
+  type: CSVLocalDataSet
+
 ../load/df_031_head.csv:
   type: CSVLocalDataSet
 

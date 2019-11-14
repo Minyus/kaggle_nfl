@@ -72,6 +72,32 @@ WR
 """.splitlines()
 POSITION_DICT = {e: i for i, e in enumerate(POSITION_LIST)}
 
+DROP_LIST = r"""Team
+GameClock
+NflId
+DisplayName
+JerseyNumber
+FieldPosition
+NflIdRusher
+OffenseFormation
+OffensePersonnel
+DefensePersonnel
+TimeSnap
+HomeTeamAbbr
+VisitorTeamAbbr
+PlayerHeight
+PlayerWeight
+PlayerBirthDate
+PlayerCollegeName
+Stadium
+Location
+StadiumType
+Turf
+GameWeather
+WindSpeed
+WindDirection
+""".splitlines()
+
 
 def df_concat(**kwargs):
     def _df_concat(df_0, df_1, *argsignore, **kwargsignore):
@@ -195,7 +221,7 @@ def preprocess(df, parameters=None):
 
     """ """
 
-    df["SeasonCode"] = ((df["Season"].clip(lower=2017, upper=2019) - 2017)).astype(np.uint8)  # 3
+    df["SeasonCode"] = ((df["Season"].clip(lower=2017, upper=2018) - 2017)).astype(np.uint8)  # 2
     df["DownCode"] = (df["Down"].clip(lower=1, upper=4) - 1).astype(np.uint8)  # 4
 
     df["HomeOnOffense"] = df["PossessionTeam"] == df["HomeTeamAbbr"]
@@ -222,14 +248,15 @@ def preprocess(df, parameters=None):
 
     """ """
 
-    df = df_duplicate(columns={"Dir_std": "Rusher_Dir_std"})(df)
-    df = df_cond_replace(cond="IsBallCarrier == False", columns="Rusher_Dir_std", value=np.nan)(df)
-    df["Rusher_Dir_std"] = df_transform(groupby="PlayId", columns="Rusher_Dir_std", func="max")(df)
-
-    df["_RusherDirSimilarity"] = np.cos(df["Dir_std"] - df["Rusher_Dir_std"])
+    # df = df_duplicate(columns={"Dir_std": "Rusher_Dir_std"})(df)
+    # df = df_cond_replace(cond="IsBallCarrier == False", columns="Rusher_Dir_std", value=np.nan)(df)
+    # df["Rusher_Dir_std"] = df_transform(groupby="PlayId", columns="Rusher_Dir_std", func="max")(df)
+    #
+    # df["_RusherDirSimilarity"] = np.cos(df["Dir_std"] - df["Rusher_Dir_std"])
     """ """
 
     # df = df.filter(items=cols)
+    df.drop(columns=DROP_LIST, inplace=True)
 
     return df
 
@@ -279,16 +306,8 @@ class FieldImagesDataset:
         value_cols=[
             "_count",
             "_S",
-            # "_S0",
-            # "_S1",
-            # "_S2",
-            # "_S3",
             "_A",
-            # "_A0",
-            # "_A1",
-            # "_A2",
-            # "_A3",
-            "_RusherDirSimilarity",
+            # "_RusherDirSimilarity",
         ],
         to_pytorch_tensor=False,
         store_as_sparse_tensor=False,
@@ -335,13 +354,24 @@ class FieldImagesDataset:
                 agg_df.rename(columns={coo_cols[0]: coo_cols_[0], coo_cols[1]: coo_cols_[1]}, inplace=True)
                 agg_df_list.append(agg_df)
             agg_df = df_concat(new_col_name="T", new_col_values=[0, 1])(agg_df_list[0], agg_df_list[1])
+            t_size = 2
 
             melted_df = agg_df.melt(id_vars=["PlayIndex", "T", dim_col] + coo_cols_)
             value_cols_dict = ordinal_dict(value_cols)
+            # melted_df["Channel"] = (
+            #     melted_df["T"] * dim_size * len(value_cols)
+            #     + melted_df[dim_col] * len(value_cols)
+            #     + melted_df["variable"].map(value_cols_dict)
+            # )
+            # melted_df["Channel"] = (
+            #     melted_df["T"]
+            #     + t_size * melted_df[dim_col]
+            #     + t_size * dim_size * melted_df["variable"].map(value_cols_dict)
+            # )
             melted_df["Channel"] = (
-                melted_df["T"] * dim_size * len(value_cols)
-                + melted_df[dim_col] * len(value_cols)
-                + melted_df["variable"].map(value_cols_dict)
+                melted_df[dim_col]
+                + dim_size * melted_df["T"]
+                + dim_size * t_size * melted_df["variable"].map(value_cols_dict)
             )
 
             melted_df.loc[:, "value"] = melted_df["value"].astype(np.float32)
