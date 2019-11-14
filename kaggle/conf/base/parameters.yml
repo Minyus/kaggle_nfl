@@ -291,7 +291,7 @@ PIPELINES:
           - train_dataset
           - val_dataset
         func:
-          =: kedex.neural_network_train
+          =: kedex.NetworkTrain
           train_params:
             =: train_params
           mlflow_logging: True
