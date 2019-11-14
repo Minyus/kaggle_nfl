@@ -339,26 +339,19 @@ PIPELINES:
         func:
           - =: kedex.df_query
             expr: 'PlayerCategory == 2'
-          - =: kedex.df_filter
-            items:
-              [
-                "GameId",
-                "PlayId",
-                "Season",
-                "YardLine",
-                "TimeHandoff",
-                "Yards",
-                "YardsToGoalCode",
-                "DownCode",
-                "ScoreDiffCode",
-                "HomeOnOffenseCode",
-                "OffenceTeamCode",
-                "DefenceTeamCode",
-                "OffenseFormationCode",
-                "DefendersInTheBoxCode",
-                "PositionCode",
-              ]
-        outputs: play_df
+        outputs: rusher_df
+
+      - inputs: rusher_df
+        func:
+          - =: kedex.df_query
+            expr: 'Season == 2017'
+        outputs: rusher_2017_describe
+
+      - inputs: rusher_df
+        func:
+          - =: kedex.df_query
+            expr: 'Season == 2018'
+        outputs: rusher_2018_describe
 
 #      - inputs: play_df
 #        func:

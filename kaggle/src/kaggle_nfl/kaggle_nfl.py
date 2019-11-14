@@ -215,14 +215,19 @@ def preprocess(df, parameters=None):
     motion_coef = 1.0
     motion_sr = motion_coef * df["_S"]
 
-    df["X_int_t1"] = X_float + motion_sr * np.sin(df["Dir_std"])
-    df["Y_int_t1"] = Y_float + motion_sr * np.cos(df["Dir_std"])
+    # df["X_int_t1"] = X_float + motion_sr * np.sin(df["Dir_std"])
+    # df["Y_int_t1"] = Y_float + motion_sr * np.cos(df["Dir_std"])
 
-    # df["_S_X"] = motion_sr * np.sin(df["Dir_std"])
-    # df["_S_Y"] = motion_sr * np.cos(df["Dir_std"])
-    #
-    # df["X_int_t1"] = X_float + df["_S_X"]
-    # df["Y_int_t1"] = Y_float + df["_S_Y"]
+    df["_S_X"] = motion_sr * np.sin(df["Dir_std"])
+    df["_S_Y"] = motion_sr * np.cos(df["Dir_std"])
+
+    df["X_int_t1"] = X_float + df["_S_X"]
+    df["Y_int_t1"] = Y_float + df["_S_Y"]
+
+    df["_S_left"] = df["_S_Y"]
+    df = df_cond_replace(cond="_S_left < 0", columns="_S_left", value=0)(df)
+    df["_S_right"] = -df["_S_Y"]
+    df = df_cond_replace(cond="_S_right < 0", columns="_S_right", value=0)(df)
 
     """ """
 
@@ -317,14 +322,12 @@ class FieldImagesDataset:
     def __init__(
         self,
         df,
-        coo_cols_list=[["X_int", "Y_int"], ["X_int_t1", "Y_int_t1"]],
-        coo_size=[30, 54],
-        value_cols=[
-            "_count",
-            "_S",
-            "_A",
-            # "_RusherDirSimilarity",
+        coo_cols_list=[
+            ["X_int", "Y_int"],
+            # ["X_int_t1", "Y_int_t1"],
         ],
+        coo_size=[30, 54],
+        value_cols=["_count", "_S", "_A", "_S_X", "_S_left", "_S_right"],
         to_pytorch_tensor=False,
         store_as_sparse_tensor=False,
         spatial_independent_cols=[
@@ -370,8 +373,15 @@ class FieldImagesDataset:
                 agg_df = df.groupby(["PlayIndex", dim_col] + coo_cols, as_index=False)[value_cols].sum()
                 agg_df.rename(columns={coo_cols[0]: coo_cols_[0], coo_cols[1]: coo_cols_[1]}, inplace=True)
                 agg_df_list.append(agg_df)
-            agg_df = df_concat(new_col_name="T", new_col_values=[0, 1])(agg_df_list[0], agg_df_list[1])
-            t_size = 2
+
+            t_size = len(coo_cols_list)
+            if t_size == 1:
+                agg_df = agg_df_list[0]
+                agg_df["T"] = 0
+            elif t_size == 2:
+                agg_df = df_concat(new_col_name="T", new_col_values=[0, 1])(agg_df_list[0], agg_df_list[1])
+            else:
+                raise ValueError("coo_cols_list length not supported.")
 
             melted_df = agg_df.melt(id_vars=["PlayIndex", "T", dim_col] + coo_cols_)
             value_cols_dict = ordinal_dict(value_cols)

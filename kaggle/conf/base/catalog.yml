@@ -28,8 +28,17 @@
 ../load/df_031_head.csv:
   type: CSVLocalDataSet
 
-../load/play_df.csv:
-  type: CSVLocalDataSet
+../load/rusher_2017_describe.csv:
+  type: kedex.PandasDescribeDataSet
+  describe_args: # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.describe.html
+    include: all
+    percentiles: [0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.99]
+
+../load/rusher_2018_describe.csv:
+  type: kedex.PandasDescribeDataSet
+  describe_args: # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.describe.html
+    include: all
+    percentiles: [0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.99]
 
 #../load/pairplot.png:
 #  type: kedex.SeabornPairPlotDataSet
