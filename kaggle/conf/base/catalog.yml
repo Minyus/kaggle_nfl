@@ -23,6 +23,7 @@
 
 ../load/df_030.csv:
   type: CSVLocalDataSet
+  cached: True
 
 ../load/df_031_head.csv:
   type: CSVLocalDataSet

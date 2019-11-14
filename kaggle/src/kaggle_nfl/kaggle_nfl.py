@@ -73,7 +73,6 @@ WR
 POSITION_DICT = {e: i for i, e in enumerate(POSITION_LIST)}
 
 DROP_LIST = r"""Team
-GameClock
 NflId
 DisplayName
 JerseyNumber
@@ -213,7 +212,7 @@ def preprocess(df, parameters=None):
     df.loc[is2017_sr, "_S"] = df["_S"] * np.float32(2.7570316419451517 / 2.435519556913685)
     df.loc[is2017_sr, "_A"] = df["_A"] * np.float32(1.7819953460610594 / 1.5895792207792045)
 
-    motion_coef = 1.0
+    motion_coef = 0.5
     motion_sr = motion_coef * df["_S"]
 
     df["X_int_t1"] = X_float + motion_sr * np.sin(df["Dir_std"])
@@ -243,8 +242,19 @@ def preprocess(df, parameters=None):
 
     df["OffenseFormationCode"] = df["OffenseFormation"].map(OFFENSE_FORMATION_DICT).fillna(0).astype(np.uint8)
 
-    df["DefendersInTheBoxCode"] = df["DefendersInTheBox"].clip(lower=0, upper=11).fillna(0).astype(np.uint8)
+    df["DefendersInTheBoxCode"] = df["DefendersInTheBox"].clip(lower=3, upper=11).fillna(0).astype(np.uint8)
     df["PositionCode"] = df["Position"].map(POSITION_DICT).fillna(0).astype(np.uint8)
+
+    """ """
+
+    try:
+        df["SnapToHandoffTime"] = (
+            pd.to_datetime(df["TimeHandoff"]) - pd.to_datetime(df["TimeSnap"])
+        ).dt.total_seconds()
+    except:
+        log.warning("Failed to compute ScaledRelativeHandoff.")
+        df["SnapToHandoffTime"] = np.ones(len(df))
+    df["SnapToHandoffTimeCode"] = df["SnapToHandoffTime"].clip(lower=0, upper=4).fillna(1).astype(np.uint8)
 
     """ """
 
@@ -315,13 +325,14 @@ class FieldImagesDataset:
             "YardsToGoalCode",
             "SeasonCode",
             "DownCode",
-            "ScoreDiffCode",
+            # "ScoreDiffCode",
             "HomeOnOffenseCode",
             "OffenceTeamCode",
-            "DefenceTeamCode",
+            # "DefenceTeamCode",
             "OffenseFormationCode",
             "DefendersInTheBoxCode",
             "PositionCode",
+            # "SnapToHandoffTimeCode"
         ],
         augmentation={},
         transform=None,
