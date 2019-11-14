@@ -322,16 +322,14 @@ class FieldImagesDataset:
     def __init__(
         self,
         df,
-        coo_cols_list=[
-            ["X_int", "Y_int"],  # 1st snapshot
-            ["X_int_t1", "Y_int_t1"],  # 2nd snapshot
-        ],
+        coo_cols_list=[["X_int", "Y_int"], ["X_int_t1", "Y_int_t1"]],  # 1st snapshot  # 2nd snapshot
         coo_size=[30, 54],
         value_cols=[
-            "_count",
-            "_S",
+            # "_count",
+            # "_S",
             "_A",
-            # "_S_X",
+            "_S_X",
+            "_S_Y",
             # "_S_left",
             # "_S_right",
         ],
