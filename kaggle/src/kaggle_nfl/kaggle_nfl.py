@@ -323,11 +323,18 @@ class FieldImagesDataset:
         self,
         df,
         coo_cols_list=[
-            ["X_int", "Y_int"],
-            # ["X_int_t1", "Y_int_t1"],
+            ["X_int", "Y_int"],  # 1st snapshot
+            ["X_int_t1", "Y_int_t1"],  # 2nd snapshot
         ],
         coo_size=[30, 54],
-        value_cols=["_count", "_S", "_A", "_S_X", "_S_left", "_S_right"],
+        value_cols=[
+            "_count",
+            "_S",
+            "_A",
+            # "_S_X",
+            # "_S_left",
+            # "_S_right",
+        ],
         to_pytorch_tensor=False,
         store_as_sparse_tensor=False,
         spatial_independent_cols=[
