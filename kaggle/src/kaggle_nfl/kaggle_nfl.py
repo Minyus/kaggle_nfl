@@ -212,11 +212,17 @@ def preprocess(df, parameters=None):
     df.loc[is2017_sr, "_S"] = df["_S"] * np.float32(2.7570316419451517 / 2.435519556913685)
     df.loc[is2017_sr, "_A"] = df["_A"] * np.float32(1.7819953460610594 / 1.5895792207792045)
 
-    motion_coef = 0.5
+    motion_coef = 1.0
     motion_sr = motion_coef * df["_S"]
 
     df["X_int_t1"] = X_float + motion_sr * np.sin(df["Dir_std"])
     df["Y_int_t1"] = Y_float + motion_sr * np.cos(df["Dir_std"])
+
+    # df["_S_X"] = motion_sr * np.sin(df["Dir_std"])
+    # df["_S_Y"] = motion_sr * np.cos(df["Dir_std"])
+    #
+    # df["X_int_t1"] = X_float + df["_S_X"]
+    # df["Y_int_t1"] = Y_float + df["_S_Y"]
 
     """ """
 
@@ -325,10 +331,10 @@ class FieldImagesDataset:
             "YardsToGoalCode",
             "SeasonCode",
             "DownCode",
-            # "ScoreDiffCode",
+            "ScoreDiffCode",
             "HomeOnOffenseCode",
             "OffenceTeamCode",
-            # "DefenceTeamCode",
+            "DefenceTeamCode",
             "OffenseFormationCode",
             "DefendersInTheBoxCode",
             "PositionCode",

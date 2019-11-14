@@ -114,7 +114,7 @@ pytorch_model:
 augmentation:
   horizontal_flip_proba: 0
   horizontal_shift_std: 1.0
-  vertical_shift_std: 0
+  vertical_shift_std: 0.5
 
 tta: 0
 
