@@ -207,15 +207,14 @@ def preprocess(df, parameters=None):
     # df.rename(columns=dict(S="_S", A="_A"), inplace=True)
     df["_S"] = df["S"].astype(np.float32)
     df["_A"] = df["A"].astype(np.float32)
+    df["_Dis10"] = 10 * df["Dis"].astype(np.float32)
     is2017_sr = df["Season"] == 2017
     df.loc[is2017_sr, "_S"] = df["_S"] * np.float32(4.56395617070357 / 3.93930840336135)
     df.loc[is2017_sr, "_A"] = df["_A"] * np.float32(2.72513175405908 / 2.50504453781512)
+    df.loc[is2017_sr, "_Dis10"] = df["_Dis10"] * np.float32(4.458548487 / 4.505504202)
 
     motion_coef = 1.0
     motion_sr = motion_coef * df["_S"]
-
-    # df["X_int_t1"] = X_float + motion_sr * np.sin(df["Dir_std"])
-    # df["Y_int_t1"] = Y_float + motion_sr * np.cos(df["Dir_std"])
 
     df["_S_X"] = motion_sr * np.sin(df["Dir_std"])
     df["_S_Y"] = motion_sr * np.cos(df["Dir_std"])
@@ -227,6 +226,15 @@ def preprocess(df, parameters=None):
     df = df_cond_replace(cond="_S_left < 0", columns="_S_left", value=0)(df)
     df["_S_right"] = -df["_S_Y"]
     df = df_cond_replace(cond="_S_right < 0", columns="_S_right", value=0)(df)
+
+    """ """
+
+    dis10_motion_sr = motion_coef * df["_Dis10"]
+    df["_Dis10_X"] = dis10_motion_sr * np.sin(df["Dir_std"])
+    df["_Dis10_Y"] = dis10_motion_sr * np.cos(df["Dir_std"])
+
+    df["X_int_Dis10_t1"] = X_float + df["_Dis10_X"]
+    df["Y_int_Dis10_t1"] = Y_float + df["_Dis10_Y"]
 
     """ """
 
@@ -321,16 +329,22 @@ class FieldImagesDataset:
     def __init__(
         self,
         df,
-        coo_cols_list=[["X_int", "Y_int"], ["X_int_t1", "Y_int_t1"]],  # 1st snapshot  # 2nd snapshot
+        coo_cols_list=[
+            ["X_int", "Y_int"],  # 1st snapshot
+            # ["X_int_t1", "Y_int_t1"],  # 2nd snapshot
+            ["X_int_Dis10_t1", "Y_int_Dis10_t1"],  # 2nd snapshot
+        ],
         coo_size=[30, 54],
         value_cols=[
             # "_count",
             # "_S",
             "_A",
-            "_S_X",
-            "_S_Y",
+            # "_S_X",
+            # "_S_Y",
             # "_S_left",
             # "_S_right",
+            "_Dis10_X",
+            "_Dis10_Y",
         ],
         to_pytorch_tensor=False,
         store_as_sparse_tensor=False,
