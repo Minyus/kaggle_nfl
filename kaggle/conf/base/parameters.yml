@@ -222,7 +222,7 @@ MLFLOW_LOGGING_CONFIG:
 
 PIPELINES:
   __default__:
-    =: kedex.KedexPipeline
+    =: kedex.FlexiblePipeline
     parameters_in_inputs: True
     module: kaggle_nfl.kaggle_nfl
     decorator: kedex.log_time

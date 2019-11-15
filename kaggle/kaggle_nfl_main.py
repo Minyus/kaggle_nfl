@@ -22,7 +22,7 @@ import kedex
 
 print("kedex version: ", kedex.__version__)
 
-from kedex.mlflow_context import MLflowFlexibleContext
+from kedex import MLflowFlexibleContext
 
 
 context = MLflowFlexibleContext(project_path)
