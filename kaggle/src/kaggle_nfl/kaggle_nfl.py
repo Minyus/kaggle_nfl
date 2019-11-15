@@ -209,9 +209,9 @@ def preprocess(df, parameters=None):
     df["_A"] = df["A"].astype(np.float32)
     df["_Dis10"] = 10 * df["Dis"].astype(np.float32)
     is2017_sr = df["Season"] == 2017
-    df.loc[is2017_sr, "_S"] = df["_S"] * np.float32(4.56395617070357 / 3.93930840336135)
-    df.loc[is2017_sr, "_A"] = df["_A"] * np.float32(2.72513175405908 / 2.50504453781512)
-    df.loc[is2017_sr, "_Dis10"] = df["_Dis10"] * np.float32(4.458548487 / 4.505504202)
+    # df.loc[is2017_sr, "_S"] = df["_S"] * np.float32(4.56395617070357 / 3.93930840336135)
+    # df.loc[is2017_sr, "_A"] = df["_A"] * np.float32(2.72513175405908 / 2.50504453781512)
+    # df.loc[is2017_sr, "_Dis10"] = df["_Dis10"] * np.float32(4.458548487 / 4.505504202)
 
     motion_coef = 1.0
     motion_sr = motion_coef * df["_S"]
@@ -339,12 +339,12 @@ class FieldImagesDataset:
             # "_count",
             # "_S",
             "_A",
-            # "_S_X",
-            # "_S_Y",
+            "_S_X",
+            "_S_Y",
             # "_S_left",
             # "_S_right",
-            "_Dis10_X",
-            "_Dis10_Y",
+            # "_Dis10_X",
+            # "_Dis10_Y",
         ],
         to_pytorch_tensor=False,
         store_as_sparse_tensor=False,
