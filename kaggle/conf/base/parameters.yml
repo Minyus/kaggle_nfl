@@ -1,115 +1,115 @@
 pytorch_model:
   =: torch.nn.Sequential
   _:
-    - =: kedex.ModuleConcat
+    - =: pipelinex.ModuleConcat
       _:
         - =: torch.nn.Sequential
           _:
-            - {=: kedex.TensorSlice, start: 18}
-            - {=: kedex.TensorSqueeze, dim: 1}
-#            - {=: kedex.TensorSlice, end: 30}
-            - {=: kedex.TensorFlatten, _: }
+            - {=: pipelinex.TensorSlice, start: 18}
+            - {=: pipelinex.TensorSqueeze, dim: 1}
+#            - {=: pipelinex.TensorSlice, end: 30}
+            - {=: pipelinex.TensorFlatten, _: }
             - {=: torch.nn.Linear, in_features: 1620, out_features: 200}
             - {=: torch.nn.CELU, alpha: 1.0}
             - {=: torch.nn.Linear, in_features: 200, out_features: 200}
             - {=: torch.nn.CELU, alpha: 1.0}
         - =: torch.nn.Sequential
           _:
-            - {=: kedex.TensorSlice, end: 18}
-            - {=: kedex.TensorGlobalAvgPool2d, keepdim: False}
+            - {=: pipelinex.TensorSlice, end: 18}
+            - {=: pipelinex.TensorGlobalAvgPool2d, keepdim: False}
             - {=: torch.nn.Linear, in_features: 18, out_features: 15}
             - {=: torch.nn.CELU, alpha: 1.0}
         - =: torch.nn.Sequential
           _:
-            - {=: kedex.TensorSlice, end: 18}
-            - {=: kedex.TensorGlobalMaxPool2d, keepdim: False}
+            - {=: pipelinex.TensorSlice, end: 18}
+            - {=: pipelinex.TensorGlobalMaxPool2d, keepdim: False}
             - {=: torch.nn.Linear, in_features: 18, out_features: 15}
             - {=: torch.nn.Sigmoid, _: }
         - =: torch.nn.Sequential
           _:
-            - {=: kedex.TensorSlice, end: 18}
-            - {=: kedex.TensorGlobalMinPool2d, keepdim: False}
+            - {=: pipelinex.TensorSlice, end: 18}
+            - {=: pipelinex.TensorGlobalMinPool2d, keepdim: False}
             - {=: torch.nn.Linear, in_features: 18, out_features: 15}
             - {=: torch.nn.Sigmoid, _: }
         - =: torch.nn.Sequential
           _:
-            - {=: kedex.TensorSlice, end: 18}
-            - {=: kedex.TensorGlobalRangePool2d, keepdim: False}
+            - {=: pipelinex.TensorSlice, end: 18}
+            - {=: pipelinex.TensorGlobalRangePool2d, keepdim: False}
             - {=: torch.nn.Linear, in_features: 18, out_features: 15}
             - {=: torch.nn.Sigmoid, _: }
 #        - =: torch.nn.Sequential
 #          _:
-#            - {=: kedex.TensorSlice, start: 10}
-#            - {=: kedex.TensorGlobalSumPool2d, keepdim: False}  # -> [11]
+#            - {=: pipelinex.TensorSlice, start: 10}
+#            - {=: pipelinex.TensorGlobalSumPool2d, keepdim: False}  # -> [11]
 #            - {=: torch.nn.Linear, in_features: 11, out_features: 11}
 #            - {=: torch.nn.CELU, alpha: 1.0}
 #        - =: torch.nn.Sequential
 #          _:
-#            - {=: kedex.TensorSlice, end: 10}
-#            - =: kedex.ModuleConcat
+#            - {=: pipelinex.TensorSlice, end: 10}
+#            - =: pipelinex.ModuleConcat
 #              _:
-#                - {=: kedex.TensorGlobalAvgPool2d, keepdim: False}  # -> [10]
-#                - {=: kedex.TensorGlobalMaxPool2d, keepdim: False}  # -> [10]
-#                - {=: kedex.TensorGlobalMinPool2d, keepdim: False}  # -> [10]
-#                - {=: kedex.TensorGlobalRangePool2d, keepdim: False}  # -> [10]
+#                - {=: pipelinex.TensorGlobalAvgPool2d, keepdim: False}  # -> [10]
+#                - {=: pipelinex.TensorGlobalMaxPool2d, keepdim: False}  # -> [10]
+#                - {=: pipelinex.TensorGlobalMinPool2d, keepdim: False}  # -> [10]
+#                - {=: pipelinex.TensorGlobalRangePool2d, keepdim: False}  # -> [10]
 #            - {=: torch.nn.Linear, in_features: 40, out_features: 40}
 #            - {=: torch.nn.CELU, alpha: 1.0}
         - =: torch.nn.Sequential
           _:
-            - {=: kedex.TensorSlice, end: 18}
-            - =: kedex.ModuleConcat
+            - {=: pipelinex.TensorSlice, end: 18}
+            - =: pipelinex.ModuleConcat
               _:
                 - {=: kaggle_nfl.kaggle_nfl.GaussianBlur2d, kernel_size: "(15, 15)", sigma: "(5.0, 5.0)"}
-                - {=: kedex.TensorConv2d, in_channels: 18, out_channels: 4, kernel_size: [3, 3]}
-                - {=: kedex.TensorConv2d, in_channels: 18, out_channels: 4, kernel_size: [7, 7]}
-                - {=: kedex.TensorConv2d, in_channels: 18, out_channels: 4, kernel_size: [5, 15]}
+                - {=: pipelinex.TensorConv2d, in_channels: 18, out_channels: 4, kernel_size: [3, 3]}
+                - {=: pipelinex.TensorConv2d, in_channels: 18, out_channels: 4, kernel_size: [7, 7]}
+                - {=: pipelinex.TensorConv2d, in_channels: 18, out_channels: 4, kernel_size: [5, 15]}
             - {=: torch.nn.CELU, alpha: 1.0}
-            - =: kedex.ModuleConcat
+            - =: pipelinex.ModuleConcat
               _:
-                - {=: kedex.TensorAvgPool2d, stride: 2, kernel_size: [3, 3]}
-                - {=: kedex.TensorConv2d, stride: 2, in_channels: 30, out_channels: 10, kernel_size: [3, 3]}
-                - {=: kedex.TensorConv2d, stride: 2, in_channels: 30, out_channels: 10, kernel_size: [7, 7]}
-                - {=: kedex.TensorConv2d, stride: 2, in_channels: 30, out_channels: 10, kernel_size: [5, 15]}
+                - {=: pipelinex.TensorAvgPool2d, stride: 2, kernel_size: [3, 3]}
+                - {=: pipelinex.TensorConv2d, stride: 2, in_channels: 30, out_channels: 10, kernel_size: [3, 3]}
+                - {=: pipelinex.TensorConv2d, stride: 2, in_channels: 30, out_channels: 10, kernel_size: [7, 7]}
+                - {=: pipelinex.TensorConv2d, stride: 2, in_channels: 30, out_channels: 10, kernel_size: [5, 15]}
             - {=: torch.nn.CELU, alpha: 1.0}
-#            - =: kedex.ModuleConcat
+#            - =: pipelinex.ModuleConcat
 #              _:
-#                - {=: kedex.TensorConv2d, in_channels: 60, out_channels: 60, kernel_size: [1, 1]}
-#                - {=: kedex.TensorConv2d, in_channels: 60, out_channels: 20, kernel_size: [3, 3]}
-#                - {=: kedex.TensorConv2d, in_channels: 60, out_channels: 20, kernel_size: [7, 7]}
-#                - {=: kedex.TensorConv2d, in_channels: 60, out_channels: 20, kernel_size: [5, 15]}
+#                - {=: pipelinex.TensorConv2d, in_channels: 60, out_channels: 60, kernel_size: [1, 1]}
+#                - {=: pipelinex.TensorConv2d, in_channels: 60, out_channels: 20, kernel_size: [3, 3]}
+#                - {=: pipelinex.TensorConv2d, in_channels: 60, out_channels: 20, kernel_size: [7, 7]}
+#                - {=: pipelinex.TensorConv2d, in_channels: 60, out_channels: 20, kernel_size: [5, 15]}
 #            - {=: torch.nn.CELU, alpha: 1.0}
-            - =: kedex.ModuleConcat
+            - =: pipelinex.ModuleConcat
               _:
-                - {=: kedex.TensorAvgPool2d, stride: 2, kernel_size: [3, 3]}
-                - {=: kedex.TensorConv2d, stride: 2, in_channels: 60, out_channels: 20, kernel_size: [3, 3]}
-                - {=: kedex.TensorConv2d, stride: 2, in_channels: 60, out_channels: 20, kernel_size: [7, 7]}
-                - {=: kedex.TensorConv2d, stride: 2, in_channels: 60, out_channels: 20, kernel_size: [5, 15]}
+                - {=: pipelinex.TensorAvgPool2d, stride: 2, kernel_size: [3, 3]}
+                - {=: pipelinex.TensorConv2d, stride: 2, in_channels: 60, out_channels: 20, kernel_size: [3, 3]}
+                - {=: pipelinex.TensorConv2d, stride: 2, in_channels: 60, out_channels: 20, kernel_size: [7, 7]}
+                - {=: pipelinex.TensorConv2d, stride: 2, in_channels: 60, out_channels: 20, kernel_size: [5, 15]}
               # -> [120, 8, 14]
             - {=: torch.nn.CELU, alpha: 1.0}
-            - =: kedex.ModuleConcat
+            - =: pipelinex.ModuleConcat
               _:
                 - =: torch.nn.Sequential
                   _:
                     - {=: torch.nn.AvgPool2d, stride: 2, kernel_size: [3, 14]}
-                    - {=: kedex.TensorConv2d, in_channels: 120, out_channels: 20, kernel_size: [1, 1]}
-                    - {=: kedex.TensorFlatten, _: }
+                    - {=: pipelinex.TensorConv2d, in_channels: 120, out_channels: 20, kernel_size: [1, 1]}
+                    - {=: pipelinex.TensorFlatten, _: }
                     - {=: torch.nn.CELU, _: }
                 - =: torch.nn.Sequential
                   _:
                     - {=: torch.nn.MaxPool2d, stride: 2, kernel_size: [3, 14]}
-                    - {=: kedex.TensorConv2d, in_channels: 120, out_channels: 20, kernel_size: [1, 1]}
-                    - {=: kedex.TensorFlatten, _: }
+                    - {=: pipelinex.TensorConv2d, in_channels: 120, out_channels: 20, kernel_size: [1, 1]}
+                    - {=: pipelinex.TensorFlatten, _: }
                     - {=: torch.nn.CELU, _: }
     - {=: torch.nn.Linear, in_features: 380, out_features: 50}
-#    - {=: kedex.TensorUnsqueeze, dim: 1}
+#    - {=: pipelinex.TensorUnsqueeze, dim: 1}
 #    - {=: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
 #    - {=: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
 #    - {=: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
-#    - {=: kedex.TensorSqueeze, dim: 1}
-    - {=: kedex.TensorNearestPad, lower: 89, upper: 60}  # 199 = 89 + 50 + 60
+#    - {=: pipelinex.TensorSqueeze, dim: 1}
+    - {=: pipelinex.TensorNearestPad, lower: 89, upper: 60}  # 199 = 89 + 50 + 60
     - {=: torch.nn.Softmax, dim: 1}
-    - {=: kedex.TensorCumsum, dim: 1}
-    - {=: kedex.TensorClamp, min: 0.0, max: 1.0}
+    - {=: pipelinex.TensorCumsum, dim: 1}
+    - {=: pipelinex.TensorClamp, min: 0.0, max: 1.0}
 
 augmentation:
   horizontal_flip_proba: 0
@@ -222,10 +222,10 @@ MLFLOW_LOGGING_CONFIG:
 
 PIPELINES:
   __default__:
-    =: kedex.FlexiblePipeline
+    =: pipelinex.FlexiblePipeline
     parameters_in_inputs: True
     module: kaggle_nfl.kaggle_nfl
-    decorator: kedex.log_time
+    decorator: pipelinex.log_time
     nodes:
 
       - inputs: train
@@ -238,7 +238,7 @@ PIPELINES:
 
 #      - inputs: df_030
 #        func:
-#          =: kedex.df_sample
+#          =: pipelinex.df_sample
 #          frac: 0.5
 #          random_state: 191024
 #          col_sample: PlayId
@@ -247,20 +247,20 @@ PIPELINES:
 
       - inputs: df_030
         func:
-          - =: kedex.df_head
+          - =: pipelinex.df_head
             groupby: Season
             n: 22
         outputs: df_031_head
 
       - inputs: df_030
         func:
-          - =: kedex.df_query
+          - =: pipelinex.df_query
             expr: "TimeHandoff < '2018-11-30T08:00:00'"
         outputs: df_031_train
 
       - inputs: df_030
         func:
-          - =: kedex.df_query
+          - =: pipelinex.df_query
             expr: "'2018-11-30T08:00:00' <= TimeHandoff"
         outputs: df_031_val
 
@@ -268,7 +268,7 @@ PIPELINES:
           - df_031_train
           - df_031_val
         func:
-          =: kedex.df_concat
+          =: pipelinex.df_concat
           new_col_name: Validation
           new_col_values: [0, 1]
         outputs: df_040
@@ -291,7 +291,7 @@ PIPELINES:
           - train_dataset
           - val_dataset
         func:
-          =: kedex.NetworkTrain
+          =: pipelinex.NetworkTrain
           train_params:
             =: train_params
           mlflow_logging: True
@@ -313,49 +313,49 @@ PIPELINES:
 
       - inputs: df_020
         func:
-          =: kedex.df_query
+          =: pipelinex.df_query
           expr: 'Season == 2017'
         outputs: describe_s2017
 
       - inputs: df_020
         func:
-          =: kedex.df_query
+          =: pipelinex.df_query
           expr: 'Season == 2018'
         outputs: describe_s2018
 
       - inputs: df_030
         func:
-          =: kedex.df_query
+          =: pipelinex.df_query
           expr: 'Season == 2017'
         outputs: describe_prep_s2017
 
       - inputs: df_030
         func:
-          =: kedex.df_query
+          =: pipelinex.df_query
           expr: 'Season == 2018'
         outputs: describe_prep_s2018
 
       - inputs: df_030
         func:
-          - =: kedex.df_query
+          - =: pipelinex.df_query
             expr: 'PlayerCategory == 2'
         outputs: rusher_df
 
       - inputs: rusher_df
         func:
-          - =: kedex.df_query
+          - =: pipelinex.df_query
             expr: 'Season == 2017'
         outputs: rusher_2017_describe
 
       - inputs: rusher_df
         func:
-          - =: kedex.df_query
+          - =: pipelinex.df_query
             expr: 'Season == 2018'
         outputs: rusher_2018_describe
 
 #      - inputs: play_df
 #        func:
-#          =: kedex.df_drop
+#          =: pipelinex.df_drop
 #          columns: TimeHandoff
 #        outputs: pairplot
 
@@ -367,13 +367,13 @@ PIPELINES:
 #          - train
 #          - test_df
 #        func:
-#          =: kedex.df_concat
+#          =: pipelinex.df_concat
 #          _:
 #        outputs: eda_df
 #
 #      - inputs: eda_df
 #        func:
-#          - =: kedex.df_filter
+#          - =: pipelinex.df_filter
 #            items:
 #              - GameId
 #              - PlayId

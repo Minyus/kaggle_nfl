@@ -1206,13 +1206,13 @@ if __name__ == "__main__":
     import yaml
 
     if ("ModuleConcat" not in dir()) or ("HatchDict" not in dir()):
-        from kedex import *
+        from pipelinex import *
 
     conf_logging = yaml.safe_load(logging_yaml)
     logging.config.dictConfig(conf_logging)
 
     parameters = yaml.safe_load(params_yaml)
-    parameters["MODULE_ALIASES"] = {"kedex": "__main__", "kaggle_nfl.kaggle_nfl": "__main__"}
+    parameters["MODULE_ALIASES"] = {"pipelinex": "__main__", "kaggle_nfl.kaggle_nfl": "__main__"}
     train_params = HatchDict(parameters).get("train_params")
     train_params["progress_update"] = False
     train_params.pop("val_data_loader_params")

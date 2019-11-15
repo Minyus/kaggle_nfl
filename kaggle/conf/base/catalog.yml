@@ -29,19 +29,19 @@
   type: CSVLocalDataSet
 
 ../load/rusher_2017_describe.csv:
-  type: kedex.PandasDescribeDataSet
+  type: pipelinex.PandasDescribeDataSet
   describe_args: # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.describe.html
     include: all
     percentiles: [0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.99]
 
 ../load/rusher_2018_describe.csv:
-  type: kedex.PandasDescribeDataSet
+  type: pipelinex.PandasDescribeDataSet
   describe_args: # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.describe.html
     include: all
     percentiles: [0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.99]
 
 #../load/pairplot.png:
-#  type: kedex.SeabornPairPlotDataSet
+#  type: pipelinex.SeabornPairPlotDataSet
 #  save_args: # https://seaborn.pydata.org/generated/seaborn.pairplot.html
 #    x_vars:
 #      - Yards
@@ -52,7 +52,7 @@
 #      s: 20
 
 ../load/describe.csv:
-  type: kedex.PandasDescribeDataSet
+  type: pipelinex.PandasDescribeDataSet
   describe_args: # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.describe.html
     include: all
     percentiles:
@@ -65,7 +65,7 @@
       - 0.99
 
 ../load/describe_s2017.csv:
-  type: kedex.PandasDescribeDataSet
+  type: pipelinex.PandasDescribeDataSet
   describe_args: # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.describe.html
     include: all
     percentiles:
@@ -78,7 +78,7 @@
       - 0.99
 
 ../load/describe_s2018.csv:
-  type: kedex.PandasDescribeDataSet
+  type: pipelinex.PandasDescribeDataSet
   describe_args: # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.describe.html
     include: all
     percentiles:
@@ -91,7 +91,7 @@
       - 0.99
 
 ../load/describe_prep_s2017.csv:
-  type: kedex.PandasDescribeDataSet
+  type: pipelinex.PandasDescribeDataSet
   describe_args: # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.describe.html
     include: all
     percentiles:
@@ -104,7 +104,7 @@
       - 0.99
 
 ../load/describe_prep_s2018.csv:
-  type: kedex.PandasDescribeDataSet
+  type: pipelinex.PandasDescribeDataSet
   describe_args: # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.describe.html
     include: all
     percentiles:
@@ -127,7 +127,7 @@
 #  load_args:  # None
 
 #../load/field_image.png:
-#  type: kedex.ImagesLocalDataSet
+#  type: pipelinex.ImagesLocalDataSet
 #  cached: False
 #  load_args:
 #    lower: 0
@@ -137,7 +137,7 @@
 #    upper: 255
 
 #../load/pairplot.png:
-#  type: kedex.contrib.io.seaborn.SeabornPairPlotDataSet
+#  type: pipelinex.contrib.io.seaborn.SeabornPairPlotDataSet
 #  save_args: # https://seaborn.pydata.org/generated/seaborn.pairplot.html
 #    x_vars:
 #      - Yards
