@@ -234,7 +234,7 @@ def preprocess(df, parameters=None):
     df["_A"].clip(lower=0, upper=5.84, inplace=True)
     df["_S"].clip(lower=0, upper=7.59, inplace=True)
     df["_Dis10"].clip(lower=0, upper=7.59, inplace=True)
-    df["_S"] = 0.5 * df["_S"] + 0.5 * df["_Dis10"]
+    # df["_S"] = 0.5 * df["_S"] + 0.5 * df["_Dis10"]
 
     motion_coef = 1.0
     motion_sr = motion_coef * df["_S"]
@@ -262,7 +262,7 @@ def preprocess(df, parameters=None):
     """ """
 
     df["SeasonCode"] = ((df["Season"].clip(lower=2017, upper=2018) - 2017)).astype(np.uint8)  # 2
-    df["DownCode"] = (df["Down"].clip(lower=1, upper=4) - 1).astype(np.uint8)  # 4
+    df["DownCode"] = (df["Down"].clip(lower=1, upper=5) - 1).astype(np.uint8)  # 5
 
     df["HomeOnOffense"] = df["PossessionTeam"] == df["HomeTeamAbbr"]
     df["HomeOnOffenseCode"] = df["HomeOnOffense"].astype(np.uint8)  # 2
@@ -306,11 +306,12 @@ def preprocess(df, parameters=None):
     # df["_RusherDirSimilarity"] = np.cos(df["Dir_std"] - df["Rusher_Dir_std"])
     """ """
 
-    df["Diff_Dis10_S"] = 10 * df["Dis"] - df["S"]
-    df = df_transform(groupby="PlayId", columns={"Diff_Dis10_S": "Diff_Dis10_S_Max"}, func="max", keep_others=True)(df)
-    df = df_transform(groupby="PlayId", columns={"Diff_Dis10_S": "Diff_Dis10_S_Min"}, func="min", keep_others=True)(df)
-
-    df.query(expr="((Diff_Dis10_S_Max < 3.53) & (Diff_Dis10_S_Min > -2.095)) | (Season > 2018)", inplace=True)
+    # df["Diff_Dis10_S"] = 10 * df["Dis"] - df["S"]
+    # df = df_transform(groupby="PlayId", columns={"Diff_Dis10_S": "Diff_Dis10_S_Max"}, func="max", keep_others=True)(df)
+    # df = df_transform(groupby="PlayId", columns={"Diff_Dis10_S": "Diff_Dis10_S_Min"}, func="min", keep_others=True)(df)
+    #
+    # df.query(expr="((Diff_Dis10_S_Max < 3.53) & (Diff_Dis10_S_Min > -2.095)) | (Season > 2018)", inplace=True)
+    df.query(expr="Season >= 2018", inplace=True)
 
     df.drop(columns=DROP_LIST, inplace=True)
 

@@ -21,6 +21,9 @@
 ../load/loss_df.csv:
   type: CSVLocalDataSet
 
+../load/rusher_df_raw.csv:
+  type: CSVLocalDataSet
+
 ../load/df_030.csv:
   type: CSVLocalDataSet
   cached: True
