@@ -228,11 +228,13 @@ def preprocess(df, parameters=None):
     # df.loc[is2017_sr, "_A"] = df["_A"] * np.float32(2.72513175405908 / 2.50504453781512)
     # df.loc[is2017_sr, "_Dis10"] = df["_Dis10"] * np.float32(4.458548487 / 4.505504202)
 
-    normal_dis10_flag_sr = df["_Dis10"] < 5.8
-    df.loc[normal_dis10_flag_sr, "_S"] = df["_Dis10"]
+    # normal_dis10_flag_sr = df["_Dis10"] < 5.8
+    # df.loc[normal_dis10_flag_sr, "_S"] = df["_Dis10"]
 
     df["_A"].clip(lower=0, upper=5.84, inplace=True)
     df["_S"].clip(lower=0, upper=7.59, inplace=True)
+    df["_Dis10"].clip(lower=0, upper=7.59, inplace=True)
+    df["_S"] = 0.5 * df["_S"] + 0.5 * df["_Dis10"]
 
     motion_coef = 1.0
     motion_sr = motion_coef * df["_S"]
