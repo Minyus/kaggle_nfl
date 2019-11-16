@@ -121,19 +121,34 @@ def df_concat(**kwargs):
 
 
 def _groupby(df, groupby, columns):
-    if not isinstance(groupby, dict):
-        groupby = dict(by=groupby)
-    if groupby:
+    if isinstance(columns, dict):
+        df = df.rename(columns=columns)
+        columns = list(columns.values())
+    if groupby is not None:
+        if not isinstance(groupby, dict):
+            groupby = dict(by=groupby)
         df = df.groupby(**groupby)
-    if columns:
-        df = df[columns]
+    if columns is not None:
+        if isinstance(columns, (list, str)):
+            df = df[columns]
+        else:
+            raise ValueError("'{}' must be dict, list, or str.".format(columns))
     return df
 
 
-def df_transform(groupby=None, columns=None, **kwargs):
+def _add_mutated(df, mutated_df, columns, keep_others):
+    if keep_others:
+        columns_list = list(columns.values()) if isinstance(columns, dict) else columns
+        df[columns_list] = mutated_df
+    else:
+        df = mutated_df
+    return df
+
+
+def df_transform(groupby=None, columns=None, keep_others=False, **kwargs):
     def _df_transform(df, *argsignore, **kwargsignore):
-        df = _groupby(df, groupby, columns)
-        return df.transform(**kwargs)
+        mutated_df = _groupby(df, groupby, columns).transform(**kwargs)
+        return _add_mutated(df, mutated_df, columns, keep_others)
 
     return _df_transform
 
@@ -213,10 +228,11 @@ def preprocess(df, parameters=None):
     # df.loc[is2017_sr, "_A"] = df["_A"] * np.float32(2.72513175405908 / 2.50504453781512)
     # df.loc[is2017_sr, "_Dis10"] = df["_Dis10"] * np.float32(4.458548487 / 4.505504202)
 
-    df["_A"].clip(lower=0.49, upper=5.84, inplace=True)
-    df["_S"].clip(lower=1.51, upper=7.59, inplace=True)
-    df["_Dis10"].clip(lower=1.51, upper=7.59, inplace=True)
-    df["_S"] = 0.5 * df["_S"] + 0.5 * df["_Dis10"]
+    normal_dis10_flag_sr = df["_Dis10"] < 5.8
+    df.loc[normal_dis10_flag_sr, "_S"] = df["_Dis10"]
+
+    df["_A"].clip(lower=0, upper=5.84, inplace=True)
+    df["_S"].clip(lower=0, upper=7.59, inplace=True)
 
     motion_coef = 1.0
     motion_sr = motion_coef * df["_S"]
@@ -288,7 +304,12 @@ def preprocess(df, parameters=None):
     # df["_RusherDirSimilarity"] = np.cos(df["Dir_std"] - df["Rusher_Dir_std"])
     """ """
 
-    # df = df.filter(items=cols)
+    df["Diff_Dis10_S"] = 10 * df["Dis"] - df["S"]
+    df = df_transform(groupby="PlayId", columns={"Diff_Dis10_S": "Diff_Dis10_S_Max"}, func="max", keep_others=True)(df)
+    df = df_transform(groupby="PlayId", columns={"Diff_Dis10_S": "Diff_Dis10_S_Min"}, func="min", keep_others=True)(df)
+
+    df.query(expr="((Diff_Dis10_S_Max < 3.53) & (Diff_Dis10_S_Min > -2.095)) | (Season > 2018)", inplace=True)
+
     df.drop(columns=DROP_LIST, inplace=True)
 
     return df

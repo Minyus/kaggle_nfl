@@ -127,7 +127,7 @@ train_params:
     dirname: ../checkpoint
     filename_prefix: "%Y-%m-%dT%H-%M-%S"
     offset_hours: 8
-    n_saved: 1
+    n_saved: 6
     atomic: True
     require_empty: True
     create_dir: True
