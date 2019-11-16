@@ -205,13 +205,18 @@ def preprocess(df, parameters=None):
     df["Dir_std"] = df["Dir_std_2"] * math.pi / 180.0
 
     # df.rename(columns=dict(S="_S", A="_A"), inplace=True)
-    df["_S"] = df["S"].astype(np.float32)
     df["_A"] = df["A"].astype(np.float32)
+    df["_S"] = df["S"].astype(np.float32)
     df["_Dis10"] = 10 * df["Dis"].astype(np.float32)
-    is2017_sr = df["Season"] == 2017
+    # is2017_sr = df["Season"] == 2017
     # df.loc[is2017_sr, "_S"] = df["_S"] * np.float32(4.56395617070357 / 3.93930840336135)
     # df.loc[is2017_sr, "_A"] = df["_A"] * np.float32(2.72513175405908 / 2.50504453781512)
     # df.loc[is2017_sr, "_Dis10"] = df["_Dis10"] * np.float32(4.458548487 / 4.505504202)
+
+    df["_A"].clip(lower=0.49, upper=5.84, inplace=True)
+    df["_S"].clip(lower=1.51, upper=7.59, inplace=True)
+    df["_Dis10"].clip(lower=1.51, upper=7.59, inplace=True)
+    df["_S"] = 0.5 * df["_S"] + 0.5 * df["_Dis10"]
 
     motion_coef = 1.0
     motion_sr = motion_coef * df["_S"]
@@ -222,19 +227,19 @@ def preprocess(df, parameters=None):
     df["X_int_t1"] = X_float + df["_S_X"]
     df["Y_int_t1"] = Y_float + df["_S_Y"]
 
-    df["_S_left"] = df["_S_Y"]
-    df = df_cond_replace(cond="_S_left < 0", columns="_S_left", value=0)(df)
-    df["_S_right"] = -df["_S_Y"]
-    df = df_cond_replace(cond="_S_right < 0", columns="_S_right", value=0)(df)
+    # df["_S_left"] = df["_S_Y"]
+    # df = df_cond_replace(cond="_S_left < 0", columns="_S_left", value=0)(df)
+    # df["_S_right"] = -df["_S_Y"]
+    # df = df_cond_replace(cond="_S_right < 0", columns="_S_right", value=0)(df)
 
     """ """
 
-    dis10_motion_sr = motion_coef * df["_Dis10"]
-    df["_Dis10_X"] = dis10_motion_sr * np.sin(df["Dir_std"])
-    df["_Dis10_Y"] = dis10_motion_sr * np.cos(df["Dir_std"])
-
-    df["X_int_Dis10_t1"] = X_float + df["_Dis10_X"]
-    df["Y_int_Dis10_t1"] = Y_float + df["_Dis10_Y"]
+    # dis10_motion_sr = motion_coef * df["_Dis10"]
+    # df["_Dis10_X"] = dis10_motion_sr * np.sin(df["Dir_std"])
+    # df["_Dis10_Y"] = dis10_motion_sr * np.cos(df["Dir_std"])
+    #
+    # df["X_int_Dis10_t1"] = X_float + df["_Dis10_X"]
+    # df["Y_int_Dis10_t1"] = Y_float + df["_Dis10_Y"]
 
     """ """
 
@@ -331,8 +336,8 @@ class FieldImagesDataset:
         df,
         coo_cols_list=[
             ["X_int", "Y_int"],  # 1st snapshot
-            # ["X_int_t1", "Y_int_t1"],  # 2nd snapshot
-            ["X_int_Dis10_t1", "Y_int_Dis10_t1"],  # 2nd snapshot
+            ["X_int_t1", "Y_int_t1"],  # 2nd snapshot
+            # ["X_int_Dis10_t1", "Y_int_Dis10_t1"],  # 2nd snapshot
         ],
         coo_size=[30, 54],
         value_cols=[
@@ -1230,7 +1235,7 @@ if __name__ == "__main__":
     train_dataset = FieldImagesDataset(df, to_pytorch_tensor=True, augmentation=augmentation)
 
     log.info("Fit model.")
-    model = neural_network_train(train_params=train_params, mlflow_logging=False)(pytorch_model, train_dataset)
+    model = NetworkTrain(train_params=train_params, mlflow_logging=False)(pytorch_model, train_dataset)
 
     log.info("Infer.")
     infer(model, parameters)
