@@ -59,10 +59,10 @@ pytorch_model:
             - {=: pipelinex.TensorSlice, end: 18}
             - =: pipelinex.ModuleConcat
               _:
-                - {=: kaggle_nfl.kaggle_nfl.GaussianBlur2d, kernel_size: "(15, 15)", sigma: "(5.0, 5.0)"}
-                - {=: pipelinex.TensorConv2d, in_channels: 18, out_channels: 4, kernel_size: [3, 3]}
-                - {=: pipelinex.TensorConv2d, in_channels: 18, out_channels: 4, kernel_size: [7, 7]}
-                - {=: pipelinex.TensorConv2d, in_channels: 18, out_channels: 4, kernel_size: [5, 15]}
+#                - {=: kaggle_nfl.kaggle_nfl.GaussianBlur2d, kernel_size: "(15, 15)", sigma: "(5.0, 5.0)"}
+                - {=: pipelinex.TensorConv2d, in_channels: 18, out_channels: 10, kernel_size: [3, 3]}
+                - {=: pipelinex.TensorConv2d, in_channels: 18, out_channels: 10, kernel_size: [7, 7]}
+                - {=: pipelinex.TensorConv2d, in_channels: 18, out_channels: 10, kernel_size: [5, 15]}
             - {=: torch.nn.CELU, alpha: 1.0}
             - =: pipelinex.ModuleConcat
               _:
@@ -129,7 +129,7 @@ train_params:
     dirname: ../checkpoint
     filename_prefix: "%Y-%m-%dT%H-%M-%S"
     offset_hours: 8
-    n_saved: 6
+    n_saved: 12
     atomic: True
     require_empty: True
     create_dir: True
