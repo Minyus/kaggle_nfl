@@ -171,16 +171,16 @@ def preprocess(df, parameters=None):
 
     """ """
 
-    df = df_relative(
-        flag="IsBallCarrier==False",
-        columns={"X_int": "X_int_rr", "Y_int": "Y_int_rr", "X_int_t1": "X_int_t1_rr", "Y_int_t1": "Y_int_t1_rr"},
-        groupby="PlayId",
-    )(df)
-
-    df = df_eval(expr="X_int_rr = X_int_rr + 5")(df)
-    df = df_eval(expr="Y_int_rr = Y_int_rr + 26.8")(df)
-    df = df_eval(expr="X_int_t1_rr = X_int_t1_rr + 5")(df)
-    df = df_eval(expr="Y_int_t1_rr = Y_int_t1_rr + 26.8")(df)
+    # df = df_relative(
+    #     flag="IsBallCarrier==False",
+    #     columns={"X_int": "X_int_rr", "Y_int": "Y_int_rr", "X_int_t1": "X_int_t1_rr", "Y_int_t1": "Y_int_t1_rr"},
+    #     groupby="PlayId",
+    # )(df)
+    #
+    # df = df_eval(expr="X_int_rr = X_int_rr + 5")(df)
+    # df = df_eval(expr="Y_int_rr = Y_int_rr + 26.8")(df)
+    # df = df_eval(expr="X_int_t1_rr = X_int_t1_rr + 5")(df)
+    # df = df_eval(expr="Y_int_t1_rr = Y_int_t1_rr + 26.8")(df)
 
     """ """
 
@@ -277,8 +277,8 @@ class FieldImagesDataset:
         coo_cols_list=[
             ["X_int", "Y_int"],  # 1st snapshot
             ["X_int_t1", "Y_int_t1"],  # 2nd snapshot
-            ["X_int_rr", "Y_int_rr"],  # 3rd snapshot
-            ["X_int_t1_rr", "Y_int_t1_rr"],  # 4th snapshot
+            # ["X_int_rr", "Y_int_rr"],  # 3rd snapshot
+            # ["X_int_t1_rr", "Y_int_t1_rr"],  # 4th snapshot
         ],
         coo_size=[30, 54],
         value_cols=[
