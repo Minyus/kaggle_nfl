@@ -1,9 +1,12 @@
 """ kaggle_nfl.py """
 
+from importlib.util import find_spec
+
+if find_spec("pipelinex"):
+    from pipelinex import *
+
 import pandas as pd
-import numpy as np
 import random
-from collections import OrderedDict
 import math
 
 import logging
@@ -97,85 +100,6 @@ WindDirection
 """.splitlines()
 
 
-def df_concat(**kwargs):
-    def _df_concat(df_0, df_1, *argsignore, **kwargsignore):
-        new_col_values = kwargs.get("new_col_values")  # type: List[str]
-        new_col_name = kwargs.get("new_col_name")  # type: str
-        col_id = kwargs.get("col_id")  # type: str
-        sort = kwargs.get("sort", False)  # type: bool
-
-        if col_id:
-            df_0.set_index(keys=col_id, inplace=True)
-            df_1.set_index(keys=col_id, inplace=True)
-        else:
-            col_id = df_0.index.name
-
-        assert (isinstance(new_col_values, list) and len(new_col_values) == 2) or (new_col_values is None)
-        names = [new_col_name, col_id] if new_col_name else col_id
-        df_0 = pd.concat([df_0, df_1], sort=sort, verify_integrity=bool(col_id), keys=new_col_values, names=names)
-        if new_col_name:
-            df_0.reset_index(inplace=True, level=new_col_name)
-        return df_0
-
-    return _df_concat
-
-
-def _groupby(df, groupby, columns):
-    if isinstance(columns, dict):
-        df = df.rename(columns=columns)
-        columns = list(columns.values())
-    if groupby is not None:
-        if not isinstance(groupby, dict):
-            groupby = dict(by=groupby)
-        df = df.groupby(**groupby)
-    if columns is not None:
-        if isinstance(columns, (list, str)):
-            df = df[columns]
-        else:
-            raise ValueError("'{}' must be dict, list, or str.".format(columns))
-    return df
-
-
-def _add_mutated(df, mutated_df, columns, keep_others):
-    if keep_others:
-        columns_list = list(columns.values()) if isinstance(columns, dict) else columns
-        df[columns_list] = mutated_df
-    else:
-        df = mutated_df
-    return df
-
-
-def df_transform(groupby=None, columns=None, keep_others=False, **kwargs):
-    def _df_transform(df, *argsignore, **kwargsignore):
-        mutated_df = _groupby(df, groupby, columns).transform(**kwargs)
-        return _add_mutated(df, mutated_df, columns, keep_others)
-
-    return _df_transform
-
-
-def df_duplicate(**kwargs):
-    columns = kwargs.get("columns")
-    assert columns and isinstance(columns, dict)
-    col_list = list(columns.keys())
-
-    def _df_duplicate(df, *argsignore, **kwargsignore):
-        for col in col_list:
-            assert col in df.columns, "{} not in the data frame.".format(col)
-        new_df = df[col_list].rename(**kwargs)
-        df = pd.concat([df, new_df], axis=1, sort=False)
-        return df
-
-    return _df_duplicate
-
-
-def df_cond_replace(cond, columns, value=np.nan, **kwargs):
-    def _df_cond_replace(df, *argsignore, **kwargsignore):
-        df.loc[df.eval(cond), columns] = value
-        return df
-
-    return _df_cond_replace
-
-
 def preprocess(df, parameters=None):
     """ Reference:
     https://www.kaggle.com/statsbymichaellopez/nfl-tracking-initial-wrangling-voronoi-areas
@@ -245,19 +169,13 @@ def preprocess(df, parameters=None):
     df["X_int_t1"] = X_float + df["_S_X"]
     df["Y_int_t1"] = Y_float + df["_S_Y"]
 
-    # df["_S_left"] = df["_S_Y"]
-    # df = df_cond_replace(cond="_S_left < 0", columns="_S_left", value=0)(df)
-    # df["_S_right"] = -df["_S_Y"]
-    # df = df_cond_replace(cond="_S_right < 0", columns="_S_right", value=0)(df)
-
     """ """
 
-    # dis10_motion_sr = motion_coef * df["_Dis10"]
-    # df["_Dis10_X"] = dis10_motion_sr * np.sin(df["Dir_std"])
-    # df["_Dis10_Y"] = dis10_motion_sr * np.cos(df["Dir_std"])
-    #
-    # df["X_int_Dis10_t1"] = X_float + df["_Dis10_X"]
-    # df["Y_int_Dis10_t1"] = Y_float + df["_Dis10_Y"]
+    df = df_relative(
+        flag="IsBallCarrier==False",
+        columns={"X_int": "X_int_rr", "Y_int": "Y_int_rr", "X_int_t1": "X_int_t1_rr", "Y_int_t1": "Y_int_t1_rr"},
+        groupby="PlayId",
+    )(df)
 
     """ """
 
@@ -297,13 +215,6 @@ def preprocess(df, parameters=None):
         df["SnapToHandoffTime"] = np.ones(len(df))
     df["SnapToHandoffTimeCode"] = df["SnapToHandoffTime"].clip(lower=0, upper=4).fillna(1).astype(np.uint8)
 
-    """ """
-
-    # df = df_duplicate(columns={"Dir_std": "Rusher_Dir_std"})(df)
-    # df = df_cond_replace(cond="IsBallCarrier == False", columns="Rusher_Dir_std", value=np.nan)(df)
-    # df["Rusher_Dir_std"] = df_transform(groupby="PlayId", columns="Rusher_Dir_std", func="max")(df)
-    #
-    # df["_RusherDirSimilarity"] = np.cos(df["Dir_std"] - df["Rusher_Dir_std"])
     """ """
 
     # df["Diff_Dis10_S"] = 10 * df["Dis"] - df["S"]
@@ -361,7 +272,8 @@ class FieldImagesDataset:
         coo_cols_list=[
             ["X_int", "Y_int"],  # 1st snapshot
             ["X_int_t1", "Y_int_t1"],  # 2nd snapshot
-            # ["X_int_Dis10_t1", "Y_int_Dis10_t1"],  # 2nd snapshot
+            ["X_int_rr", "Y_int_rr"],  # 3rd snapshot
+            ["X_int_t1_rr", "Y_int_t1_rr"],  # 4th snapshot
         ],
         coo_size=[30, 54],
         value_cols=[
@@ -422,13 +334,7 @@ class FieldImagesDataset:
                 agg_df_list.append(agg_df)
 
             t_size = len(coo_cols_list)
-            if t_size == 1:
-                agg_df = agg_df_list[0]
-                agg_df["T"] = 0
-            elif t_size == 2:
-                agg_df = df_concat(new_col_name="T", new_col_values=[0, 1])(agg_df_list[0], agg_df_list[1])
-            else:
-                raise ValueError("coo_cols_list length not supported.")
+            agg_df = df_concat(new_col_name="T")(*agg_df_list)
 
             melted_df = agg_df.melt(id_vars=["PlayIndex", "T", dim_col] + coo_cols_)
             value_cols_dict = ordinal_dict(value_cols)
@@ -1233,9 +1139,6 @@ if __name__ == "__main__":
     import ignite
     import logging.config
     import yaml
-
-    if ("ModuleConcat" not in dir()) or ("HatchDict" not in dir()):
-        from pipelinex import *
 
     conf_logging = yaml.safe_load(logging_yaml)
     logging.config.dictConfig(conf_logging)

@@ -5,7 +5,7 @@ pytorch_model:
       _:
         - =: torch.nn.Sequential
           _:
-            - {=: pipelinex.TensorSlice, start: 18}
+            - {=: pipelinex.TensorSlice, start: 36}
             - {=: pipelinex.TensorSqueeze, dim: 1}
 #            - {=: pipelinex.TensorSlice, end: 30}
             - {=: pipelinex.TensorFlatten, _: }
@@ -37,32 +37,15 @@ pytorch_model:
             - {=: pipelinex.TensorGlobalRangePool2d, keepdim: False}
             - {=: torch.nn.Linear, in_features: 18, out_features: 15}
             - {=: torch.nn.Sigmoid, _: }
-#        - =: torch.nn.Sequential
-#          _:
-#            - {=: pipelinex.TensorSlice, start: 10}
-#            - {=: pipelinex.TensorGlobalSumPool2d, keepdim: False}  # -> [11]
-#            - {=: torch.nn.Linear, in_features: 11, out_features: 11}
-#            - {=: torch.nn.CELU, alpha: 1.0}
-#        - =: torch.nn.Sequential
-#          _:
-#            - {=: pipelinex.TensorSlice, end: 10}
-#            - =: pipelinex.ModuleConcat
-#              _:
-#                - {=: pipelinex.TensorGlobalAvgPool2d, keepdim: False}  # -> [10]
-#                - {=: pipelinex.TensorGlobalMaxPool2d, keepdim: False}  # -> [10]
-#                - {=: pipelinex.TensorGlobalMinPool2d, keepdim: False}  # -> [10]
-#                - {=: pipelinex.TensorGlobalRangePool2d, keepdim: False}  # -> [10]
-#            - {=: torch.nn.Linear, in_features: 40, out_features: 40}
-#            - {=: torch.nn.CELU, alpha: 1.0}
         - =: torch.nn.Sequential
           _:
-            - {=: pipelinex.TensorSlice, end: 18}
+            - {=: pipelinex.TensorSlice, end: 36}
             - =: pipelinex.ModuleConcat
               _:
 #                - {=: kaggle_nfl.kaggle_nfl.GaussianBlur2d, kernel_size: "(15, 15)", sigma: "(5.0, 5.0)"}
-                - {=: pipelinex.TensorConv2d, in_channels: 18, out_channels: 10, kernel_size: [3, 3]}
-                - {=: pipelinex.TensorConv2d, in_channels: 18, out_channels: 10, kernel_size: [7, 7]}
-                - {=: pipelinex.TensorConv2d, in_channels: 18, out_channels: 10, kernel_size: [3, 9]}
+                - {=: pipelinex.TensorConv2d, in_channels: 36, out_channels: 10, kernel_size: [3, 3]}
+                - {=: pipelinex.TensorConv2d, in_channels: 36, out_channels: 10, kernel_size: [7, 7]}
+                - {=: pipelinex.TensorConv2d, in_channels: 36, out_channels: 10, kernel_size: [3, 9]}
             - {=: torch.nn.CELU, alpha: 1.0}
             - =: pipelinex.ModuleConcat
               _:
@@ -120,7 +103,7 @@ augmentation:
 
 tta: 0
 
-train_batch_size: 64
+train_batch_size: 32
 
 train_params:
   epochs: 20  # number of epochs to train
