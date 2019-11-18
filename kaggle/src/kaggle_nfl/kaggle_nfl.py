@@ -177,6 +177,11 @@ def preprocess(df, parameters=None):
         groupby="PlayId",
     )(df)
 
+    df = df_eval(expr="X_int_rr = X_int_rr + 5")(df)
+    df = df_eval(expr="Y_int_rr = Y_int_rr + 26.8")(df)
+    df = df_eval(expr="X_int_t1_rr = X_int_t1_rr + 5")(df)
+    df = df_eval(expr="Y_int_t1_rr = Y_int_t1_rr + 26.8")(df)
+
     """ """
 
     df["SeasonCode"] = ((df["Season"].clip(lower=2017, upper=2018) - 2017)).astype(np.uint8)  # 2
