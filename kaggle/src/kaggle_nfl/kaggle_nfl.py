@@ -1148,7 +1148,12 @@ if __name__ == "__main__":
     conf_logging = yaml.safe_load(logging_yaml)
     logging.config.dictConfig(conf_logging)
 
-    parameters = yaml.safe_load(params_yaml)
+    if "params_yaml" not in dir():
+        load_path = Path("../conf/base/parameters.yml")
+        with load_path.open("r") as local_file:
+            parameters = yaml.safe_load(local_file)
+    else:
+        parameters = yaml.safe_load(params_yaml)
     parameters["MODULE_ALIASES"] = {"pipelinex": "__main__", "kaggle_nfl.kaggle_nfl": "__main__"}
     train_params = HatchDict(parameters).get("train_params")
     train_params["progress_update"] = False
