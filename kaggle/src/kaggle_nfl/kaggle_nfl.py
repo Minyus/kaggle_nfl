@@ -200,8 +200,9 @@ def preprocess(df, parameters=None):
     df.loc[df["HomeOnOffense"], "ScoreDiff"] = -df["ScoreDiff"]
     df["ScoreDiffCode"] = (np.floor(df["ScoreDiff"].clip(lower=-35, upper=35) / 10) + 4).astype(np.uint8)  # 8
 
-    df["YardsToGoalCode"] = np.floor((100 - df["YardsFromOwnGoal"].clip(lower=1, upper=99)) / 2).astype(np.uint8)
-
+    df["YardsToGoal"] = 100 - df["YardsFromOwnGoal"].clip(lower=1, upper=99)
+    df["YardsToGoalCode"] = np.floor(df["YardsToGoal"] / 2).astype(np.uint8)
+    df["YardsToGoalP10Val"] = np.floor((df["YardsToGoal"] + 10).clip(upper=99)).astype(np.uint8)
     """ """
 
     df["OffenseFormationCode"] = df["OffenseFormation"].map(OFFENSE_FORMATION_DICT).fillna(0).astype(np.uint8)
@@ -294,7 +295,8 @@ class FieldImagesDataset:
         ],
         to_pytorch_tensor=False,
         store_as_sparse_tensor=False,
-        spatial_independent_cols=[
+        continuous_cols=["YardsToGoalP10Val"],
+        categorical_cols=[
             "YardsToGoalCode",
             "SeasonCode",
             "DownCode",
@@ -364,19 +366,26 @@ class FieldImagesDataset:
 
             dim_sizes_ = [dim_size * len(value_cols) * len(coo_cols_list)] + coo_size
 
-            melted_si_df = None
+            spatial_independent_cols = continuous_cols + categorical_cols
+            # melted_si_df = None
             if spatial_independent_cols:
                 spatial_independent_dict = ordinal_dict(spatial_independent_cols)
                 agg_si_df = df.query("PlayerCategory == 2")  # Rusher
                 agg_si_df = agg_si_df[["PlayIndex"] + spatial_independent_cols].drop_duplicates().reset_index(drop=True)
                 melted_si_df = agg_si_df.melt(id_vars=["PlayIndex"])
                 melted_si_df["Channel"] = dim_sizes_[0]
-                melted_si_df.rename(columns={"variable": "H", "value": "W"}, inplace=True)
-                melted_si_df.loc[:, "H"] = melted_si_df["H"].map(spatial_independent_dict)
-                melted_si_df["value"] = 1.0
-                # melted_df = pd.concat([melted_df, melted_si_df], sort=False)
+
+                melted_si_df["W"] = melted_si_df["value"].copy()
+                melted_si_df.loc[melted_si_df["variable"].isin(continuous_cols), "W"] = 0
+                melted_si_df.loc[melted_si_df["variable"].isin(categorical_cols), "value"] = 1.0
+
                 melted_si_df.loc[:, "value"] = melted_si_df["value"].astype(np.float32)
+
+                melted_si_df.loc[:, "H"] = melted_si_df["variable"].map(spatial_independent_dict)
+
                 melted_si_df.set_index("PlayIndex", inplace=True)
+
+                melted_df = pd.concat([melted_df, melted_si_df], sort=False)
                 dim_sizes_[0] += 1
 
             f = torch.sparse_coo_tensor if store_as_sparse_tensor else dict
@@ -385,11 +394,12 @@ class FieldImagesDataset:
                 play_df = melted_df.xs(pi)
                 values = play_df["value"].values
                 indices = play_df[dim_cols_].values
-                if melted_si_df is not None:
-                    play_si_df = melted_si_df.xs(pi)
-                    indices_si = play_si_df[dim_cols_].values
-                    coo_3d = f(values=values, indices=indices, indices_si=indices_si, size=dim_sizes_)
-                else:
+                # if melted_si_df is not None:
+                #     play_si_df = melted_si_df.xs(pi)
+                #     indices_si = play_si_df[dim_cols_].values
+                #     coo_3d = f(values=values, indices=indices, indices_si=indices_si, size=dim_sizes_)
+                # else:
+                if 1:
                     coo_3d = f(values=values, indices=indices, size=dim_sizes_)
                 coo_dict[pi] = coo_3d
 
@@ -426,8 +436,8 @@ class FieldImagesDataset:
                         indices_arr = _add_normal_vertical_shift(indices_arr, vertical_shift_std)
 
                 indices_si_arr = play_coo_3d.get("indices_si", None)
-                if indices_si_arr is not None:
-                    indices_arr = np.concatenate([indices_arr, indices_si_arr], axis=0)
+                # if indices_si_arr is not None:
+                #     indices_arr = np.concatenate([indices_arr, indices_si_arr], axis=0)
                 indices_arr[:, 1] = indices_arr[:, 1].clip(0, size[1] - 1)
                 indices_arr[:, 2] = indices_arr[:, 2].clip(0, size[2] - 1)
 
@@ -435,9 +445,9 @@ class FieldImagesDataset:
                 indices_2dtt = torch.from_numpy(indices_arr.transpose())
 
                 values_arr = play_coo_3d.get("values")
-                if indices_si_arr is not None:
-                    values_si_arr = np.ones(shape=indices_si_arr.shape[0], dtype=np.float32)
-                    values_arr = np.concatenate([values_arr, values_si_arr], axis=0)
+                # if indices_si_arr is not None:
+                #     values_si_arr = np.ones(shape=indices_si_arr.shape[0], dtype=np.float32)
+                #     values_arr = np.concatenate([values_arr, values_si_arr], axis=0)
                 values_1dtt = torch.from_numpy(values_arr)
                 play_coo_3dtt = torch.sparse_coo_tensor(indices=indices_2dtt, values=values_1dtt, size=size)
             img = play_coo_3dtt.to_dense()
