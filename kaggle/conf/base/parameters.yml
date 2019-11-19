@@ -91,7 +91,8 @@ pytorch_model:
 #    - {=: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
 #    - {=: torch.nn.AvgPool1d, kernel_size: 3, stride: 1, padding: 0}
 #    - {=: pipelinex.TensorSqueeze, dim: 1}
-    - {=: pipelinex.TensorNearestPad, lower: 89, upper: 60}  # 199 = 89 + 50 + 60
+#    - {=: pipelinex.TensorNearestPad, lower: 89, upper: 60}  # 199 = 89 + 50 + 60
+    - {=: torch.nn.ConstantPad1d, padding: [89, 60], value: 0.0}  # 199 = 89 + 50 + 60
     - {=: torch.nn.Softmax, dim: 1}
     - {=: pipelinex.TensorCumsum, dim: 1}
     - {=: pipelinex.TensorClamp, min: 0.0, max: 1.0}
