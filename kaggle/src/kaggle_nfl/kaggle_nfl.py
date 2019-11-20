@@ -223,11 +223,17 @@ def preprocess(df, parameters=None):
 
     """ """
 
-    # df["Diff_Dis10_S"] = 10 * df["Dis"] - df["S"]
-    # df = df_transform(groupby="PlayId", columns={"Diff_Dis10_S": "Diff_Dis10_S_Max"}, func="max", keep_others=True)(df)
-    # df = df_transform(groupby="PlayId", columns={"Diff_Dis10_S": "Diff_Dis10_S_Min"}, func="min", keep_others=True)(df)
-    #
-    # df.query(expr="((Diff_Dis10_S_Max < 3.53) & (Diff_Dis10_S_Min > -2.095)) | (Season > 2018)", inplace=True)
+    df = df_transform(func=np.max, groupby="PlayId", columns={"X_int": "X_max", "Y_int": "Y_max"}, keep_others=True)(df)
+    df = df_transform(func=np.min, groupby="PlayId", columns={"X_int": "X_min", "Y_int": "Y_min"}, keep_others=True)(df)
+    df = df_transform(func=np.mean, groupby="PlayId", columns={"X_int": "X_mean", "Y_int": "Y_mean"}, keep_others=True)(
+        df
+    )
+    df = df_transform(
+        func=np.std, groupby="PlayId", columns={"X_int": "X_stdev", "Y_int": "Y_stdev"}, keep_others=True
+    )(df)
+
+    """ """
+
     df.query(expr="Season >= 2018", inplace=True)
 
     df.drop(columns=DROP_LIST, inplace=True)
@@ -295,7 +301,17 @@ class FieldImagesDataset:
         ],
         to_pytorch_tensor=False,
         store_as_sparse_tensor=False,
-        continuous_cols=["YardsToGoalP10Val"],
+        continuous_cols=[
+            "YardsToGoalP10Val",
+            "X_max",
+            "X_min",
+            "X_mean",
+            "X_stdev",
+            "Y_max",
+            "Y_min",
+            "Y_mean",
+            "Y_stdev",
+        ],
         categorical_cols=[
             # "YardsToGoalCode",
             # "SeasonCode",
