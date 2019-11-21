@@ -223,13 +223,70 @@ def preprocess(df, parameters=None):
 
     """ """
 
-    df = df_transform(func=np.max, groupby="PlayId", columns={"X_int": "X_max", "Y_int": "Y_max"}, keep_others=True)(df)
-    df = df_transform(func=np.min, groupby="PlayId", columns={"X_int": "X_min", "Y_int": "Y_min"}, keep_others=True)(df)
-    df = df_transform(func=np.mean, groupby="PlayId", columns={"X_int": "X_mean", "Y_int": "Y_mean"}, keep_others=True)(
-        df
-    )
-    df = df_transform(
-        func=np.std, groupby="PlayId", columns={"X_int": "X_stdev", "Y_int": "Y_stdev"}, keep_others=True
+    df = df_focus_transform(
+        focus="PlayerCategory == 0",
+        columns={"X_int": "X_Defense_Max", "Y_int": "Y_Defense_Max"},
+        func=np.max,
+        groupby="PlayId",
+        keep_others=True,
+    )(df)
+    df = df_focus_transform(
+        focus="PlayerCategory == 0",
+        columns={"X_int": "X_Defense_Min", "Y_int": "Y_Defense_Min"},
+        func=np.min,
+        groupby="PlayId",
+        keep_others=True,
+    )(df)
+    df = df_focus_transform(
+        focus="PlayerCategory == 0",
+        columns={"X_int": "X_Defense_Mean", "Y_int": "Y_Defense_Mean"},
+        func=np.mean,
+        groupby="PlayId",
+        keep_others=True,
+    )(df)
+    df = df_focus_transform(
+        focus="PlayerCategory == 0",
+        columns={"X_int": "X_Defense_Stdev", "Y_int": "Y_Defense_Stdev"},
+        func=np.std,
+        groupby="PlayId",
+        keep_others=True,
+    )(df)
+
+    df = df_focus_transform(
+        focus="PlayerCategory == 1",
+        columns={"X_int": "X_Offense_Max", "Y_int": "Y_Offense_Max"},
+        func=np.max,
+        groupby="PlayId",
+        keep_others=True,
+    )(df)
+    df = df_focus_transform(
+        focus="PlayerCategory == 1",
+        columns={"X_int": "X_Offense_Min", "Y_int": "Y_Offense_Min"},
+        func=np.min,
+        groupby="PlayId",
+        keep_others=True,
+    )(df)
+    df = df_focus_transform(
+        focus="PlayerCategory == 1",
+        columns={"X_int": "X_Offense_Mean", "Y_int": "Y_Offense_Mean"},
+        func=np.mean,
+        groupby="PlayId",
+        keep_others=True,
+    )(df)
+    df = df_focus_transform(
+        focus="PlayerCategory == 1",
+        columns={"X_int": "X_Offense_Stdev", "Y_int": "Y_Offense_Stdev"},
+        func=np.std,
+        groupby="PlayId",
+        keep_others=True,
+    )(df)
+
+    df = df_focus_transform(
+        focus="PlayerCategory == 2",
+        columns={"X_int": "X_Rusher", "Y_int": "Y_Rusher"},
+        func=np.max,
+        groupby="PlayId",
+        keep_others=True,
     )(df)
 
     """ """
@@ -277,6 +334,43 @@ def ordinal_dict(ls):
     return {ls[i]: i for i in range(len(ls))}
 
 
+CONTINUOUS_COLS = """
+YardsToGoalP10Val
+X_Defense_Max
+X_Defense_Min
+X_Defense_Mean
+X_Defense_Stdev
+X_Offense_Max
+X_Offense_Min
+X_Offense_Mean
+X_Offense_Stdev
+X_Rusher
+Y_Defense_Max
+Y_Defense_Min
+Y_Defense_Mean
+Y_Defense_Stdev
+Y_Offense_Max
+Y_Offense_Min
+Y_Offense_Mean
+Y_Offense_Stdev
+Y_Rusher
+""".strip().splitlines()
+
+CATEGORICAL_COLS = [
+    # "YardsToGoalCode",
+    # "SeasonCode",
+    "DownCode",
+    # "ScoreDiffCode",
+    "HomeOnOffenseCode",
+    # "OffenceTeamCode",
+    # "DefenceTeamCode",
+    "OffenseFormationCode",
+    "DefendersInTheBoxCode",
+    # "PositionCode",
+    # "SnapToHandoffTimeCode"
+]
+
+
 class FieldImagesDataset:
     def __init__(
         self,
@@ -301,30 +395,6 @@ class FieldImagesDataset:
         ],
         to_pytorch_tensor=False,
         store_as_sparse_tensor=False,
-        continuous_cols=[
-            "YardsToGoalP10Val",
-            "X_max",
-            "X_min",
-            "X_mean",
-            "X_stdev",
-            "Y_max",
-            "Y_min",
-            "Y_mean",
-            "Y_stdev",
-        ],
-        categorical_cols=[
-            # "YardsToGoalCode",
-            # "SeasonCode",
-            "DownCode",
-            # "ScoreDiffCode",
-            "HomeOnOffenseCode",
-            # "OffenceTeamCode",
-            # "DefenceTeamCode",
-            "OffenseFormationCode",
-            "DefendersInTheBoxCode",
-            # "PositionCode",
-            # "SnapToHandoffTimeCode"
-        ],
         augmentation={},
         transform=None,
         target_transform=None,
@@ -382,7 +452,7 @@ class FieldImagesDataset:
 
             dim_sizes_ = [dim_size * len(value_cols) * len(coo_cols_list)] + coo_size
 
-            spatial_independent_cols = continuous_cols + categorical_cols
+            spatial_independent_cols = CONTINUOUS_COLS + CATEGORICAL_COLS
             melted_si_df = None
             if spatial_independent_cols:
                 spatial_independent_dict = ordinal_dict(spatial_independent_cols)
@@ -392,8 +462,8 @@ class FieldImagesDataset:
                 melted_si_df["Channel"] = dim_sizes_[0]
 
                 melted_si_df["W"] = melted_si_df["value"].copy()
-                melted_si_df.loc[melted_si_df["variable"].isin(continuous_cols), "W"] = 0
-                melted_si_df.loc[melted_si_df["variable"].isin(categorical_cols), "value"] = 1.0
+                melted_si_df.loc[melted_si_df["variable"].isin(CONTINUOUS_COLS), "W"] = 0
+                melted_si_df.loc[melted_si_df["variable"].isin(CATEGORICAL_COLS), "value"] = 1.0
 
                 melted_si_df.loc[:, "value"] = melted_si_df["value"].astype(np.float32)
 
