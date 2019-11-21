@@ -22,9 +22,9 @@ pytorch_model:
                   _:
                     - {=: pipelinex.TensorSlice, start: 18}
                     - {=: pipelinex.TensorSqueeze, dim: 1}
-                    - {=: pipelinex.TensorSlice, start: 1, end: 23}
+                    - {=: pipelinex.TensorSlice, end: 5}
                     - {=: pipelinex.TensorFlatten, _: }
-                    - {=: torch.nn.Linear, in_features: 1188, out_features: 200}
+                    - {=: torch.nn.Linear, in_features: 270, out_features: 200}
                     - {=: torch.nn.CELU, alpha: 1.0}
                     - {=: torch.nn.Linear, in_features: 200, out_features: 200}
                     - {=: torch.nn.CELU, alpha: 1.0}

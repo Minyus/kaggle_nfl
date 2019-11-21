@@ -224,67 +224,70 @@ def preprocess(df, parameters=None):
     """ """
 
     df = df_focus_transform(
-        focus="PlayerCategory == 0",
-        columns={"X_int": "X_Defense_Max", "Y_int": "Y_Defense_Max"},
-        func=np.max,
-        groupby="PlayId",
-        keep_others=True,
-    )(df)
-    df = df_focus_transform(
-        focus="PlayerCategory == 0",
-        columns={"X_int": "X_Defense_Min", "Y_int": "Y_Defense_Min"},
-        func=np.min,
-        groupby="PlayId",
-        keep_others=True,
-    )(df)
-    df = df_focus_transform(
-        focus="PlayerCategory == 0",
-        columns={"X_int": "X_Defense_Mean", "Y_int": "Y_Defense_Mean"},
-        func=np.mean,
-        groupby="PlayId",
-        keep_others=True,
-    )(df)
-    df = df_focus_transform(
-        focus="PlayerCategory == 0",
-        columns={"X_int": "X_Defense_Stdev", "Y_int": "Y_Defense_Stdev"},
-        func=np.std,
-        groupby="PlayId",
-        keep_others=True,
-    )(df)
-
-    df = df_focus_transform(
-        focus="PlayerCategory == 1",
-        columns={"X_int": "X_Offense_Max", "Y_int": "Y_Offense_Max"},
-        func=np.max,
-        groupby="PlayId",
-        keep_others=True,
-    )(df)
-    df = df_focus_transform(
-        focus="PlayerCategory == 1",
-        columns={"X_int": "X_Offense_Min", "Y_int": "Y_Offense_Min"},
-        func=np.min,
-        groupby="PlayId",
-        keep_others=True,
-    )(df)
-    df = df_focus_transform(
-        focus="PlayerCategory == 1",
-        columns={"X_int": "X_Offense_Mean", "Y_int": "Y_Offense_Mean"},
-        func=np.mean,
-        groupby="PlayId",
-        keep_others=True,
-    )(df)
-    df = df_focus_transform(
-        focus="PlayerCategory == 1",
-        columns={"X_int": "X_Offense_Stdev", "Y_int": "Y_Offense_Stdev"},
-        func=np.std,
-        groupby="PlayId",
-        keep_others=True,
-    )(df)
-
-    df = df_focus_transform(
         focus="PlayerCategory == 2",
         columns={"X_int": "X_Rusher", "Y_int": "Y_Rusher"},
         func=np.max,
+        groupby="PlayId",
+        keep_others=True,
+    )(df)
+
+    df = df_eval("X_RR = X_int - X_Rusher")(df)
+    df = df_eval("Y_RR = Y_int - Y_Rusher")(df)
+
+    df = df_focus_transform(
+        focus="PlayerCategory == 0",
+        columns={"X_int": "X_Defense_Max", "X_RR": "X_RR_Defense_Max", "Y_RR": "Y_RR_Defense_Max"},
+        func=np.max,
+        groupby="PlayId",
+        keep_others=True,
+    )(df)
+    df = df_focus_transform(
+        focus="PlayerCategory == 0",
+        columns={"X_int": "X_Defense_Min", "X_RR": "X_RR_Defense_Min", "Y_RR": "Y_RR_Defense_Min"},
+        func=np.min,
+        groupby="PlayId",
+        keep_others=True,
+    )(df)
+    df = df_focus_transform(
+        focus="PlayerCategory == 0",
+        columns={"X_int": "X_Defense_Mean", "X_RR": "X_RR_Defense_Mean", "Y_RR": "Y_RR_Defense_Mean"},
+        func=np.mean,
+        groupby="PlayId",
+        keep_others=True,
+    )(df)
+    df = df_focus_transform(
+        focus="PlayerCategory == 0",
+        columns={"X_int": "X_Defense_Stdev", "X_RR": "X_RR_Defense_Stdev", "Y_RR": "Y_RR_Defense_Stdev"},
+        func=np.std,
+        groupby="PlayId",
+        keep_others=True,
+    )(df)
+
+    df = df_focus_transform(
+        focus="PlayerCategory == 1",
+        columns={"X_int": "X_Offense_Max", "X_RR": "X_RR_Offense_Max", "Y_RR": "Y_RR_Offense_Max"},
+        func=np.max,
+        groupby="PlayId",
+        keep_others=True,
+    )(df)
+    df = df_focus_transform(
+        focus="PlayerCategory == 1",
+        columns={"X_int": "X_Offense_Min", "X_RR": "X_RR_Offense_Min", "Y_RR": "Y_RR_Offense_Min"},
+        func=np.min,
+        groupby="PlayId",
+        keep_others=True,
+    )(df)
+    df = df_focus_transform(
+        focus="PlayerCategory == 1",
+        columns={"X_int": "X_Offense_Mean", "X_RR": "X_RR_Offense_Mean", "Y_RR": "Y_RR_Offense_Mean"},
+        func=np.mean,
+        groupby="PlayId",
+        keep_others=True,
+    )(df)
+    df = df_focus_transform(
+        focus="PlayerCategory == 1",
+        columns={"X_int": "X_Offense_Stdev", "X_RR": "X_RR_Offense_Stdev", "Y_RR": "Y_RR_Offense_Stdev"},
+        func=np.std,
         groupby="PlayId",
         keep_others=True,
     )(df)
@@ -336,24 +339,30 @@ def ordinal_dict(ls):
 
 CONTINUOUS_COLS = """
 YardsToGoalP10Val
+X_Rusher
+Y_Rusher
 X_Defense_Max
 X_Defense_Min
 X_Defense_Mean
-X_Defense_Stdev
 X_Offense_Max
 X_Offense_Min
 X_Offense_Mean
-X_Offense_Stdev
-X_Rusher
-Y_Defense_Max
-Y_Defense_Min
-Y_Defense_Mean
-Y_Defense_Stdev
-Y_Offense_Max
-Y_Offense_Min
-Y_Offense_Mean
-Y_Offense_Stdev
-Y_Rusher
+X_RR_Defense_Max
+X_RR_Defense_Min
+X_RR_Defense_Mean
+X_RR_Defense_Stdev
+X_RR_Offense_Max
+X_RR_Offense_Min
+X_RR_Offense_Mean
+X_RR_Offense_Stdev
+Y_RR_Defense_Max
+Y_RR_Defense_Min
+Y_RR_Defense_Mean
+Y_RR_Defense_Stdev
+Y_RR_Offense_Max
+Y_RR_Offense_Min
+Y_RR_Offense_Mean
+Y_RR_Offense_Stdev
 """.strip().splitlines()
 
 CATEGORICAL_COLS = [
@@ -455,19 +464,25 @@ class FieldImagesDataset:
             spatial_independent_cols = CONTINUOUS_COLS + CATEGORICAL_COLS
             melted_si_df = None
             if spatial_independent_cols:
-                spatial_independent_dict = ordinal_dict(spatial_independent_cols)
+                categorical_cols_dict = ordinal_dict(CATEGORICAL_COLS)
+                continuous_cols_dict = ordinal_dict(CONTINUOUS_COLS)
+
                 agg_si_df = df.query("PlayerCategory == 2")  # Rusher
                 agg_si_df = agg_si_df[["PlayIndex"] + spatial_independent_cols].drop_duplicates().reset_index(drop=True)
                 melted_si_df = agg_si_df.melt(id_vars=["PlayIndex"])
                 melted_si_df["Channel"] = dim_sizes_[0]
 
+                melted_si_df["H"] = 0
+                melted_si_df.loc[melted_si_df["variable"].isin(CATEGORICAL_COLS), "H"] = (
+                    melted_si_df["variable"].map(categorical_cols_dict) + 1
+                )
+
                 melted_si_df["W"] = melted_si_df["value"].copy()
-                melted_si_df.loc[melted_si_df["variable"].isin(CONTINUOUS_COLS), "W"] = 0
+                melted_si_df.loc[melted_si_df["variable"].isin(CONTINUOUS_COLS), "W"] = melted_si_df["variable"].map(
+                    continuous_cols_dict
+                )
                 melted_si_df.loc[melted_si_df["variable"].isin(CATEGORICAL_COLS), "value"] = 1.0
-
                 melted_si_df.loc[:, "value"] = melted_si_df["value"].astype(np.float32)
-
-                melted_si_df.loc[:, "H"] = melted_si_df["variable"].map(spatial_independent_dict)
 
                 melted_si_df.set_index("PlayIndex", inplace=True)
 
