@@ -233,31 +233,53 @@ def preprocess(df, parameters=None):
 
     df = df_eval("X_RR = X_int - X_Rusher")(df)
     df = df_eval("Y_RR = Y_int - Y_Rusher")(df)
+    df["D_RR"] = df[["X_RR", "Y_RR"]].apply(np.linalg.norm, axis=1)
+    df.sort_values(by=["PlayId", "PlayerCategory", "D_RR"], inplace=True)
 
     df = df_focus_transform(
         focus="PlayerCategory == 0",
-        columns={"X_int": "X_Defense_Max", "X_RR": "X_RR_Defense_Max", "Y_RR": "Y_RR_Defense_Max"},
+        columns={
+            "X_int": "X_Defense_Max",
+            "X_RR": "X_RR_Defense_Max",
+            "Y_RR": "Y_RR_Defense_Max",
+            "D_RR": "D_RR_Defense_Max",
+        },
         func=np.max,
         groupby="PlayId",
         keep_others=True,
     )(df)
     df = df_focus_transform(
         focus="PlayerCategory == 0",
-        columns={"X_int": "X_Defense_Min", "X_RR": "X_RR_Defense_Min", "Y_RR": "Y_RR_Defense_Min"},
+        columns={
+            "X_int": "X_Defense_Min",
+            "X_RR": "X_RR_Defense_Min",
+            "Y_RR": "Y_RR_Defense_Min",
+            "D_RR": "D_RR_Defense_Min",
+        },
         func=np.min,
         groupby="PlayId",
         keep_others=True,
     )(df)
     df = df_focus_transform(
         focus="PlayerCategory == 0",
-        columns={"X_int": "X_Defense_Mean", "X_RR": "X_RR_Defense_Mean", "Y_RR": "Y_RR_Defense_Mean"},
+        columns={
+            "X_int": "X_Defense_Mean",
+            "X_RR": "X_RR_Defense_Mean",
+            "Y_RR": "Y_RR_Defense_Mean",
+            "D_RR": "D_RR_Defense_Mean",
+        },
         func=np.mean,
         groupby="PlayId",
         keep_others=True,
     )(df)
     df = df_focus_transform(
         focus="PlayerCategory == 0",
-        columns={"X_int": "X_Defense_Stdev", "X_RR": "X_RR_Defense_Stdev", "Y_RR": "Y_RR_Defense_Stdev"},
+        columns={
+            "X_int": "X_Defense_Stdev",
+            "X_RR": "X_RR_Defense_Stdev",
+            "Y_RR": "Y_RR_Defense_Stdev",
+            "D_RR": "D_RR_Defense_Stdev",
+        },
         func=np.std,
         groupby="PlayId",
         keep_others=True,
@@ -265,31 +287,66 @@ def preprocess(df, parameters=None):
 
     df = df_focus_transform(
         focus="PlayerCategory == 1",
-        columns={"X_int": "X_Offense_Max", "X_RR": "X_RR_Offense_Max", "Y_RR": "Y_RR_Offense_Max"},
+        columns={
+            "X_int": "X_Offense_Max",
+            "X_RR": "X_RR_Offense_Max",
+            "Y_RR": "Y_RR_Offense_Max",
+            "D_RR": "D_RR_Offense_Max",
+        },
         func=np.max,
         groupby="PlayId",
         keep_others=True,
     )(df)
     df = df_focus_transform(
         focus="PlayerCategory == 1",
-        columns={"X_int": "X_Offense_Min", "X_RR": "X_RR_Offense_Min", "Y_RR": "Y_RR_Offense_Min"},
+        columns={
+            "X_int": "X_Offense_Min",
+            "X_RR": "X_RR_Offense_Min",
+            "Y_RR": "Y_RR_Offense_Min",
+            "D_RR": "D_RR_Offense_Min",
+        },
         func=np.min,
         groupby="PlayId",
         keep_others=True,
     )(df)
     df = df_focus_transform(
         focus="PlayerCategory == 1",
-        columns={"X_int": "X_Offense_Mean", "X_RR": "X_RR_Offense_Mean", "Y_RR": "Y_RR_Offense_Mean"},
+        columns={
+            "X_int": "X_Offense_Mean",
+            "X_RR": "X_RR_Offense_Mean",
+            "Y_RR": "Y_RR_Offense_Mean",
+            "D_RR": "D_RR_Offense_Mean",
+        },
         func=np.mean,
         groupby="PlayId",
         keep_others=True,
     )(df)
     df = df_focus_transform(
         focus="PlayerCategory == 1",
-        columns={"X_int": "X_Offense_Stdev", "X_RR": "X_RR_Offense_Stdev", "Y_RR": "Y_RR_Offense_Stdev"},
+        columns={
+            "X_int": "X_Offense_Stdev",
+            "X_RR": "X_RR_Offense_Stdev",
+            "Y_RR": "Y_RR_Offense_Stdev",
+            "D_RR": "D_RR_Offense_Stdev",
+        },
         func=np.std,
         groupby="PlayId",
         keep_others=True,
+    )(df)
+
+    """ """
+
+    df = df_laplacian_eig(
+        return_values=True,
+        return_vectors=False,
+        coo_cols=["X_int", "Y_int"],
+        groupby="PlayId",
+        affinity_scale="PlayerCategory == 0",
+        col_name_fmt="Defense_Eig_{:02d}",
+        dist_scale=1.0,
+        min_affinity=None,
+        keep_others=True,
+        sort=True,
     )(df)
 
     """ """
@@ -340,7 +397,6 @@ def ordinal_dict(ls):
 CONTINUOUS_COLS = """
 YardsToGoalP10Val
 X_Rusher
-Y_Rusher
 X_Defense_Max
 X_Defense_Min
 X_Defense_Mean
@@ -363,6 +419,28 @@ Y_RR_Offense_Max
 Y_RR_Offense_Min
 Y_RR_Offense_Mean
 Y_RR_Offense_Stdev
+Defense_Eig_00
+Defense_Eig_01
+Defense_Eig_02
+Defense_Eig_03
+Defense_Eig_04
+Defense_Eig_05
+Defense_Eig_06
+Defense_Eig_07
+Defense_Eig_08
+Defense_Eig_09
+Defense_Eig_10
+Defense_Eig_11
+Defense_Eig_12
+Defense_Eig_13
+Defense_Eig_14
+Defense_Eig_15
+Defense_Eig_16
+Defense_Eig_17
+Defense_Eig_18
+Defense_Eig_19
+Defense_Eig_20
+Defense_Eig_21
 """.strip().splitlines()
 
 CATEGORICAL_COLS = [
@@ -666,6 +744,7 @@ def _predict_cdf(test_df, pytorch_model, parameters=None):
     augmentation = parameters.get("augmentation")
 
     yards_abs = test_df["YardsFromOwnGoal"].iloc[0]
+    yards_abs = int(yards_abs)
 
     pytorch_model.eval()
     with torch.no_grad():
