@@ -444,9 +444,6 @@ Y_RR_Offense_Max
 Y_RR_Offense_Min
 Y_RR_Offense_Mean
 Y_RR_Offense_Stdev
-Defense_NConn
-Offense_NConn
-Bipart_NConn
 """.strip().splitlines()
 
 CATEGORICAL_COLS = [
@@ -461,6 +458,9 @@ CATEGORICAL_COLS = [
     "DefendersInTheBoxCode",
     # "PositionCode",
     # "SnapToHandoffTimeCode"
+    "Defense_NConn",
+    "Offense_NConn",
+    "Bipart_NConn",
 ]
 
 
