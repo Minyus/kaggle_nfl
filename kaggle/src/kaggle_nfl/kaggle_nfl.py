@@ -100,6 +100,11 @@ WindDirection
 """.splitlines()
 
 
+zeros11 = np.zeros((11, 11))
+ones11 = np.ones((11, 11))
+bipart_mask_2darr = np.block([[zeros11, ones11], [ones11, zeros11]])
+
+
 def preprocess(df, parameters=None):
     """ Reference:
     https://www.kaggle.com/statsbymichaellopez/nfl-tracking-initial-wrangling-voronoi-areas
@@ -336,15 +341,35 @@ def preprocess(df, parameters=None):
 
     """ """
 
-    df = df_laplacian_eig(
-        return_values=True,
-        return_vectors=False,
+    df = df_spatial_features(
+        output="n_connected",
         coo_cols=["X_int", "Y_int"],
         groupby="PlayId",
         affinity_scale="PlayerCategory == 0",
-        col_name_fmt="Defense_Eig_{:02d}",
-        dist_scale=1.0,
-        min_affinity=None,
+        col_name_fmt="Defense_NConn",
+        unit_distance=5.0,
+        keep_others=True,
+        sort=True,
+    )(df)
+
+    df = df_spatial_features(
+        output="n_connected",
+        coo_cols=["X_int", "Y_int"],
+        groupby="PlayId",
+        affinity_scale="PlayerCategory != 0",
+        col_name_fmt="Offense_NConn",
+        unit_distance=5.0,
+        keep_others=True,
+        sort=True,
+    )(df)
+
+    df = df_spatial_features(
+        output="n_connected",
+        coo_cols=["X_int", "Y_int"],
+        groupby="PlayId",
+        affinity_scale=bipart_mask_2darr,
+        col_name_fmt="Bipart_NConn",
+        unit_distance=5.0,
         keep_others=True,
         sort=True,
     )(df)
@@ -419,28 +444,9 @@ Y_RR_Offense_Max
 Y_RR_Offense_Min
 Y_RR_Offense_Mean
 Y_RR_Offense_Stdev
-Defense_Eig_00
-Defense_Eig_01
-Defense_Eig_02
-Defense_Eig_03
-Defense_Eig_04
-Defense_Eig_05
-Defense_Eig_06
-Defense_Eig_07
-Defense_Eig_08
-Defense_Eig_09
-Defense_Eig_10
-Defense_Eig_11
-Defense_Eig_12
-Defense_Eig_13
-Defense_Eig_14
-Defense_Eig_15
-Defense_Eig_16
-Defense_Eig_17
-Defense_Eig_18
-Defense_Eig_19
-Defense_Eig_20
-Defense_Eig_21
+Defense_NConn
+Offense_NConn
+Bipart_NConn
 """.strip().splitlines()
 
 CATEGORICAL_COLS = [
