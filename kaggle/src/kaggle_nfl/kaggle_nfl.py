@@ -341,29 +341,29 @@ def preprocess(df, parameters=None):
 
     """ """
 
-    df = df_spatial_features(
-        output="n_connected",
-        coo_cols=["X_int", "Y_int"],
-        groupby="PlayId",
-        affinity_scale="PlayerCategory == 0",
-        col_name_fmt="Defense_NConn",
-        binary_affinity=True,
-        unit_distance=5.0,
-        keep_others=True,
-        sort=True,
-    )(df)
-
-    df = df_spatial_features(
-        output="n_connected",
-        coo_cols=["X_int", "Y_int"],
-        groupby="PlayId",
-        affinity_scale="PlayerCategory != 0",
-        col_name_fmt="Offense_NConn",
-        binary_affinity=True,
-        unit_distance=5.0,
-        keep_others=True,
-        sort=True,
-    )(df)
+    # df = df_spatial_features(
+    #     output="n_connected",
+    #     coo_cols=["X_int", "Y_int"],
+    #     groupby="PlayId",
+    #     affinity_scale="PlayerCategory == 0",
+    #     col_name_fmt="Defense_NConn",
+    #     binary_affinity=True,
+    #     unit_distance=5.0,
+    #     keep_others=True,
+    #     sort=True,
+    # )(df)
+    #
+    # df = df_spatial_features(
+    #     output="n_connected",
+    #     coo_cols=["X_int", "Y_int"],
+    #     groupby="PlayId",
+    #     affinity_scale="PlayerCategory != 0",
+    #     col_name_fmt="Offense_NConn",
+    #     binary_affinity=True,
+    #     unit_distance=5.0,
+    #     keep_others=True,
+    #     sort=True,
+    # )(df)
 
     df = df_spatial_features(
         output="n_connected",
@@ -461,8 +461,8 @@ CATEGORICAL_COLS = [
     "DefendersInTheBoxCode",
     # "PositionCode",
     # "SnapToHandoffTimeCode"
-    "Defense_NConn",
-    "Offense_NConn",
+    # "Defense_NConn",
+    # "Offense_NConn",
     "Bipart_NConn",
 ]
 
