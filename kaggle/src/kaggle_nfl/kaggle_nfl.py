@@ -234,9 +234,9 @@ def preprocess(df, parameters=None):
         columns={
             "X_int": "X_Rusher",
             "Y_int": "Y_Rusher",
-            "_A": "A_Rusher",
-            "_S_X": "S_X_Rusher",
-            "_S_Y": "S_Y_Rusher",
+            # "_A": "A_Rusher",
+            # "_S_X": "S_X_Rusher",
+            # "_S_Y": "S_Y_Rusher",
         },
         func=np.max,
         groupby="PlayId",
@@ -255,9 +255,9 @@ def preprocess(df, parameters=None):
             "X_RR": "X_RR_Defense_Max",
             "Y_RR": "Y_RR_Defense_Max",
             # "D_RR": "D_RR_Defense_Max",
-            "_A": "A_Defense_Max",
-            "_S_X": "S_X_Defense_Max",
-            "_S_Y": "S_Y_Defense_Max",
+            # "_A": "A_Defense_Max",
+            # "_S_X": "S_X_Defense_Max",
+            # "_S_Y": "S_Y_Defense_Max",
         },
         func=np.max,
         groupby="PlayId",
@@ -270,9 +270,9 @@ def preprocess(df, parameters=None):
             "X_RR": "X_RR_Defense_Min",
             "Y_RR": "Y_RR_Defense_Min",
             # "D_RR": "D_RR_Defense_Min",
-            "_A": "A_Defense_Min",
-            "_S_X": "S_X_Defense_Min",
-            "_S_Y": "S_Y_Defense_Min",
+            # "_A": "A_Defense_Min",
+            # "_S_X": "S_X_Defense_Min",
+            # "_S_Y": "S_Y_Defense_Min",
         },
         func=np.min,
         groupby="PlayId",
@@ -285,9 +285,9 @@ def preprocess(df, parameters=None):
             "X_RR": "X_RR_Defense_Mean",
             "Y_RR": "Y_RR_Defense_Mean",
             # "D_RR": "D_RR_Defense_Mean",
-            "_A": "A_Defense_Mean",
-            "_S_X": "S_X_Defense_Mean",
-            "_S_Y": "S_Y_Defense_Mean",
+            # "_A": "A_Defense_Mean",
+            # "_S_X": "S_X_Defense_Mean",
+            # "_S_Y": "S_Y_Defense_Mean",
         },
         func=np.mean,
         groupby="PlayId",
@@ -300,9 +300,9 @@ def preprocess(df, parameters=None):
             "X_RR": "X_RR_Defense_Stdev",
             "Y_RR": "Y_RR_Defense_Stdev",
             # "D_RR": "D_RR_Defense_Stdev",
-            "_A": "A_Defense_Stdev",
-            "_S_X": "S_X_Defense_Stdev",
-            "_S_Y": "S_Y_Defense_Stdev",
+            # "_A": "A_Defense_Stdev",
+            # "_S_X": "S_X_Defense_Stdev",
+            # "_S_Y": "S_Y_Defense_Stdev",
         },
         func=np.std,
         groupby="PlayId",
@@ -316,9 +316,9 @@ def preprocess(df, parameters=None):
             "X_RR": "X_RR_Offense_Max",
             "Y_RR": "Y_RR_Offense_Max",
             # "D_RR": "D_RR_Offense_Max",
-            "_A": "A_Offense_Max",
-            "_S_X": "S_X_Offense_Max",
-            "_S_Y": "S_Y_Offense_Max",
+            # "_A": "A_Offense_Max",
+            # "_S_X": "S_X_Offense_Max",
+            # "_S_Y": "S_Y_Offense_Max",
         },
         func=np.max,
         groupby="PlayId",
@@ -331,9 +331,9 @@ def preprocess(df, parameters=None):
             "X_RR": "X_RR_Offense_Min",
             "Y_RR": "Y_RR_Offense_Min",
             # "D_RR": "D_RR_Offense_Min",
-            "_A": "A_Offense_Min",
-            "_S_X": "S_X_Offense_Min",
-            "_S_Y": "S_Y_Offense_Min",
+            # "_A": "A_Offense_Min",
+            # "_S_X": "S_X_Offense_Min",
+            # "_S_Y": "S_Y_Offense_Min",
         },
         func=np.min,
         groupby="PlayId",
@@ -346,9 +346,9 @@ def preprocess(df, parameters=None):
             "X_RR": "X_RR_Offense_Mean",
             "Y_RR": "Y_RR_Offense_Mean",
             # "D_RR": "D_RR_Offense_Mean",
-            "_A": "A_Offense_Mean",
-            "_S_X": "S_X_Offense_Mean",
-            "_S_Y": "S_Y_Offense_Mean",
+            # "_A": "A_Offense_Mean",
+            # "_S_X": "S_X_Offense_Mean",
+            # "_S_Y": "S_Y_Offense_Mean",
         },
         func=np.mean,
         groupby="PlayId",
@@ -361,9 +361,9 @@ def preprocess(df, parameters=None):
             "X_RR": "X_RR_Offense_Stdev",
             "Y_RR": "Y_RR_Offense_Stdev",
             # "D_RR": "D_RR_Offense_Stdev",
-            "_A": "A_Offense_Stdev",
-            "_S_X": "S_X_Offense_Stdev",
-            "_S_Y": "S_Y_Offense_Stdev",
+            # "_A": "A_Offense_Stdev",
+            # "_S_X": "S_X_Offense_Stdev",
+            # "_S_Y": "S_Y_Offense_Stdev",
         },
         func=np.std,
         groupby="PlayId",
@@ -456,7 +456,6 @@ def ordinal_dict(ls):
 CONTINUOUS_COLS = [
     """
 YardsToGoalP10Val
-HomeOnOffenseCode
 X_Defense_Max
 X_RR_Defense_Max
 Y_RR_Defense_Max
@@ -482,50 +481,50 @@ Y_RR_Offense_Stdev
 X_Rusher
 Y_Rusher
 """.strip().splitlines(),
-    """
-A_Defense_Max
-S_X_Defense_Max
-S_Y_Defense_Max
-A_Offense_Max
-S_X_Offense_Max
-S_Y_Offense_Max
-A_Rusher
-S_X_Rusher
-S_Y_Rusher
-""".strip().splitlines(),
-    """
-A_Defense_Min
-S_X_Defense_Min
-S_Y_Defense_Min
-A_Offense_Min
-S_X_Offense_Min
-S_Y_Offense_Min
-A_Rusher
-S_X_Rusher
-S_Y_Rusher
-""".strip().splitlines(),
-    """
-A_Defense_Mean
-S_X_Defense_Mean
-S_Y_Defense_Mean
-A_Offense_Mean
-S_X_Offense_Mean
-S_Y_Offense_Mean
-A_Rusher
-S_X_Rusher
-S_Y_Rusher
-""".strip().splitlines(),
-    """
-A_Defense_Stdev
-S_X_Defense_Stdev
-S_Y_Defense_Stdev
-A_Offense_Stdev
-S_X_Offense_Stdev
-S_Y_Offense_Stdev
-A_Rusher
-S_X_Rusher
-S_Y_Rusher
-""".strip().splitlines(),
+#     """
+# A_Defense_Max
+# S_X_Defense_Max
+# S_Y_Defense_Max
+# A_Offense_Max
+# S_X_Offense_Max
+# S_Y_Offense_Max
+# A_Rusher
+# S_X_Rusher
+# S_Y_Rusher
+# """.strip().splitlines(),
+#     """
+# A_Defense_Min
+# S_X_Defense_Min
+# S_Y_Defense_Min
+# A_Offense_Min
+# S_X_Offense_Min
+# S_Y_Offense_Min
+# A_Rusher
+# S_X_Rusher
+# S_Y_Rusher
+# """.strip().splitlines(),
+#     """
+# A_Defense_Mean
+# S_X_Defense_Mean
+# S_Y_Defense_Mean
+# A_Offense_Mean
+# S_X_Offense_Mean
+# S_Y_Offense_Mean
+# A_Rusher
+# S_X_Rusher
+# S_Y_Rusher
+# """.strip().splitlines(),
+#     """
+# A_Defense_Stdev
+# S_X_Defense_Stdev
+# S_Y_Defense_Stdev
+# A_Offense_Stdev
+# S_X_Offense_Stdev
+# S_Y_Offense_Stdev
+# A_Rusher
+# S_X_Rusher
+# S_Y_Rusher
+# """.strip().splitlines(),
 ]
 
 CATEGORICAL_COLS = [
@@ -533,6 +532,7 @@ CATEGORICAL_COLS = [
     # "SeasonCode",
     "DownCode",
     # "ScoreDiffCode",
+    "HomeOnOffenseCode",
     # "OffenceTeamCode",
     # "DefenceTeamCode",
     "OffenseFormationCode",

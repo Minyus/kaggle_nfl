@@ -22,80 +22,86 @@ pytorch_model:
                   _:
                     - {=: pipelinex.TensorSlice, start: 18}
                     - {=: pipelinex.TensorSqueeze, dim: 1}
-                    - =: pipelinex.ModuleConcat
-                      _:
-                      - =: torch.nn.Sequential
-                        _:
-                          - {=: pipelinex.TensorSlice, start: 0, end: 1}
-                          - {=: pipelinex.TensorFlatten, _: }
-                          - {=: torch.nn.Linear, in_features: 54, out_features: 25}
-                          - {=: torch.nn.CELU, alpha: 1.0}
-                      - =: torch.nn.Sequential
-                        _:
-                          - {=: pipelinex.TensorSlice, start: 1, end: 2}
-                          - {=: pipelinex.TensorFlatten, _: }
-                          - {=: torch.nn.Linear, in_features: 54, out_features: 15}
-                          - {=: torch.nn.Sigmoid, _: }
-                      - =: torch.nn.Sequential
-                        _:
-                          - {=: pipelinex.TensorSlice, start: 2, end: 3}
-                          - {=: pipelinex.TensorFlatten, _: }
-                          - {=: torch.nn.Linear, in_features: 54, out_features: 15}
-                          - {=: torch.nn.Sigmoid, _: }
-                      - =: torch.nn.Sequential
-                        _:
-                          - {=: pipelinex.TensorSlice, start: 3, end: 4}
-                          - {=: pipelinex.TensorFlatten, _: }
-                          - {=: torch.nn.Linear, in_features: 54, out_features: 15}
-                          - {=: torch.nn.CELU, alpha: 1.0}
-                      - =: torch.nn.Sequential
-                        _:
-                          - {=: pipelinex.TensorSlice, start: 4, end: 5}
-                          - {=: pipelinex.TensorFlatten, _: }
-                          - {=: torch.nn.Linear, in_features: 54, out_features: 15}
-                          - {=: torch.nn.CELU, alpha: 1.0}
-                      - =: torch.nn.Sequential
-                        _:
-                          - {=: pipelinex.TensorSlice, start: 5, end: 6}
-                          - {=: pipelinex.TensorFlatten, _: }
-                          - {=: torch.nn.Linear, in_features: 54, out_features: 5}
-                          - {=: torch.nn.CELU, alpha: 1.0}
-                      - =: torch.nn.Sequential
-                        _:
-                          - {=: pipelinex.TensorSlice, start: 6, end: 7}
-                          - {=: pipelinex.TensorFlatten, _: }
-                          - {=: torch.nn.Linear, in_features: 54, out_features: 5}
-                          - {=: torch.nn.CELU, alpha: 1.0}
-                      - =: torch.nn.Sequential
-                        _:
-                          - {=: pipelinex.TensorSlice, start: 7, end: 8}
-                          - {=: pipelinex.TensorFlatten, _: }
-                          - {=: torch.nn.Linear, in_features: 54, out_features: 5}
-                          - {=: torch.nn.CELU, alpha: 1.0}
-#                - =: torch.nn.Sequential
-#                  _:
-#                    - {=: pipelinex.TensorSlice, end: 18}
-#                    - {=: pipelinex.TensorGlobalAvgPool2d, keepdim: False}
-#                    - {=: torch.nn.Linear, in_features: 18, out_features: 15}
-#                    - {=: torch.nn.CELU, alpha: 1.0}
-#                - =: torch.nn.Sequential
-#                  _:
-#                    - {=: pipelinex.TensorSlice, end: 18}
-#                    - {=: pipelinex.TensorGlobalMaxPool2d, keepdim: False}
-#                    - {=: torch.nn.Linear, in_features: 18, out_features: 15}
-#                    - {=: torch.nn.Sigmoid, _: }
-#                - =: torch.nn.Sequential
-#                  _:
-#                    - {=: pipelinex.TensorSlice, end: 18}
-#                    - {=: pipelinex.TensorGlobalMinPool2d, keepdim: False}
-#                    - {=: torch.nn.Linear, in_features: 18, out_features: 15}
-#                    - {=: torch.nn.Sigmoid, _: }
-#                - =: torch.nn.Sequential
-#                  _:
-#                    - {=: pipelinex.TensorSlice, end: 18}
-#                    - {=: pipelinex.TensorGlobalRangePool2d, keepdim: False}
-#                    - {=: torch.nn.Linear, in_features: 18, out_features: 15}
-#                    - {=: torch.nn.Sigmoid, _: }
+                    - {=: pipelinex.TensorSlice, end: 5}
+                    - {=: pipelinex.TensorFlatten, _: }
+                    - {=: torch.nn.Linear, in_features: 270, out_features: 200}
+                    - {=: torch.nn.CELU, alpha: 1.0}
+                    - {=: torch.nn.Linear, in_features: 200, out_features: 200}
+                    - {=: torch.nn.CELU, alpha: 1.0}
+#                    - =: pipelinex.ModuleConcat
+#                      _:
+#                      - =: torch.nn.Sequential
+#                        _:
+#                          - {=: pipelinex.TensorSlice, start: 0, end: 1}
+#                          - {=: pipelinex.TensorFlatten, _: }
+#                          - {=: torch.nn.Linear, in_features: 54, out_features: 25}
+#                          - {=: torch.nn.CELU, alpha: 1.0}
+#                      - =: torch.nn.Sequential
+#                        _:
+#                          - {=: pipelinex.TensorSlice, start: 1, end: 2}
+#                          - {=: pipelinex.TensorFlatten, _: }
+#                          - {=: torch.nn.Linear, in_features: 54, out_features: 15}
+#                          - {=: torch.nn.Sigmoid, _: }
+#                      - =: torch.nn.Sequential
+#                        _:
+#                          - {=: pipelinex.TensorSlice, start: 2, end: 3}
+#                          - {=: pipelinex.TensorFlatten, _: }
+#                          - {=: torch.nn.Linear, in_features: 54, out_features: 15}
+#                          - {=: torch.nn.Sigmoid, _: }
+#                      - =: torch.nn.Sequential
+#                        _:
+#                          - {=: pipelinex.TensorSlice, start: 3, end: 4}
+#                          - {=: pipelinex.TensorFlatten, _: }
+#                          - {=: torch.nn.Linear, in_features: 54, out_features: 15}
+#                          - {=: torch.nn.CELU, alpha: 1.0}
+#                      - =: torch.nn.Sequential
+#                        _:
+#                          - {=: pipelinex.TensorSlice, start: 4, end: 5}
+#                          - {=: pipelinex.TensorFlatten, _: }
+#                          - {=: torch.nn.Linear, in_features: 54, out_features: 15}
+#                          - {=: torch.nn.CELU, alpha: 1.0}
+#                      - =: torch.nn.Sequential
+#                        _:
+#                          - {=: pipelinex.TensorSlice, start: 5, end: 6}
+#                          - {=: pipelinex.TensorFlatten, _: }
+#                          - {=: torch.nn.Linear, in_features: 54, out_features: 5}
+#                          - {=: torch.nn.CELU, alpha: 1.0}
+#                      - =: torch.nn.Sequential
+#                        _:
+#                          - {=: pipelinex.TensorSlice, start: 6, end: 7}
+#                          - {=: pipelinex.TensorFlatten, _: }
+#                          - {=: torch.nn.Linear, in_features: 54, out_features: 5}
+#                          - {=: torch.nn.CELU, alpha: 1.0}
+#                      - =: torch.nn.Sequential
+#                        _:
+#                          - {=: pipelinex.TensorSlice, start: 7, end: 8}
+#                          - {=: pipelinex.TensorFlatten, _: }
+#                          - {=: torch.nn.Linear, in_features: 54, out_features: 5}
+#                          - {=: torch.nn.CELU, alpha: 1.0}
+                - =: torch.nn.Sequential
+                  _:
+                    - {=: pipelinex.TensorSlice, end: 18}
+                    - {=: pipelinex.TensorGlobalAvgPool2d, keepdim: False}
+                    - {=: torch.nn.Linear, in_features: 18, out_features: 15}
+                    - {=: torch.nn.CELU, alpha: 1.0}
+                - =: torch.nn.Sequential
+                  _:
+                    - {=: pipelinex.TensorSlice, end: 18}
+                    - {=: pipelinex.TensorGlobalMaxPool2d, keepdim: False}
+                    - {=: torch.nn.Linear, in_features: 18, out_features: 15}
+                    - {=: torch.nn.Sigmoid, _: }
+                - =: torch.nn.Sequential
+                  _:
+                    - {=: pipelinex.TensorSlice, end: 18}
+                    - {=: pipelinex.TensorGlobalMinPool2d, keepdim: False}
+                    - {=: torch.nn.Linear, in_features: 18, out_features: 15}
+                    - {=: torch.nn.Sigmoid, _: }
+                - =: torch.nn.Sequential
+                  _:
+                    - {=: pipelinex.TensorSlice, end: 18}
+                    - {=: pipelinex.TensorGlobalRangePool2d, keepdim: False}
+                    - {=: torch.nn.Linear, in_features: 18, out_features: 15}
+                    - {=: torch.nn.Sigmoid, _: }
                 - =: torch.nn.Sequential
                   _:
                     - {=: pipelinex.TensorSlice, end: 18}
@@ -144,7 +150,7 @@ pytorch_model:
                             - {=: pipelinex.TensorConv2d, in_channels: 120, out_channels: 20, kernel_size: [1, 1]}
                             - {=: pipelinex.TensorFlatten, _: }
                             - {=: torch.nn.CELU, _: }
-            - {=: torch.nn.Linear, in_features: 1220, out_features: 50}
+            - {=: torch.nn.Linear, in_features: 1380, out_features: 50}
             - {=: pipelinex.TensorNearestPad, lower: 0, upper: 50}
     - {=: torch.nn.ConstantPad1d, padding: [89, 10], value: 0.0}  # 199 = 89 + 100 + 10
     - {=: torch.nn.Softmax, dim: 1}
