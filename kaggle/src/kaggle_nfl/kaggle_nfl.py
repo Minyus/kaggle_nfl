@@ -8,6 +8,7 @@ if find_spec("pipelinex"):
 import pandas as pd
 import random
 import math
+from itertools import chain
 
 import logging
 
@@ -452,61 +453,80 @@ def ordinal_dict(ls):
     return {ls[i]: i for i in range(len(ls))}
 
 
-CONTINUOUS_COLS = """
+CONTINUOUS_COLS = [
+    """
 YardsToGoalP10Val
+HomeOnOffenseCode
+X_Defense_Max
+X_RR_Defense_Max
+Y_RR_Defense_Max
+X_Offense_Max
+X_RR_Offense_Max
+Y_RR_Offense_Max
+X_Defense_Min
+X_RR_Defense_Min
+Y_RR_Defense_Min
+X_Offense_Min
+X_RR_Offense_Min
+Y_RR_Offense_Min
+X_Defense_Mean
+X_RR_Defense_Mean
+Y_RR_Defense_Mean
+X_Offense_Mean
+X_RR_Offense_Mean
+Y_RR_Offense_Mean
+X_RR_Defense_Stdev
+Y_RR_Defense_Stdev
+X_RR_Offense_Stdev
+Y_RR_Offense_Stdev
 X_Rusher
 Y_Rusher
+""".strip().splitlines(),
+    """
+A_Defense_Max
+S_X_Defense_Max
+S_Y_Defense_Max
+A_Offense_Max
+S_X_Offense_Max
+S_Y_Offense_Max
 A_Rusher
 S_X_Rusher
 S_Y_Rusher
-X_Defense_Max
-X_Defense_Min
-X_Defense_Mean
-X_Offense_Max
-X_Offense_Min
-X_Offense_Mean
-X_RR_Defense_Max
-X_RR_Defense_Min
-X_RR_Defense_Mean
-X_RR_Defense_Stdev
-X_RR_Offense_Max
-X_RR_Offense_Min
-X_RR_Offense_Mean
-X_RR_Offense_Stdev
-Y_RR_Defense_Max
-Y_RR_Defense_Min
-Y_RR_Defense_Mean
-Y_RR_Defense_Stdev
-Y_RR_Offense_Max
-Y_RR_Offense_Min
-Y_RR_Offense_Mean
-Y_RR_Offense_Stdev
-A_Defense_Max
+""".strip().splitlines(),
+    """
 A_Defense_Min
-A_Defense_Mean
-A_Defense_Stdev
-A_Offense_Max
-A_Offense_Min
-A_Offense_Mean
-A_Offense_Stdev
-S_X_Defense_Max
 S_X_Defense_Min
-S_X_Defense_Mean
-S_X_Defense_Stdev
-S_X_Offense_Max
-S_X_Offense_Min
-S_X_Offense_Mean
-S_X_Offense_Stdev
-S_Y_Defense_Max
 S_Y_Defense_Min
-S_Y_Defense_Mean
-S_Y_Defense_Stdev
-S_Y_Offense_Max
+A_Offense_Min
+S_X_Offense_Min
 S_Y_Offense_Min
+A_Rusher
+S_X_Rusher
+S_Y_Rusher
+""".strip().splitlines(),
+    """
+A_Defense_Mean
+S_X_Defense_Mean
+S_Y_Defense_Mean
+A_Offense_Mean
+S_X_Offense_Mean
 S_Y_Offense_Mean
+A_Rusher
+S_X_Rusher
+S_Y_Rusher
+""".strip().splitlines(),
+    """
+A_Defense_Stdev
+S_X_Defense_Stdev
+S_Y_Defense_Stdev
+A_Offense_Stdev
+S_X_Offense_Stdev
 S_Y_Offense_Stdev
-HomeOnOffenseCode
-""".strip().splitlines()
+A_Rusher
+S_X_Rusher
+S_Y_Rusher
+""".strip().splitlines(),
+]
 
 CATEGORICAL_COLS = [
     # "YardsToGoalCode",
@@ -606,27 +626,32 @@ class FieldImagesDataset:
 
             dim_sizes_ = [dim_size * len(value_cols) * len(coo_cols_list)] + coo_size
 
-            spatial_independent_cols = CONTINUOUS_COLS + CATEGORICAL_COLS
+            spatial_independent_cols = list(chain.from_iterable(CONTINUOUS_COLS)) + CATEGORICAL_COLS
             melted_si_df = None
             if spatial_independent_cols:
-                categorical_cols_dict = ordinal_dict(CATEGORICAL_COLS)
-                continuous_cols_dict = ordinal_dict(CONTINUOUS_COLS)
 
                 agg_si_df = df.query("PlayerCategory == 2")  # Rusher
                 agg_si_df = agg_si_df[["PlayIndex"] + spatial_independent_cols].drop_duplicates().reset_index(drop=True)
                 melted_si_df = agg_si_df.melt(id_vars=["PlayIndex"])
                 melted_si_df["Channel"] = dim_sizes_[0]
-
                 melted_si_df["H"] = 0
-                melted_si_df.loc[melted_si_df["variable"].isin(CATEGORICAL_COLS), "H"] = (
-                    melted_si_df["variable"].map(categorical_cols_dict) + 1
-                )
+                melted_si_df["W"] = copy.deepcopy(melted_si_df["value"].values)
 
-                melted_si_df["W"] = melted_si_df["value"].copy()
-                melted_si_df.loc[melted_si_df["variable"].isin(CONTINUOUS_COLS), "W"] = melted_si_df["variable"].map(
-                    continuous_cols_dict
-                )
+                """ Categorical """
+                categorical_cols_dict = ordinal_dict(CATEGORICAL_COLS)
+                melted_si_df.loc[melted_si_df["variable"].isin(CATEGORICAL_COLS), "H"] = melted_si_df["variable"].map(
+                    categorical_cols_dict
+                ) + len(CONTINUOUS_COLS)
                 melted_si_df.loc[melted_si_df["variable"].isin(CATEGORICAL_COLS), "value"] = 1.0
+
+                """ Continuous """
+                for i, cont_cols_1d in enumerate(CONTINUOUS_COLS):
+                    melted_si_df.loc[melted_si_df["variable"].isin(cont_cols_1d), "H"] = i
+                    continuous_cols_dict = ordinal_dict(cont_cols_1d)
+                    melted_si_df.loc[melted_si_df["variable"].isin(cont_cols_1d), "W"] = melted_si_df["variable"].map(
+                        continuous_cols_dict
+                    )
+
                 melted_si_df.loc[:, "value"] = melted_si_df["value"].astype(np.float32)
 
                 melted_si_df.set_index("PlayIndex", inplace=True)
