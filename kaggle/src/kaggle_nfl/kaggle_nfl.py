@@ -166,7 +166,7 @@ def preprocess(df, parameters=None):
     df["_Dis10"].clip(lower=0, upper=7.59, inplace=True)
     # df["_S"] = 0.5 * df["_S"] + 0.5 * df["_Dis10"]
 
-    motion_coef = 1.0
+    motion_coef = 1.5
     motion_sr = motion_coef * df["_S"]
 
     df["_S_X"] = motion_sr * np.sin(df["Dir_std"])
