@@ -196,15 +196,15 @@ def preprocess(df, parameters=None):
     df["HomeOnOffense"] = df["PossessionTeam"] == df["HomeTeamAbbr"]
     df["HomeOnOffenseCode"] = df["HomeOnOffense"].astype(np.uint8)  # 2
 
-    df["OffenceTeamCode"] = df["PossessionTeam"].map(TEAM_CODE_DICT).fillna(0).astype(np.uint8)
+    # df["OffenceTeamCode"] = df["PossessionTeam"].map(TEAM_CODE_DICT).fillna(0).astype(np.uint8)
+    #
+    # df["DefenceTeamAbbr"] = df["HomeTeamAbbr"]
+    # df.loc[df["HomeOnOffense"], "DefenceTeamAbbr"] = df["VisitorTeamAbbr"]
+    # df["DefenceTeamCode"] = df["DefenceTeamAbbr"].map(TEAM_CODE_DICT).fillna(0).astype(np.uint8)
 
-    df["DefenceTeamAbbr"] = df["HomeTeamAbbr"]
-    df.loc[df["HomeOnOffense"], "DefenceTeamAbbr"] = df["VisitorTeamAbbr"]
-    df["DefenceTeamCode"] = df["DefenceTeamAbbr"].map(TEAM_CODE_DICT).fillna(0).astype(np.uint8)
-
-    df["ScoreDiff"] = df["VisitorScoreBeforePlay"] - df["HomeScoreBeforePlay"]
-    df.loc[df["HomeOnOffense"], "ScoreDiff"] = -df["ScoreDiff"]
-    df["ScoreDiffCode"] = (np.floor(df["ScoreDiff"].clip(lower=-35, upper=35) / 10) + 4).astype(np.uint8)  # 8
+    # df["ScoreDiff"] = df["VisitorScoreBeforePlay"] - df["HomeScoreBeforePlay"]
+    # df.loc[df["HomeOnOffense"], "ScoreDiff"] = -df["ScoreDiff"]
+    # df["ScoreDiffCode"] = (np.floor(df["ScoreDiff"].clip(lower=-35, upper=35) / 10) + 4).astype(np.uint8)  # 8
 
     df["YardsToGoal"] = 100 - df["YardsFromOwnGoal"].clip(lower=1, upper=99)
     df["YardsToGoalCode"] = np.floor(df["YardsToGoal"] / 2).astype(np.uint8)
@@ -214,18 +214,18 @@ def preprocess(df, parameters=None):
     df["OffenseFormationCode"] = df["OffenseFormation"].map(OFFENSE_FORMATION_DICT).fillna(0).astype(np.uint8)
 
     df["DefendersInTheBoxCode"] = df["DefendersInTheBox"].clip(lower=3, upper=11).fillna(0).astype(np.uint8)
-    df["PositionCode"] = df["Position"].map(POSITION_DICT).fillna(0).astype(np.uint8)
+    # df["PositionCode"] = df["Position"].map(POSITION_DICT).fillna(0).astype(np.uint8)
 
     """ """
 
-    try:
-        df["SnapToHandoffTime"] = (
-            pd.to_datetime(df["TimeHandoff"]) - pd.to_datetime(df["TimeSnap"])
-        ).dt.total_seconds()
-    except:
-        log.warning("Failed to compute ScaledRelativeHandoff.")
-        df["SnapToHandoffTime"] = np.ones(len(df))
-    df["SnapToHandoffTimeCode"] = df["SnapToHandoffTime"].clip(lower=0, upper=4).fillna(1).astype(np.uint8)
+    # try:
+    #     df["SnapToHandoffTime"] = (
+    #         pd.to_datetime(df["TimeHandoff"]) - pd.to_datetime(df["TimeSnap"])
+    #     ).dt.total_seconds()
+    # except:
+    #     log.warning("Failed to compute ScaledRelativeHandoff.")
+    #     df["SnapToHandoffTime"] = np.ones(len(df))
+    # df["SnapToHandoffTimeCode"] = df["SnapToHandoffTime"].clip(lower=0, upper=4).fillna(1).astype(np.uint8)
 
     """ """
 
@@ -245,8 +245,8 @@ def preprocess(df, parameters=None):
 
     df = df_eval("X_RR = X_int - X_Rusher")(df)
     df = df_eval("Y_RR = Y_int - Y_Rusher")(df)
-    df["D_RR"] = df[["X_RR", "Y_RR"]].apply(np.linalg.norm, axis=1)
-    df.sort_values(by=["PlayId", "PlayerCategory", "D_RR"], inplace=True)
+    # df["D_RR"] = df[["X_RR", "Y_RR"]].apply(np.linalg.norm, axis=1)
+    # df.sort_values(by=["PlayId", "PlayerCategory", "D_RR"], inplace=True)
 
     df = df_focus_transform(
         focus="PlayerCategory == 0",
@@ -481,50 +481,50 @@ Y_RR_Offense_Stdev
 X_Rusher
 Y_Rusher
 """.strip().splitlines(),
-#     """
-# A_Defense_Max
-# S_X_Defense_Max
-# S_Y_Defense_Max
-# A_Offense_Max
-# S_X_Offense_Max
-# S_Y_Offense_Max
-# A_Rusher
-# S_X_Rusher
-# S_Y_Rusher
-# """.strip().splitlines(),
-#     """
-# A_Defense_Min
-# S_X_Defense_Min
-# S_Y_Defense_Min
-# A_Offense_Min
-# S_X_Offense_Min
-# S_Y_Offense_Min
-# A_Rusher
-# S_X_Rusher
-# S_Y_Rusher
-# """.strip().splitlines(),
-#     """
-# A_Defense_Mean
-# S_X_Defense_Mean
-# S_Y_Defense_Mean
-# A_Offense_Mean
-# S_X_Offense_Mean
-# S_Y_Offense_Mean
-# A_Rusher
-# S_X_Rusher
-# S_Y_Rusher
-# """.strip().splitlines(),
-#     """
-# A_Defense_Stdev
-# S_X_Defense_Stdev
-# S_Y_Defense_Stdev
-# A_Offense_Stdev
-# S_X_Offense_Stdev
-# S_Y_Offense_Stdev
-# A_Rusher
-# S_X_Rusher
-# S_Y_Rusher
-# """.strip().splitlines(),
+    #     """
+    # A_Defense_Max
+    # S_X_Defense_Max
+    # S_Y_Defense_Max
+    # A_Offense_Max
+    # S_X_Offense_Max
+    # S_Y_Offense_Max
+    # A_Rusher
+    # S_X_Rusher
+    # S_Y_Rusher
+    # """.strip().splitlines(),
+    #     """
+    # A_Defense_Min
+    # S_X_Defense_Min
+    # S_Y_Defense_Min
+    # A_Offense_Min
+    # S_X_Offense_Min
+    # S_Y_Offense_Min
+    # A_Rusher
+    # S_X_Rusher
+    # S_Y_Rusher
+    # """.strip().splitlines(),
+    #     """
+    # A_Defense_Mean
+    # S_X_Defense_Mean
+    # S_Y_Defense_Mean
+    # A_Offense_Mean
+    # S_X_Offense_Mean
+    # S_Y_Offense_Mean
+    # A_Rusher
+    # S_X_Rusher
+    # S_Y_Rusher
+    # """.strip().splitlines(),
+    #     """
+    # A_Defense_Stdev
+    # S_X_Defense_Stdev
+    # S_Y_Defense_Stdev
+    # A_Offense_Stdev
+    # S_X_Offense_Stdev
+    # S_Y_Offense_Stdev
+    # A_Rusher
+    # S_X_Rusher
+    # S_Y_Rusher
+    # """.strip().splitlines(),
 ]
 
 CATEGORICAL_COLS = [
@@ -859,13 +859,17 @@ def _predict_cdf(test_df, pytorch_model, parameters=None):
     return pred_arr
 
 
-def crps_loss(input, target, target_to_index=None, reduction="mean"):
+def crps_loss(input, target, l1=False, target_to_index=None, reduction="mean"):
     index_1dtt = target_to_index(target) if target_to_index else target
     h_1dtt = torch.arange(input.shape[1])
 
     h_2dtt = (h_1dtt.reshape(1, -1) >= index_1dtt.reshape(-1, 1)).type(torch.FloatTensor)
 
-    ret = (input - h_2dtt) ** 2
+    if l1:
+        ret = torch.abs(input - h_2dtt)
+    else:
+        ret = (input - h_2dtt) ** 2
+
     if reduction != "none":
         ret = torch.mean(ret) if reduction == "mean" else torch.sum(ret)
     return ret
@@ -879,22 +883,35 @@ def nfl_crps_loss(input, target):
     return crps_loss(input, target, target_to_index=yards_to_index)
 
 
+def nfl_l1crps_loss(input, target):
+    return crps_loss(input, target, l1=True, target_to_index=yards_to_index)
+
+
 class NflCrpsLossFunc:
-    def __init__(self, min=None, max=None, desc_penalty=None):
+    def __init__(self, min=None, max=None, desc_penalty=None, l1=False):
         self.min = min
         self.max = max
         self.clip = (min is not None) or (max is not None)
         self.desc_penalty = desc_penalty
+        self.l1 = l1
 
     def __call__(self, input, target):
         if self.clip:
             target = torch.clamp(target, min=self.min, max=self.max)
-        loss = nfl_crps_loss(input, target)
+        if self.l1:
+            loss = nfl_l1crps_loss(input, target)
+        else:
+            loss = nfl_crps_loss(input, target)
         if self.desc_penalty:
             penalty_tt = torch.relu(tensor_shift(input, offset=1) - input)
             penalty = torch.mean(penalty_tt)
             loss += penalty * self.desc_penalty
         return loss
+
+
+class NflL1CrpsLossFunc(NflCrpsLossFunc):
+    def __init__(self, **kwargs):
+        super().__init__(l1=True, **kwargs)
 
 
 def tensor_shift(tt, offset=1):
