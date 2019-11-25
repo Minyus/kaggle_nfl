@@ -973,7 +973,7 @@ def final_validation(dataset, pytorch_model, parameters={}):
         loss_1dtt = torch.mean(loss_2dtt, dim=1, keepdim=False)
         loss_mean = float(torch.mean(loss_1dtt).numpy())
         loss_std = float(torch.std(loss_1dtt).numpy())
-        final_dict = dict(final_loss_mean=loss_mean, final_loss_std=loss_std)
+        final_dict = dict(final_crps_mean=loss_mean, final_crps_std=loss_std)
 
     log.info("{}".format(final_dict))
     try:
