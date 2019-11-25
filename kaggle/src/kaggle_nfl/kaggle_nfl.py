@@ -166,7 +166,7 @@ def preprocess(df, parameters=None):
     df["_Dis10"].clip(lower=0, upper=7.59, inplace=True)
     # df["_S"] = 0.5 * df["_S"] + 0.5 * df["_Dis10"]
 
-    motion_coef = 1.5
+    motion_coef = 1.0
     motion_sr = motion_coef * df["_S"]
 
     df["_S_X"] = motion_sr * np.sin(df["Dir_std"])
@@ -920,12 +920,14 @@ def tensor_shift(tt, offset=1):
     return out_tt
 
 
-def infer(model, parameters={}):
+def infer(model, transformer=None, parameters={}):
     from kaggle.competitions import nflrush
 
     env = nflrush.make_env()
     for (test_df, sample_prediction_df) in env.iter_test():
         test_df = preprocess(test_df)
+        if transformer is not None:
+            test_df = transformer.transform(test_df)
         sample_prediction_df.iloc[0, :] = _predict_cdf(test_df, model, parameters)
         env.predict(sample_prediction_df)
 
@@ -1460,6 +1462,7 @@ if __name__ == "__main__":
     train_params["progress_update"] = False
     train_params.pop("val_data_loader_params")
     train_params.pop("evaluate_val_data")
+    q_transformer = HatchDict(parameters).get("q_transformer")
     pytorch_model = HatchDict(parameters).get("pytorch_model")
     augmentation = parameters.get("augmentation")
 
@@ -1469,6 +1472,10 @@ if __name__ == "__main__":
     log.info("Preprocess.")
     df = preprocess(df)
 
+    if q_transformer:
+        log.info("Fit transformer and transform.")
+        df, transformer = q_transformer(df)
+
     log.info("Set up dataset.")
     train_dataset = FieldImagesDataset(df, to_pytorch_tensor=True, augmentation=augmentation)
 
@@ -1476,6 +1483,6 @@ if __name__ == "__main__":
     model = NetworkTrain(train_params=train_params, mlflow_logging=False)(pytorch_model, train_dataset)
 
     log.info("Infer.")
-    infer(model, parameters)
+    infer(model, transformer, parameters)
 
     log.info("Completed.")

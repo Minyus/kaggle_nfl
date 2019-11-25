@@ -24,7 +24,8 @@ pytorch_model:
                     - {=: pipelinex.TensorSqueeze, dim: 1}
                     - {=: pipelinex.TensorSlice, end: 5}
                     - {=: pipelinex.TensorFlatten, _: }
-                    - {=: torch.nn.Linear, in_features: 270, out_features: 200}
+                    - {=: pipelinex.TensorSlice, start: 1}
+                    - {=: torch.nn.Linear, in_features: 269, out_features: 200}
                     - {=: torch.nn.CELU, alpha: 1.0}
                     - {=: torch.nn.Linear, in_features: 200, out_features: 200}
                     - {=: torch.nn.CELU, alpha: 1.0}
@@ -241,6 +242,42 @@ train_params:
   progress_update: True
   seed: 0  #
 
+q_transformer:
+  =: pipelinex.DfQuantileTransformer
+  cols:
+    - _A
+    - _S_X
+    - _S_Y
+    - X_Defense_Max
+    - X_RR_Defense_Max
+    - Y_RR_Defense_Max
+    - X_Offense_Max
+    - X_RR_Offense_Max
+    - Y_RR_Offense_Max
+    - X_Defense_Min
+    - X_RR_Defense_Min
+    - Y_RR_Defense_Min
+    - X_Offense_Min
+    - X_RR_Offense_Min
+    - Y_RR_Offense_Min
+    - X_Defense_Mean
+    - X_RR_Defense_Mean
+    - Y_RR_Defense_Mean
+    - X_Offense_Mean
+    - X_RR_Offense_Mean
+    - Y_RR_Offense_Mean
+    - X_RR_Defense_Stdev
+    - Y_RR_Defense_Stdev
+    - X_RR_Offense_Stdev
+    - Y_RR_Offense_Stdev
+    - X_Rusher
+    - Y_Rusher
+  zero_to_zero: True
+  n_quantiles: 1000
+  output_distribution: normal
+  subsample: 100000
+  random_state: 42
+
 
 RUN_CONFIG:
   pipeline_name: __default__
@@ -260,7 +297,7 @@ MLFLOW_LOGGING_CONFIG:
 PIPELINES:
   __default__:
     =: pipelinex.FlexiblePipeline
-    parameters_in_inputs: True
+    parameters_in_inputs: False
     module: kaggle_nfl.kaggle_nfl
     decorator: pipelinex.log_time
     nodes:
@@ -271,7 +308,13 @@ PIPELINES:
       - inputs: df_020
         func:
           - preprocess
-        outputs: df_030
+        outputs: df_021
+
+      - inputs: df_021
+        func: {=: q_transformer}
+        outputs:
+          - df_030
+          - transformer
 
 #      - inputs: df_030
 #        func:
@@ -310,7 +353,7 @@ PIPELINES:
           new_col_values: [0, 1]
         outputs: df_040
 
-      - inputs: df_040
+      - inputs: [df_040, parameters]
         func: generate_datasets
         outputs:
           - train_dataset
@@ -334,7 +377,7 @@ PIPELINES:
           mlflow_logging: True
         outputs: pytorch_model
 
-#      - inputs: pytorch_model
+#      - inputs: [pytorch_model, transformer, parameters]
 #        func: infer
 #        outputs: infered_first_iter
 
