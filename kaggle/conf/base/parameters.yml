@@ -242,44 +242,44 @@ train_params:
   progress_update: True
   seed: 0  #
 
-q_transformer:
+#q_transformer:
 #  =: pipelinex.DfQuantileTransformer
 #  n_quantiles: 1000
 #  output_distribution: normal
 #  subsample: 100000
 #  random_state: 42
-  =: pipelinex.DfStandardScaler
-  with_mean: True
-  with_std: True
-  zero_to_zero: True
-  cols:
-    - _A
-    - _S_X
-    - _S_Y
-    - X_Defense_Max
-    - X_RR_Defense_Max
-    - Y_RR_Defense_Max
-    - X_Offense_Max
-    - X_RR_Offense_Max
-    - Y_RR_Offense_Max
-    - X_Defense_Min
-    - X_RR_Defense_Min
-    - Y_RR_Defense_Min
-    - X_Offense_Min
-    - X_RR_Offense_Min
-    - Y_RR_Offense_Min
-    - X_Defense_Mean
-    - X_RR_Defense_Mean
-    - Y_RR_Defense_Mean
-    - X_Offense_Mean
-    - X_RR_Offense_Mean
-    - Y_RR_Offense_Mean
-    - X_RR_Defense_Stdev
-    - Y_RR_Defense_Stdev
-    - X_RR_Offense_Stdev
-    - Y_RR_Offense_Stdev
-    - X_Rusher
-    - Y_Rusher
+#  =: pipelinex.DfStandardScaler
+#  with_mean: False
+#  with_std: True
+#  zero_to_zero: FalseQ
+#  cols:
+#    - _A
+#    - _S_X
+#    - _S_Y
+#    - X_Defense_Max
+#    - X_RR_Defense_Max
+#    - Y_RR_Defense_Max
+#    - X_Offense_Max
+#    - X_RR_Offense_Max
+#    - Y_RR_Offense_Max
+#    - X_Defense_Min
+#    - X_RR_Defense_Min
+#    - Y_RR_Defense_Min
+#    - X_Offense_Min
+#    - X_RR_Offense_Min
+#    - Y_RR_Offense_Min
+#    - X_Defense_Mean
+#    - X_RR_Defense_Mean
+#    - Y_RR_Defense_Mean
+#    - X_Offense_Mean
+#    - X_RR_Offense_Mean
+#    - Y_RR_Offense_Mean
+#    - X_RR_Defense_Stdev
+#    - Y_RR_Defense_Stdev
+#    - X_RR_Offense_Stdev
+#    - Y_RR_Offense_Stdev
+#    - X_Rusher
+#    - Y_Rusher
 
 
 RUN_CONFIG:
@@ -314,10 +314,10 @@ PIPELINES:
         outputs: df_021
 
       - inputs: df_021
-        func: {=: q_transformer}
+#        func: {=: q_transformer}
         outputs:
           - df_030
-          - transformer
+#          - transformer
 
 #      - inputs: df_030
 #        func:

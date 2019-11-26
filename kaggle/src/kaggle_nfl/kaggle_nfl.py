@@ -1475,6 +1475,8 @@ if __name__ == "__main__":
     if q_transformer:
         log.info("Fit transformer and transform.")
         df, transformer = q_transformer(df)
+    else:
+        transformer = None
 
     log.info("Set up dataset.")
     train_dataset = FieldImagesDataset(df, to_pytorch_tensor=True, augmentation=augmentation)
