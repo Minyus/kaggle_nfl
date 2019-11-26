@@ -9,6 +9,7 @@ import pandas as pd
 import random
 import math
 from itertools import chain
+from scipy.stats import lognorm
 
 import logging
 
@@ -432,6 +433,49 @@ def _relative_values(abs_sr, comp_sr, offset=101, transform_func=None):
     return values_sr
 
 
+class BaseProbas:
+    def __init__(self, groupby=None, yards_query="-10 <= Yards < 40"):
+        self.groupby = groupby
+        self.yards_query = yards_query
+        self.agg_df = None
+
+    def fit(self, df):
+        df = df.copy()
+        if self.groupby is None:
+            self.keys = ["CONSTANT"]
+            df["CONSTANT"] = 0.0
+        elif isinstance(self.groupby, str):
+            self.keys = [self.groupby]
+        elif isinstance(self.groupby, list):
+            self.keys = self.groupby
+        else:
+            raise ValueError
+
+        agg_df = df_agg(groupby=self.keys + ["Yards"], columns="PlayId", count_yards=("PlayId", "count"))(df)
+        agg_df.reset_index(drop=False, inplace=True)
+        agg_df = df_duplicate(columns={"count_yards": "count_total"})(agg_df)
+        agg_df = df_transform(groupby=self.keys, columns="count_total", func="sum", keep_others=True)(agg_df)
+        agg_df.reset_index(drop=False, inplace=True)
+        agg_df = df_query(expr=self.yards_query)(agg_df)
+
+        agg_df = df_eval("H = 0 \n W = Yards + 10 \n value = (count_yards / count_total)")(agg_df)
+        agg_df = df_filter(items=self.keys + ["H", "W", "value"])(agg_df)
+        agg_df = df_sort_values(by=self.keys + ["H", "W"])(agg_df)
+        self.agg_df = agg_df
+
+    def transform(self, df):
+        assert isinstance(df, pd.DataFrame)
+        assert self.agg_df is not None, "BasePrabas needs to be fitted before calling transform."
+        if self.groupby is None:
+            df = df.copy()
+            df["CONSTANT"] = 0.0
+        return pd.merge(left=df, right=self.agg_df, how="left", on=self.keys)
+
+    def fit_transform(self, df):
+        self.fit(df)
+        return self.transform(df)
+
+
 class PlayDfsDataset:
     def __init__(self, df, transform=None):
         self.play_id_list = df["PlayId"].drop_duplicates().to_list()
@@ -549,6 +593,7 @@ class FieldImagesDataset:
     def __init__(
         self,
         df,
+        base_probas,
         coo_cols_list=[
             ["X_int", "Y_int"],  # 1st snapshot
             ["X_int_t1", "Y_int_t1"],  # 2nd snapshot
@@ -630,8 +675,10 @@ class FieldImagesDataset:
             melted_si_df = None
             if spatial_independent_cols:
 
-                agg_si_df = df.query("PlayerCategory == 2")  # Rusher
-                agg_si_df = agg_si_df[["PlayIndex"] + spatial_independent_cols].drop_duplicates().reset_index(drop=True)
+                rusher_df = df.query("PlayerCategory == 2")  # Rusher
+                agg_si_df = (
+                    rusher_df[["PlayIndex"] + spatial_independent_cols].copy().drop_duplicates().reset_index(drop=True)
+                )
                 melted_si_df = agg_si_df.melt(id_vars=["PlayIndex"])
                 melted_si_df["Channel"] = dim_sizes_[0]
                 melted_si_df["H"] = 0
@@ -639,18 +686,30 @@ class FieldImagesDataset:
 
                 """ Categorical """
                 categorical_cols_dict = ordinal_dict(CATEGORICAL_COLS)
-                melted_si_df.loc[melted_si_df["variable"].isin(CATEGORICAL_COLS), "H"] = melted_si_df["variable"].map(
-                    categorical_cols_dict
-                ) + len(CONTINUOUS_COLS)
+                melted_si_df.loc[melted_si_df["variable"].isin(CATEGORICAL_COLS), "H"] = (
+                    melted_si_df["variable"].map(categorical_cols_dict)
+                    + len(CONTINUOUS_COLS)
+                    + int(base_probas is not None)
+                )
                 melted_si_df.loc[melted_si_df["variable"].isin(CATEGORICAL_COLS), "value"] = 1.0
 
                 """ Continuous """
                 for i, cont_cols_1d in enumerate(CONTINUOUS_COLS):
-                    melted_si_df.loc[melted_si_df["variable"].isin(cont_cols_1d), "H"] = i
+                    melted_si_df.loc[melted_si_df["variable"].isin(cont_cols_1d), "H"] = i + int(
+                        base_probas is not None
+                    )
                     continuous_cols_dict = ordinal_dict(cont_cols_1d)
                     melted_si_df.loc[melted_si_df["variable"].isin(cont_cols_1d), "W"] = melted_si_df["variable"].map(
                         continuous_cols_dict
                     )
+
+                """ Base probas """
+                if base_probas is not None:
+                    base_probas_df = base_probas.transform(rusher_df[["PlayIndex"]])
+                    base_probas_df["Channel"] = dim_sizes_[0]
+                    melted_si_df = df_concat()(melted_si_df, base_probas_df)
+
+                melted_si_df.sort_values(by=["PlayIndex", "Channel", "H", "W"], inplace=True)
 
                 melted_si_df.loc[:, "value"] = melted_si_df["value"].astype(np.float32)
 
@@ -790,14 +849,16 @@ def generate_datasets(df, parameters=None):
         vali_df = df
 
     augmentation = parameters.get("augmentation", dict())
+    base_probas = BaseProbas()
+    base_probas.fit(fit_df)
 
     log.info("Setting up train_dataset from df shape: {}".format(fit_df.shape))
-    train_dataset = FieldImagesDataset(fit_df, to_pytorch_tensor=True, augmentation=augmentation)
+    train_dataset = FieldImagesDataset(fit_df, base_probas, to_pytorch_tensor=True, augmentation=augmentation)
 
     log.info("Setting up val_dataset from df shape: {}".format(vali_df.shape))
-    val_dataset = FieldImagesDataset(vali_df, to_pytorch_tensor=True)
+    val_dataset = FieldImagesDataset(vali_df, base_probas, to_pytorch_tensor=True)
 
-    return train_dataset, val_dataset
+    return train_dataset, val_dataset, base_probas
 
 
 def generate_field_images(df, parameters=None):
@@ -830,7 +891,7 @@ def generate_field_images(df, parameters=None):
     return images
 
 
-def _predict_cdf(test_df, pytorch_model, parameters=None):
+def _predict_cdf(test_df, pytorch_model, base_probas, parameters=None):
 
     tta = parameters.get("tta")
     augmentation = parameters.get("augmentation")
@@ -842,13 +903,14 @@ def _predict_cdf(test_df, pytorch_model, parameters=None):
     with torch.no_grad():
         if tta:
             imgs_3dtt_list = [
-                FieldImagesDataset(test_df, to_pytorch_tensor=True, augmentation=augmentation)[0][0] for _ in range(tta)
+                FieldImagesDataset(test_df, base_probas, to_pytorch_tensor=True, augmentation=augmentation)[0][0]
+                for _ in range(tta)
             ]
             imgs_4dtt = torch.stack(imgs_3dtt_list, dim=0)
             out_2dtt = pytorch_model(imgs_4dtt)
             pred_arr = torch.mean(out_2dtt, dim=0, keepdim=False).numpy()
         else:
-            imgs_3dtt, _ = FieldImagesDataset(test_df, to_pytorch_tensor=True)[0]
+            imgs_3dtt, _ = FieldImagesDataset(test_df, base_probas, to_pytorch_tensor=True)[0]
             imgs_4dtt = torch.unsqueeze(imgs_3dtt, 0)  # instead of DataLoader
             out_2dtt = pytorch_model(imgs_4dtt)
             pred_arr = torch.squeeze(out_2dtt).numpy()
@@ -920,7 +982,7 @@ def tensor_shift(tt, offset=1):
     return out_tt
 
 
-def infer(model, transformer=None, parameters={}):
+def infer(model, base_probas=None, transformer=None, parameters={}):
     from kaggle.competitions import nflrush
 
     env = nflrush.make_env()
@@ -928,7 +990,7 @@ def infer(model, transformer=None, parameters={}):
         test_df = preprocess(test_df)
         if transformer is not None:
             test_df = transformer.transform(test_df)
-        sample_prediction_df.iloc[0, :] = _predict_cdf(test_df, model, parameters)
+        sample_prediction_df.iloc[0, :] = _predict_cdf(test_df, model, base_probas, parameters)
         env.predict(sample_prediction_df)
 
     env.write_submission_file()
@@ -1479,12 +1541,14 @@ if __name__ == "__main__":
         transformer = None
 
     log.info("Set up dataset.")
-    train_dataset = FieldImagesDataset(df, to_pytorch_tensor=True, augmentation=augmentation)
+    base_probas = BaseProbas()
+    base_probas.fit(df)
+    train_dataset = FieldImagesDataset(df, base_probas, to_pytorch_tensor=True, augmentation=augmentation)
 
     log.info("Fit model.")
     model = NetworkTrain(train_params=train_params, mlflow_logging=False)(pytorch_model, train_dataset)
 
     log.info("Infer.")
-    infer(model, transformer, parameters)
+    infer(model, base_probas, transformer, parameters)
 
     log.info("Completed.")

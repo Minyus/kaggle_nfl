@@ -11,6 +11,8 @@
 
 ../load/val_dataset.pickle:
 
+../load/base_probas.pickle:
+
 ../model/pytorch_model.pickle:
   mlflow_logging: True
 
