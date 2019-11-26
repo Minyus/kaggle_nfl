@@ -243,7 +243,15 @@ train_params:
   seed: 0  #
 
 q_transformer:
-  =: pipelinex.DfQuantileTransformer
+#  =: pipelinex.DfQuantileTransformer
+#  n_quantiles: 1000
+#  output_distribution: normal
+#  subsample: 100000
+#  random_state: 42
+  =: pipelinex.DfStandardScaler
+  with_mean: True
+  with_std: True
+  zero_to_zero: True
   cols:
     - _A
     - _S_X
@@ -272,11 +280,6 @@ q_transformer:
     - Y_RR_Offense_Stdev
     - X_Rusher
     - Y_Rusher
-  zero_to_zero: True
-  n_quantiles: 1000
-  output_distribution: normal
-  subsample: 100000
-  random_state: 42
 
 
 RUN_CONFIG:
