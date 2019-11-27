@@ -178,9 +178,6 @@ def preprocess(df, parameters=None):
     df["X_int_t1"] = X_float + df["_S_X"]
     df["Y_int_t1"] = Y_float + df["_S_Y"]
 
-    df["X_int_t2"] = X_float + 2 * df["_S_X"]
-    df["Y_int_t2"] = Y_float + 2 * df["_S_Y"]
-
     """ """
 
     # df = df_relative(
@@ -602,7 +599,8 @@ class FieldImagesDataset:
         coo_cols_list=[
             ["X_int", "Y_int"],  # 1st snapshot
             ["X_int_t1", "Y_int_t1"],  # 2nd snapshot
-            ["X_int_t2", "Y_int_t2"],  # 3rd snapshot
+            # ["X_int_rr", "Y_int_rr"],  # 3rd snapshot
+            # ["X_int_t1_rr", "Y_int_t1_rr"],  # 4th snapshot
         ],
         coo_size=[30, 54],
         value_cols=[
