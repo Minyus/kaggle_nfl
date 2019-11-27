@@ -436,53 +436,31 @@ def _relative_values(abs_sr, comp_sr, offset=101, transform_func=None):
 
 
 class BaseProbas:
-    yards_df = pd.DataFrame(dict(Yards=np.arange(50) - 10, CONSTANT=np.array([0] * 50)))
-
-    def __init__(self, groupby=["PossessionTeam"]):
+    def __init__(self, groupby=["PossessionTeam"], yards_query="-10 <= Yards < 40"):
         self.groupby = groupby
+        self.yards_query = yards_query
         self.agg_df = None
 
     def fit(self, df):
         df = df.copy()
-
-        self.keys = ["CONSTANT"]
-        df["CONSTANT"] = 0.0
-        if isinstance(self.groupby, str):
-            self.keys = self.keys + [self.groupby]
+        if self.groupby is None:
+            self.keys = ["CONSTANT"]
+            df["CONSTANT"] = 0.0
+        elif isinstance(self.groupby, str):
+            self.keys = [self.groupby]
         elif isinstance(self.groupby, list):
-            self.keys = self.keys + self.groupby
+            self.keys = self.groupby
         else:
             raise ValueError
 
-        agg_df = df_agg(groupby=self.keys + ["Yards"], columns="PlayId", count_yards=("PlayId", "count"))(
-            df
-        ).reset_index(drop=False)
+        agg_df = df_agg(groupby=self.keys + ["Yards"], columns="PlayId", count_yards=("PlayId", "count"))(df)
+        agg_df.reset_index(drop=False, inplace=True)
+        agg_df = df_duplicate(columns={"count_yards": "count_total"})(agg_df)
+        agg_df = df_transform(groupby=self.keys, columns="count_total", func="sum", keep_others=True)(agg_df)
+        agg_df.reset_index(drop=False, inplace=True)
+        agg_df = df_query(expr=self.yards_query)(agg_df)
 
-        g_df = df_drop_duplicates()(agg_df[self.keys].copy())
-        yards_df = df_merge(how="left", on=["CONSTANT"])(self.yards_df, g_df)
-
-        agg_df = df_merge(how="left", on=self.keys + ["Yards"])(yards_df, agg_df)
-        agg_df = df_fillna(value=0)(agg_df)
-
-        agg_df = df_transform(groupby=self.keys, columns={"count_yards": "count_total"}, func="sum", keep_others=True)(
-            agg_df
-        )
-
-        agg_df = df_transform(
-            groupby=["CONSTANT"],
-            columns={"count_yards": "count_yards_overall", "count_total": "count_total_overall"},
-            func="sum",
-            keep_others=True,
-        )(agg_df)
-
-        agg_df = df_eval(
-            "proba = (count_yards / count_total) \n proba_overall = (count_yards_overall / count_total_overall)"
-        )(agg_df)
-
-        agg_df = df_eval("value = 0.5 * (proba + proba_overall)")(agg_df)
-
-        agg_df = df_eval("H = 0 \n W = Yards + 10 ")(agg_df)
-
+        agg_df = df_eval("H = 0 \n W = Yards + 10 \n value = (count_yards / count_total)")(agg_df)
         agg_df = df_filter(items=self.keys + ["H", "W", "value"])(agg_df)
         agg_df = df_sort_values(by=self.keys + ["H", "W"])(agg_df)
         self.agg_df = agg_df
@@ -490,8 +468,9 @@ class BaseProbas:
     def transform(self, df):
         assert isinstance(df, pd.DataFrame)
         assert self.agg_df is not None, "BasePrabas needs to be fitted before calling transform."
-        df = df.copy()
-        df["CONSTANT"] = 0.0
+        if self.groupby is None:
+            df = df.copy()
+            df["CONSTANT"] = 0.0
         return pd.merge(left=df, right=self.agg_df, how="left", on=self.keys)
 
     def fit_transform(self, df):
