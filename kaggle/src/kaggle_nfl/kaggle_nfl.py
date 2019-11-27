@@ -436,7 +436,7 @@ def _relative_values(abs_sr, comp_sr, offset=101, transform_func=None):
 
 
 class BaseProbas:
-    def __init__(self, groupby=None, yards_query="-10 <= Yards < 40"):
+    def __init__(self, groupby=["PossessionTeam"], yards_query="-10 <= Yards < 40"):
         self.groupby = groupby
         self.yards_query = yards_query
         self.agg_df = None
@@ -707,7 +707,7 @@ class FieldImagesDataset:
 
                 """ Base probas """
                 if base_probas is not None:
-                    base_probas_df = base_probas.transform(rusher_df[["PlayIndex"]])
+                    base_probas_df = base_probas.transform(rusher_df[["PlayIndex", "PossessionTeam"]])
                     base_probas_df["Channel"] = dim_sizes_[0]
                     melted_si_df = df_concat()(melted_si_df, base_probas_df)
 
