@@ -139,7 +139,7 @@ def preprocess(df, parameters=None):
     X_float = df["X_std"] - df["YardsFromOwnGoal"] + 10
     Y_float = df["Y_std"]
 
-    X_float[df["PlayerCategory"]==0] = X_float + 0.5  # separate defense and offense
+    X_float[df["PlayerCategory"] == 0] = X_float + 0.5  # separate defense and offense
 
     df["X_int"] = X_float
     df["Y_int"] = Y_float
@@ -177,6 +177,9 @@ def preprocess(df, parameters=None):
 
     df["X_int_t1"] = X_float + df["_S_X"]
     df["Y_int_t1"] = Y_float + df["_S_Y"]
+
+    df["X_int_t2"] = X_float + 2 * df["_S_X"]
+    df["Y_int_t2"] = Y_float + 2 * df["_S_Y"]
 
     """ """
 
@@ -599,8 +602,7 @@ class FieldImagesDataset:
         coo_cols_list=[
             ["X_int", "Y_int"],  # 1st snapshot
             ["X_int_t1", "Y_int_t1"],  # 2nd snapshot
-            # ["X_int_rr", "Y_int_rr"],  # 3rd snapshot
-            # ["X_int_t1_rr", "Y_int_t1_rr"],  # 4th snapshot
+            ["X_int_t2", "Y_int_t2"],  # 3rd snapshot
         ],
         coo_size=[30, 54],
         value_cols=[
