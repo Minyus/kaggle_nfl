@@ -164,8 +164,7 @@ pytorch_model:
                                     - {=: pipelinex.TensorFlatten, _: }
                                     - {=: torch.nn.CELU, _: }
                     - {=: torch.nn.Linear, in_features: 1380, out_features: 50}
-#                    - {=: torch.nn.Tanh, _: }
-#                    - {=: pipelinex.TensorConstantLinear, weight: 0.02}
+                    - {=: torch.nn.Tanhshrink, _: }
             - {=: pipelinex.TensorNearestPad, lower: 0, upper: 50}
     - {=: torch.nn.ConstantPad1d, padding: [89, 10], value: 0.0}  # 199 = 89 + 100 + 10
 #    - {=: torch.nn.Softmax, dim: 1}
@@ -227,7 +226,7 @@ train_params:
     weight_decay:
       =: operator.truediv
       _:
-        - 0.01
+        - 0.001
         - =: train_batch_size
   loss_fn:
     =: kaggle_nfl.kaggle_nfl.NflCrpsLossFunc
