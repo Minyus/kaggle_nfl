@@ -170,6 +170,7 @@ pytorch_model:
     - {=: torch.nn.ConstantPad1d, padding: [89, 10], value: 0.0}  # 199 = 89 + 100 + 10
 #    - {=: torch.nn.Softmax, dim: 1}
     - {=: torch.nn.ReLU, _: }
+    - {=: pipelinex.TensorProba, dim: 1}
     - {=: pipelinex.TensorCumsum, dim: 1}
     - {=: pipelinex.TensorClamp, min: 0.0, max: 1.0}
 
@@ -226,7 +227,7 @@ train_params:
     weight_decay:
       =: operator.truediv
       _:
-        - 0.001
+        - 0.01
         - =: train_batch_size
   loss_fn:
     =: kaggle_nfl.kaggle_nfl.NflCrpsLossFunc
