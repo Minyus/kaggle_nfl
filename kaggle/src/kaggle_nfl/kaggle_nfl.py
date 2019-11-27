@@ -139,6 +139,8 @@ def preprocess(df, parameters=None):
     X_float = df["X_std"] - df["YardsFromOwnGoal"] + 10
     Y_float = df["Y_std"]
 
+    X_float[df["PlayerCategory"]==0] = X_float + 0.5  # separate defense and offense
+
     df["X_int"] = X_float
     df["Y_int"] = Y_float
 

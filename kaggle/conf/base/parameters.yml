@@ -180,7 +180,7 @@ augmentation:
 
 tta: 0
 
-train_batch_size: 64
+train_batch_size: 32
 
 train_params:
   epochs: 20  # number of epochs to train
@@ -230,8 +230,8 @@ train_params:
         - =: train_batch_size
   loss_fn:
     =: kaggle_nfl.kaggle_nfl.NflCrpsLossFunc
-    min:  # None  # -4 # -15
-    max:  # None  # 29 # 25
+    min: -10
+    max: 19
 #    desc_penalty: 10.0
   evaluation_metrics:
     crps:
