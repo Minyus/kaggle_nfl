@@ -139,7 +139,7 @@ def preprocess(df, parameters=None):
     X_float = df["X_std"] - df["YardsFromOwnGoal"] + 10
     Y_float = df["Y_std"]
 
-    X_float[df["PlayerCategory"]==0] = X_float + 0.5  # separate defense and offense
+    X_float[df["PlayerCategory"] == 0] = X_float + 0.5  # separate defense and offense
 
     df["X_int"] = X_float
     df["Y_int"] = Y_float
@@ -180,16 +180,16 @@ def preprocess(df, parameters=None):
 
     """ """
 
-    # df = df_relative(
+    # df = DfRelative(
     #     flag="IsBallCarrier==False",
     #     columns={"X_int": "X_int_rr", "Y_int": "Y_int_rr", "X_int_t1": "X_int_t1_rr", "Y_int_t1": "Y_int_t1_rr"},
     #     groupby="PlayId",
     # )(df)
     #
-    # df = df_eval(expr="X_int_rr = X_int_rr + 5")(df)
-    # df = df_eval(expr="Y_int_rr = Y_int_rr + 26.8")(df)
-    # df = df_eval(expr="X_int_t1_rr = X_int_t1_rr + 5")(df)
-    # df = df_eval(expr="Y_int_t1_rr = Y_int_t1_rr + 26.8")(df)
+    # df = DfEval(expr="X_int_rr = X_int_rr + 5")(df)
+    # df = DfEval(expr="Y_int_rr = Y_int_rr + 26.8")(df)
+    # df = DfEval(expr="X_int_t1_rr = X_int_t1_rr + 5")(df)
+    # df = DfEval(expr="Y_int_t1_rr = Y_int_t1_rr + 26.8")(df)
 
     """ """
 
@@ -232,7 +232,7 @@ def preprocess(df, parameters=None):
 
     """ """
 
-    df = df_focus_transform(
+    df = DfFocusTransform(
         focus="PlayerCategory == 2",
         columns={
             "X_int": "X_Rusher",
@@ -246,12 +246,12 @@ def preprocess(df, parameters=None):
         keep_others=True,
     )(df)
 
-    df = df_eval("X_RR = X_int - X_Rusher")(df)
-    df = df_eval("Y_RR = Y_int - Y_Rusher")(df)
+    df = DfEval("X_RR = X_int - X_Rusher")(df)
+    df = DfEval("Y_RR = Y_int - Y_Rusher")(df)
     # df["D_RR"] = df[["X_RR", "Y_RR"]].apply(np.linalg.norm, axis=1)
     # df.sort_values(by=["PlayId", "PlayerCategory", "D_RR"], inplace=True)
 
-    df = df_focus_transform(
+    df = DfFocusTransform(
         focus="PlayerCategory == 0",
         columns={
             "X_int": "X_Defense_Max",
@@ -266,7 +266,7 @@ def preprocess(df, parameters=None):
         groupby="PlayId",
         keep_others=True,
     )(df)
-    df = df_focus_transform(
+    df = DfFocusTransform(
         focus="PlayerCategory == 0",
         columns={
             "X_int": "X_Defense_Min",
@@ -281,7 +281,7 @@ def preprocess(df, parameters=None):
         groupby="PlayId",
         keep_others=True,
     )(df)
-    df = df_focus_transform(
+    df = DfFocusTransform(
         focus="PlayerCategory == 0",
         columns={
             "X_int": "X_Defense_Mean",
@@ -296,7 +296,7 @@ def preprocess(df, parameters=None):
         groupby="PlayId",
         keep_others=True,
     )(df)
-    df = df_focus_transform(
+    df = DfFocusTransform(
         focus="PlayerCategory == 0",
         columns={
             "X_int": "X_Defense_Stdev",
@@ -312,7 +312,7 @@ def preprocess(df, parameters=None):
         keep_others=True,
     )(df)
 
-    df = df_focus_transform(
+    df = DfFocusTransform(
         focus="PlayerCategory == 1",
         columns={
             "X_int": "X_Offense_Max",
@@ -327,7 +327,7 @@ def preprocess(df, parameters=None):
         groupby="PlayId",
         keep_others=True,
     )(df)
-    df = df_focus_transform(
+    df = DfFocusTransform(
         focus="PlayerCategory == 1",
         columns={
             "X_int": "X_Offense_Min",
@@ -342,7 +342,7 @@ def preprocess(df, parameters=None):
         groupby="PlayId",
         keep_others=True,
     )(df)
-    df = df_focus_transform(
+    df = DfFocusTransform(
         focus="PlayerCategory == 1",
         columns={
             "X_int": "X_Offense_Mean",
@@ -357,7 +357,7 @@ def preprocess(df, parameters=None):
         groupby="PlayId",
         keep_others=True,
     )(df)
-    df = df_focus_transform(
+    df = DfFocusTransform(
         focus="PlayerCategory == 1",
         columns={
             "X_int": "X_Offense_Stdev",
@@ -375,7 +375,7 @@ def preprocess(df, parameters=None):
 
     """ """
 
-    # df = df_spatial_features(
+    # df = DfSpatialFeatures(
     #     output="n_connected",
     #     coo_cols=["X_int", "Y_int"],
     #     groupby="PlayId",
@@ -387,7 +387,7 @@ def preprocess(df, parameters=None):
     #     sort=True,
     # )(df)
     #
-    # df = df_spatial_features(
+    # df = DfSpatialFeatures(
     #     output="n_connected",
     #     coo_cols=["X_int", "Y_int"],
     #     groupby="PlayId",
@@ -399,7 +399,7 @@ def preprocess(df, parameters=None):
     #     sort=True,
     # )(df)
 
-    # df = df_spatial_features(
+    # df = DfSpatialFeatures(
     #     output="n_connected",
     #     coo_cols=["X_int", "Y_int"],
     #     groupby="PlayId",
@@ -453,16 +453,16 @@ class BaseProbas:
         else:
             raise ValueError
 
-        agg_df = df_agg(groupby=self.keys + ["Yards"], columns="PlayId", count_yards=("PlayId", "count"))(df)
+        agg_df = DfAgg(groupby=self.keys + ["Yards"], columns="PlayId", count_yards=("PlayId", "count"))(df)
         agg_df.reset_index(drop=False, inplace=True)
-        agg_df = df_duplicate(columns={"count_yards": "count_total"})(agg_df)
-        agg_df = df_transform(groupby=self.keys, columns="count_total", func="sum", keep_others=True)(agg_df)
+        agg_df = DfDuplicate(columns={"count_yards": "count_total"})(agg_df)
+        agg_df = DfTransform(groupby=self.keys, columns="count_total", func="sum", keep_others=True)(agg_df)
         agg_df.reset_index(drop=False, inplace=True)
-        agg_df = df_query(expr=self.yards_query)(agg_df)
+        agg_df = DfQuery(expr=self.yards_query)(agg_df)
 
-        agg_df = df_eval("H = 0 \n W = Yards + 10 \n value = (count_yards / count_total)")(agg_df)
-        agg_df = df_filter(items=self.keys + ["H", "W", "value"])(agg_df)
-        agg_df = df_sort_values(by=self.keys + ["H", "W"])(agg_df)
+        agg_df = DfEval("H = 0 \n W = Yards + 10 \n value = (count_yards / count_total)")(agg_df)
+        agg_df = DfFilter(items=self.keys + ["H", "W", "value"])(agg_df)
+        agg_df = DfSortValues(by=self.keys + ["H", "W"])(agg_df)
         self.agg_df = agg_df
 
     def transform(self, df):
@@ -648,7 +648,7 @@ class FieldImagesDataset:
                 agg_df_list.append(agg_df)
 
             t_size = len(coo_cols_list)
-            agg_df = df_concat(new_col_name="T")(*agg_df_list)
+            agg_df = DfConcat(new_col_name="T")(*agg_df_list)
 
             melted_df = agg_df.melt(id_vars=["PlayIndex", "T", dim_col] + coo_cols_)
             value_cols_dict = ordinal_dict(value_cols)
@@ -709,7 +709,7 @@ class FieldImagesDataset:
                 if base_probas is not None:
                     base_probas_df = base_probas.transform(rusher_df[["PlayIndex"]])
                     base_probas_df["Channel"] = dim_sizes_[0]
-                    melted_si_df = df_concat()(melted_si_df, base_probas_df)
+                    melted_si_df = DfConcat()(melted_si_df, base_probas_df)
 
                 melted_si_df.sort_values(by=["PlayIndex", "Channel", "H", "W"], inplace=True)
 
@@ -1069,421 +1069,6 @@ def final_validation(dataset, pytorch_model, parameters={}):
     loss_df = pd.DataFrame(dict(loss=loss_1dtt.numpy()))
 
     return loss_df
-
-
-"""
-https://github.com/kornia/kornia/blob/master/kornia/filters/kernels.py
-"""
-
-from typing import Tuple, List
-
-import torch
-import torch.nn as nn
-
-
-def normalize_kernel2d(input: torch.Tensor) -> torch.Tensor:
-    r"""Normalizes both derivative and smoothing kernel.
-    """
-    if len(input.size()) < 2:
-        raise TypeError("input should be at least 2D tensor. Got {}".format(input.size()))
-    norm: torch.Tensor = input.abs().sum(dim=-1).sum(dim=-1)
-    return input / (norm.unsqueeze(-1).unsqueeze(-1))
-
-
-def gaussian(window_size, sigma):
-    x = torch.arange(window_size).float() - window_size // 2
-    if window_size % 2 == 0:
-        x = x + 0.5
-    gauss = torch.exp((-x.pow(2.0) / float(2 * sigma ** 2)))
-    return gauss / gauss.sum()
-
-
-def laplacian_1d(window_size) -> torch.Tensor:
-    r"""One could also use the Laplacian of Gaussian formula
-        to design the filter.
-    """
-
-    filter_1d = torch.ones(window_size)
-    filter_1d[window_size // 2] = 1 - window_size
-    laplacian_1d: torch.Tensor = filter_1d
-    return laplacian_1d
-
-
-def get_box_kernel2d(kernel_size: Tuple[int, int]) -> torch.Tensor:
-    r"""Utility function that returns a box filter."""
-    kx: float = float(kernel_size[0])
-    ky: float = float(kernel_size[1])
-    scale: torch.Tensor = torch.tensor(1.0) / torch.tensor([kx * ky])
-    tmp_kernel: torch.Tensor = torch.ones(1, kernel_size[0], kernel_size[1])
-    return scale.to(tmp_kernel.dtype) * tmp_kernel
-
-
-def get_binary_kernel2d(window_size: Tuple[int, int]) -> torch.Tensor:
-    r"""Creates a binary kernel to extract the patches. If the window size
-    is HxW will create a (H*W)xHxW kernel.
-    """
-    window_range: int = window_size[0] * window_size[1]
-    kernel: torch.Tensor = torch.zeros(window_range, window_range)
-    for i in range(window_range):
-        kernel[i, i] += 1.0
-    return kernel.view(window_range, 1, window_size[0], window_size[1])
-
-
-def get_sobel_kernel_3x3() -> torch.Tensor:
-    """Utility function that returns a sobel kernel of 3x3"""
-    return torch.tensor([[-1.0, 0.0, 1.0], [-2.0, 0.0, 2.0], [-1.0, 0.0, 1.0]])
-
-
-def get_sobel_kernel_5x5_2nd_order() -> torch.Tensor:
-    """Utility function that returns a 2nd order sobel kernel of 5x5"""
-    return torch.tensor(
-        [
-            [-1.0, 0.0, 2.0, 0.0, -1.0],
-            [-4.0, 0.0, 8.0, 0.0, -4.0],
-            [-6.0, 0.0, 12.0, 0.0, -6.0],
-            [-4.0, 0.0, 8.0, 0.0, -4.0],
-            [-1.0, 0.0, 2.0, 0.0, -1.0],
-        ]
-    )
-
-
-def _get_sobel_kernel_5x5_2nd_order_xy() -> torch.Tensor:
-    """Utility function that returns a 2nd order sobel kernel of 5x5"""
-    return torch.tensor(
-        [
-            [-1.0, -2.0, 0.0, 2.0, 1.0],
-            [-2.0, -4.0, 0.0, 4.0, 2.0],
-            [0.0, 0.0, 0.0, 0.0, 0.0],
-            [2.0, 4.0, 0.0, -4.0, -2.0],
-            [1.0, 2.0, 0.0, -2.0, -1.0],
-        ]
-    )
-
-
-def get_diff_kernel_3x3() -> torch.Tensor:
-    """Utility function that returns a sobel kernel of 3x3"""
-    return torch.tensor([[-0.0, 0.0, 0.0], [-1.0, 0.0, 1.0], [-0.0, 0.0, 0.0]])
-
-
-def get_sobel_kernel2d() -> torch.Tensor:
-    kernel_x: torch.Tensor = get_sobel_kernel_3x3()
-    kernel_y: torch.Tensor = kernel_x.transpose(0, 1)
-    return torch.stack([kernel_x, kernel_y])
-
-
-def get_diff_kernel2d() -> torch.Tensor:
-    kernel_x: torch.Tensor = get_diff_kernel_3x3()
-    kernel_y: torch.Tensor = kernel_x.transpose(0, 1)
-    return torch.stack([kernel_x, kernel_y])
-
-
-def get_sobel_kernel2d_2nd_order() -> torch.Tensor:
-    gxx: torch.Tensor = get_sobel_kernel_5x5_2nd_order()
-    gyy: torch.Tensor = gxx.transpose(0, 1)
-    gxy: torch.Tensor = _get_sobel_kernel_5x5_2nd_order_xy()
-    return torch.stack([gxx, gxy, gyy])
-
-
-def get_diff_kernel2d_2nd_order() -> torch.Tensor:
-    gxx: torch.Tensor = torch.tensor([[0.0, 0.0, 0.0], [1.0, -2.0, 1.0], [0.0, 0.0, 0.0]])
-    gyy: torch.Tensor = gxx.transpose(0, 1)
-    gxy: torch.Tensor = torch.tensor([[-1.0, 0.0, 1.0], [0.0, 0.0, 0.0], [1.0, 0.0, -1.0]])
-    return torch.stack([gxx, gxy, gyy])
-
-
-def get_spatial_gradient_kernel2d(mode: str, order: int) -> torch.Tensor:
-    r"""Function that returns kernel for 1st or 2nd order image gradients,
-    using one of the following operators: sobel, diff"""
-    if mode not in ["sobel", "diff"]:
-        raise TypeError(
-            "mode should be either sobel\
-                         or diff. Got {}".format(
-                mode
-            )
-        )
-    if order not in [1, 2]:
-        raise TypeError(
-            "order should be either 1 or 2\
-                         Got {}".format(
-                order
-            )
-        )
-    if mode == "sobel" and order == 1:
-        kernel: torch.Tensor = get_sobel_kernel2d()
-    elif mode == "sobel" and order == 2:
-        kernel = get_sobel_kernel2d_2nd_order()
-    elif mode == "diff" and order == 1:
-        kernel = get_diff_kernel2d()
-    elif mode == "diff" and order == 2:
-        kernel = get_diff_kernel2d_2nd_order()
-    else:
-        raise NotImplementedError("")
-    return kernel
-
-
-def get_gaussian_kernel1d(kernel_size: int, sigma: float, force_even: bool = False) -> torch.Tensor:
-    r"""Function that returns Gaussian filter coefficients.
-    Args:
-        kernel_size (int): filter size. It should be odd and positive.
-        sigma (float): gaussian standard deviation.
-        force_even (bool): overrides requirement for odd kernel size.
-    Returns:
-        Tensor: 1D tensor with gaussian filter coefficients.
-    Shape:
-        - Output: :math:`(\text{kernel_size})`
-    Examples::
-        >>> kornia.image.get_gaussian_kernel(3, 2.5)
-        tensor([0.3243, 0.3513, 0.3243])
-        >>> kornia.image.get_gaussian_kernel(5, 1.5)
-        tensor([0.1201, 0.2339, 0.2921, 0.2339, 0.1201])
-    """
-    if not isinstance(kernel_size, int) or ((kernel_size % 2 == 0) and not force_even) or (kernel_size <= 0):
-        raise TypeError("kernel_size must be an odd positive integer. " "Got {}".format(kernel_size))
-    window_1d: torch.Tensor = gaussian(kernel_size, sigma)
-    return window_1d
-
-
-def get_gaussian_kernel2d(
-    kernel_size: Tuple[int, int], sigma: Tuple[float, float], force_even: bool = False
-) -> torch.Tensor:
-    r"""Function that returns Gaussian filter matrix coefficients.
-    Args:
-        kernel_size (Tuple[int, int]): filter sizes in the x and y direction.
-         Sizes should be odd and positive.
-        sigma (Tuple[int, int]): gaussian standard deviation in the x and y
-         direction.
-        force_even (bool): overrides requirement for odd kernel size.
-    Returns:
-        Tensor: 2D tensor with gaussian filter matrix coefficients.
-    Shape:
-        - Output: :math:`(\text{kernel_size}_x, \text{kernel_size}_y)`
-    Examples::
-        >>> kornia.image.get_gaussian_kernel2d((3, 3), (1.5, 1.5))
-        tensor([[0.0947, 0.1183, 0.0947],
-                [0.1183, 0.1478, 0.1183],
-                [0.0947, 0.1183, 0.0947]])
-        >>> kornia.image.get_gaussian_kernel2d((3, 5), (1.5, 1.5))
-        tensor([[0.0370, 0.0720, 0.0899, 0.0720, 0.0370],
-                [0.0462, 0.0899, 0.1123, 0.0899, 0.0462],
-                [0.0370, 0.0720, 0.0899, 0.0720, 0.0370]])
-    """
-    if not isinstance(kernel_size, tuple) or len(kernel_size) != 2:
-        raise TypeError("kernel_size must be a tuple of length two. Got {}".format(kernel_size))
-    if not isinstance(sigma, tuple) or len(sigma) != 2:
-        raise TypeError("sigma must be a tuple of length two. Got {}".format(sigma))
-    ksize_x, ksize_y = kernel_size
-    sigma_x, sigma_y = sigma
-    kernel_x: torch.Tensor = get_gaussian_kernel1d(ksize_x, sigma_x, force_even)
-    kernel_y: torch.Tensor = get_gaussian_kernel1d(ksize_y, sigma_y, force_even)
-    kernel_2d: torch.Tensor = torch.matmul(kernel_x.unsqueeze(-1), kernel_y.unsqueeze(-1).t())
-    return kernel_2d
-
-
-def get_laplacian_kernel1d(kernel_size: int) -> torch.Tensor:
-    r"""Function that returns the coefficients of a 1D Laplacian filter.
-    Args:
-        kernel_size (int): filter size. It should be odd and positive.
-    Returns:
-        Tensor (float): 1D tensor with laplacian filter coefficients.
-    Shape:
-        - Output: math:`(\text{kernel_size})`
-    Examples::
-        >>> kornia.image.get_laplacian_kernel(3)
-        tensor([ 1., -2.,  1.])
-        >>> kornia.image.get_laplacian_kernel(5)
-        tensor([ 1.,  1., -4.,  1.,  1.])
-    """
-    if not isinstance(kernel_size, int) or kernel_size % 2 == 0 or kernel_size <= 0:
-        raise TypeError("ksize must be an odd positive integer. Got {}".format(kernel_size))
-    window_1d: torch.Tensor = laplacian_1d(kernel_size)
-    return window_1d
-
-
-def get_laplacian_kernel2d(kernel_size: int) -> torch.Tensor:
-    r"""Function that returns Gaussian filter matrix coefficients.
-    Args:
-        kernel_size (int): filter size should be odd.
-    Returns:
-        Tensor: 2D tensor with laplacian filter matrix coefficients.
-    Shape:
-        - Output: :math:`(\text{kernel_size}_x, \text{kernel_size}_y)`
-    Examples::
-        >>> kornia.image.get_laplacian_kernel2d(3)
-        tensor([[ 1.,  1.,  1.],
-                [ 1., -8.,  1.],
-                [ 1.,  1.,  1.]])
-        >>> kornia.image.get_laplacian_kernel2d(5)
-        tensor([[  1.,   1.,   1.,   1.,   1.],
-                [  1.,   1.,   1.,   1.,   1.],
-                [  1.,   1., -24.,   1.,   1.],
-                [  1.,   1.,   1.,   1.,   1.],
-                [  1.,   1.,   1.,   1.,   1.]])
-    """
-    if not isinstance(kernel_size, int) or kernel_size % 2 == 0 or kernel_size <= 0:
-        raise TypeError("ksize must be an odd positive integer. Got {}".format(kernel_size))
-
-    kernel = torch.ones((kernel_size, kernel_size))
-    mid = kernel_size // 2
-    kernel[mid, mid] = 1 - kernel_size ** 2
-    kernel_2d: torch.Tensor = kernel
-    return kernel_2d
-
-
-"""
-https://github.com/kornia/kornia/blob/master/kornia/filters/filter.py
-"""
-
-from typing import Tuple, List
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-
-# from kornia.filters.kernels import normalize_kernel2d
-
-
-def compute_padding(kernel_size: Tuple[int, int]) -> List[int]:
-    """Computes padding tuple."""
-    # 4 ints:  (padding_left, padding_right,padding_top,padding_bottom)
-    # https://pytorch.org/docs/stable/nn.html#torch.nn.functional.pad
-    assert len(kernel_size) == 2, kernel_size
-    computed = [(k - 1) // 2 for k in kernel_size]
-    return [computed[1], computed[1], computed[0], computed[0]]
-
-
-def filter2D(
-    input: torch.Tensor, kernel: torch.Tensor, border_type: str = "reflect", normalized: bool = False
-) -> torch.Tensor:
-    r"""Function that convolves a tensor with a kernel.
-    The function applies a given kernel to a tensor. The kernel is applied
-    independently at each depth channel of the tensor. Before applying the
-    kernel, the function applies padding according to the specified mode so
-    that the output remains in the same shape.
-    Args:
-        input (torch.Tensor): the input tensor with shape of
-          :math:`(B, C, H, W)`.
-        kernel (torch.Tensor): the kernel to be convolved with the input
-          tensor. The kernel shape must be :math:`(B, kH, kW)`.
-        border_type (str): the padding mode to be applied before convolving.
-          The expected modes are: ``'constant'``, ``'reflect'``,
-          ``'replicate'`` or ``'circular'``. Default: ``'reflect'``.
-        normalized (bool): If True, kernel will be L1 normalized.
-    Return:
-        torch.Tensor: the convolved tensor of same size and numbers of channels
-        as the input.
-    """
-    if not isinstance(input, torch.Tensor):
-        raise TypeError("Input type is not a torch.Tensor. Got {}".format(type(input)))
-
-    if not isinstance(kernel, torch.Tensor):
-        raise TypeError("Input kernel type is not a torch.Tensor. Got {}".format(type(kernel)))
-
-    if not isinstance(border_type, str):
-        raise TypeError("Input border_type is not string. Got {}".format(type(kernel)))
-
-    if not len(input.shape) == 4:
-        raise ValueError("Invalid input shape, we expect BxCxHxW. Got: {}".format(input.shape))
-
-    if not len(kernel.shape) == 3:
-        raise ValueError("Invalid kernel shape, we expect BxHxW. Got: {}".format(kernel.shape))
-
-    borders_list: List[str] = ["constant", "reflect", "replicate", "circular"]
-    if border_type not in borders_list:
-        raise ValueError(
-            "Invalid border_type, we expect the following: {0}." "Got: {1}".format(borders_list, border_type)
-        )
-
-    # prepare kernel
-    b, c, h, w = input.shape
-    tmp_kernel: torch.Tensor = kernel.to(input.device).to(input.dtype)
-    tmp_kernel = tmp_kernel.repeat(c, 1, 1, 1)
-    if normalized:
-        tmp_kernel = normalize_kernel2d(tmp_kernel)
-    # pad the input tensor
-    height, width = tmp_kernel.shape[-2:]
-    padding_shape: List[int] = compute_padding((height, width))
-    input_pad: torch.Tensor = F.pad(input, padding_shape, mode=border_type)
-
-    # convolve the tensor with the kernel
-    return F.conv2d(input_pad, tmp_kernel, padding=0, stride=1, groups=c)
-
-
-""" 
-https://github.com/kornia/kornia/blob/master/kornia/filters/gaussian.py 
-"""
-
-from typing import Tuple
-
-import torch
-import torch.nn as nn
-
-# import kornia
-# from kornia.filters.kernels import get_gaussian_kernel2d
-
-
-class GaussianBlur2d(nn.Module):
-    r"""Creates an operator that blurs a tensor using a Gaussian filter.
-    The operator smooths the given tensor with a gaussian kernel by convolving
-    it to each channel. It suports batched operation.
-    Arguments:
-        kernel_size (Tuple[int, int]): the size of the kernel.
-        sigma (Tuple[float, float]): the standard deviation of the kernel.
-        borde_type (str): the padding mode to be applied before convolving.
-          The expected modes are: ``'constant'``, ``'reflect'``,
-          ``'replicate'`` or ``'circular'``. Default: ``'reflect'``.
-    Returns:
-        Tensor: the blurred tensor.
-    Shape:
-        - Input: :math:`(B, C, H, W)`
-        - Output: :math:`(B, C, H, W)`
-    Examples::
-        >>> input = torch.rand(2, 4, 5, 5)
-        >>> gauss = kornia.filters.GaussianBlur((3, 3), (1.5, 1.5))
-        >>> output = gauss(input)  # 2x4x5x5
-    """
-
-    def __init__(self, kernel_size: Tuple[int, int], sigma: Tuple[float, float], border_type: str = "reflect") -> None:
-        super(GaussianBlur2d, self).__init__()
-        self.kernel_size: Tuple[int, int] = kernel_size
-        self.sigma: Tuple[float, float] = sigma
-        self.kernel: torch.Tensor = torch.unsqueeze(get_gaussian_kernel2d(kernel_size, sigma), dim=0)
-
-        assert border_type in ["constant", "reflect", "replicate", "circular"]
-        self.border_type = border_type
-
-    def __repr__(self) -> str:
-        return (
-            self.__class__.__name__
-            + "(kernel_size="
-            + str(self.kernel_size)
-            + ", "
-            + "sigma="
-            + str(self.sigma)
-            + ", "
-            + "border_type="
-            + self.border_type
-            + ")"
-        )
-
-    def forward(self, x: torch.Tensor):  # type: ignore
-        return filter2D(x, self.kernel, self.border_type)
-
-
-######################
-# functional interface
-######################
-
-
-def gaussian_blur2d(
-    input: torch.Tensor, kernel_size: Tuple[int, int], sigma: Tuple[float, float], border_type: str = "reflect"
-) -> torch.Tensor:
-    r"""Function that blurs a tensor using a Gaussian filter.
-    See :class:`~kornia.filters.GaussianBlur` for details.
-    """
-    return GaussianBlur2d(kernel_size, sigma, border_type)(input)
-
-
-""" """
 
 
 logging_yaml = """

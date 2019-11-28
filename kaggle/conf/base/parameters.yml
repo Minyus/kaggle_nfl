@@ -330,7 +330,7 @@ PIPELINES:
 
 #      - inputs: df_030
 #        func:
-#          =: pipelinex.df_sample
+#          =: pipelinex.DfSample
 #          frac: 0.5
 #          random_state: 191024
 #          col_sample: PlayId
@@ -339,20 +339,20 @@ PIPELINES:
 
       - inputs: df_030
         func:
-          - =: pipelinex.df_head
+          - =: pipelinex.DfHead
             groupby: Season
             n: 22
         outputs: df_031_head
 
       - inputs: df_030
         func:
-          - =: pipelinex.df_query
+          - =: pipelinex.DfQuery
             expr: "TimeHandoff < '2018-11-30T08:00:00'"
         outputs: df_031_train
 
       - inputs: df_030
         func:
-          - =: pipelinex.df_query
+          - =: pipelinex.DfQuery
             expr: "'2018-11-30T08:00:00' <= TimeHandoff"
         outputs: df_031_val
 
@@ -360,7 +360,7 @@ PIPELINES:
           - df_031_train
           - df_031_val
         func:
-          =: pipelinex.df_concat
+          =: pipelinex.DfConcat
           new_col_name: Validation
           new_col_values: [0, 1]
         outputs: df_040
@@ -406,55 +406,55 @@ PIPELINES:
 
       - inputs: df_020
         func:
-          =: pipelinex.df_query
+          =: pipelinex.DfQuery
           expr: 'Season == 2017'
         outputs: describe_s2017
 
       - inputs: df_020
         func:
-          =: pipelinex.df_query
+          =: pipelinex.DfQuery
           expr: 'Season == 2018'
         outputs: describe_s2018
 
       - inputs: df_020
         func:
-          - =: pipelinex.df_query
+          - =: pipelinex.DfQuery
             expr: 'NflId == NflIdRusher'
         outputs: rusher_df_raw
 
       - inputs: df_030
         func:
-          =: pipelinex.df_query
+          =: pipelinex.DfQuery
           expr: 'Season == 2017'
         outputs: describe_prep_s2017
 
       - inputs: df_030
         func:
-          =: pipelinex.df_query
+          =: pipelinex.DfQuery
           expr: 'Season == 2018'
         outputs: describe_prep_s2018
 
       - inputs: df_030
         func:
-          - =: pipelinex.df_query
+          - =: pipelinex.DfQuery
             expr: 'PlayerCategory == 2'
         outputs: rusher_df
 
       - inputs: rusher_df
         func:
-          - =: pipelinex.df_query
+          - =: pipelinex.DfQuery
             expr: 'Season == 2017'
         outputs: rusher_2017_describe
 
       - inputs: rusher_df
         func:
-          - =: pipelinex.df_query
+          - =: pipelinex.DfQuery
             expr: 'Season == 2018'
         outputs: rusher_2018_describe
 
 #      - inputs: play_df
 #        func:
-#          =: pipelinex.df_drop
+#          =: pipelinex.DfDrop
 #          columns: TimeHandoff
 #        outputs: pairplot
 
@@ -466,13 +466,13 @@ PIPELINES:
 #          - train
 #          - test_df
 #        func:
-#          =: pipelinex.df_concat
+#          =: pipelinex.DfConcat
 #          _:
 #        outputs: eda_df
 #
 #      - inputs: eda_df
 #        func:
-#          - =: pipelinex.df_filter
+#          - =: pipelinex.DfFilter
 #            items:
 #              - GameId
 #              - PlayId
