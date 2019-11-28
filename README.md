@@ -28,7 +28,6 @@ After several experiments, the following combinations of 18 (= 3 x 3 x 2) channe
 Computed another snapshot of 1 second later by adding the speed.
 (Also tried adding acceleration, but did not improve the performance.)
 
-The input tensor size for CNN was [Batch size, Channel, X, Y] was [32, 18, 30, 54] 
 
 ## CNN architecture
 
@@ -109,14 +108,16 @@ neural network learn the residual.
 ### Loss function
 CRPS with yards clipped to -10 to 29 yards
 
-### Other tricks
+### Other settings
 
 - Subtle augmentation
   - random shift in X-axis: 0.1 yards stdev of normal distribution
   - random shift in Y-axis: 1.0 yards stdev of normal distribution
   - (random flip in Y-axis decreased the performance thus not used.) 
 - Discarded all 2017 data which was very different from 2018 due to sensor issues and hard to adjust
-
+- Batch size: 32
+- Optimizer: Adam
+- Learning rate scheduler: LinearCyclicalScheduler (slightly better than CosineAnnealingScheduler)
 
 ### What did not work:
 - Treat players as graph
