@@ -183,7 +183,7 @@ tta: 0
 train_batch_size: 32
 
 train_params:
-  epochs: 14  # number of epochs to train
+  epochs: 12  # number of epochs to train
   time_limit: 12000
   model_checkpoint_params:
     dirname: ../checkpoint
