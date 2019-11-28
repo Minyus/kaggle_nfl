@@ -12,7 +12,7 @@ https://www.kaggle.com/c/nfl-big-data-bowl-2020/leaderboard
 Generated heatmap-like field images of 30 ((YardLine - 10) <= X < (YardLine + 20)) x 54 (0 <= Y < 54) yards grid 
 (rounded to integer).
 
-Usual color image consists of 3 channels of RGB, but I added more channels (3 x 3 x 2 = 18)
+After several experiments, the following combinations of 18 (= 3 x 3 x 2) channels worked best.
 
 #### 3 player categories:
 - 11 defense players
