@@ -14,17 +14,17 @@ Generated heatmap-like field images of 30 ((YardLine - 10) <= X < (YardLine + 20
 
 Usual color image consists of 3 channels of RGB, but I added more channels (3 x 3 x 2 = 18)
 
-##### 3 player categories:
+#### 3 player categories:
 - 11 defense players
 - 10 offense players excluding the rusher
 - The rusher (ball carrier)
 
-##### 3 variables:
+#### 3 variables:
 - A (acceleration)
 - S_X (speed in X axis)
 - S_Y (Speed in Y-axis)
 
-##### 2 frames:
+#### 2 frames:
 Computed another snapshot of 1 second later by adding the speed.
 (Also tried adding acceleration, but did not improve the performance.)
 
@@ -117,11 +117,14 @@ CRPS with yards clipped to -10 to 29 yards
 - Discarded all 2017 data which was very different from 2018 due to sensor issues and hard to adjust
 
 
-### What did not work well:
+### What did not work:
 - Treat players as graph
-  - e.g. Use the reciprocal of distance between players as edge weights, compute 
+  - Use the reciprocal of distance between players as edge weights, compute 
 Laplacian spectrum, count the number of 0 eigenvalues which equals to number of connected subgraphs 
 to use additional features
+- Scaling
+  - RankGauss
+  - StandardScaler
 
 
 ## Dependencies available in Kaggle Kernel
