@@ -22,7 +22,7 @@ After several experiments, the following combinations of 18 (= 3 x 3 x 2) channe
 #### 3 variables:
 - A (acceleration)
 - S_X (speed in X axis)
-- S_Y (Speed in Y-axis)
+- S_Y (speed in Y-axis)
 
 #### 2 frames:
 Computed another snapshot of 1 second later by adding the speed.
