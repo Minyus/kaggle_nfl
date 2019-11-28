@@ -99,7 +99,8 @@ Max, Min, Mean, Stdev for axis (X, Y) and player categories (Defense, Offense)
 
 ### Computing the CDF output
 1. Concatenate outputs of CNN and MLP.
-2. Add base probabilities computed by counting the Yards in whole train dataset in 2018 to let neural network
+2. Add base probabilities computed by counting the Yards in the whole train dataset in 2018 to let the
+neural network learn the residual.
 3. Forced predicted probabilities for the yards beyond the goal line to 0
 4. Pad 0 to lower (-99 <= Yards < -10 yards) and upper (90 <= Yards < 100).
 5. Divide by the sum through Yards to make the sum to 1 (SoftMax without exponential)
