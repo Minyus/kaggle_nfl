@@ -4,6 +4,10 @@
 https://www.kaggle.com/c/nfl-big-data-bowl-2020/leaderboard
 )
 
+<p align="center">
+<img src="readme_images/Kaggle_NFL_CNN.PNG" width="495" height="291">
+</p>
+
 ## Summary:
 2d-CNN (Convolutional Neural Network) for sparse heatmap images and MLP for tabular data
 

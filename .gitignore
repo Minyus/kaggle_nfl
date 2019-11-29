@@ -169,7 +169,6 @@ catboost_info
 # zip files
 *.zip
 
-*.png
 *.twb
 *.twbr
 *.pickle
