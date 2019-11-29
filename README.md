@@ -1,4 +1,4 @@
-# Public 45th solution for Kaggle NFL: 
+# Public 45th solution for Kaggle NFL competition
  
 [Kaggle NFL Big Data Bowl](
 https://www.kaggle.com/c/nfl-big-data-bowl-2020/leaderboard
