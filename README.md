@@ -1,7 +1,7 @@
-# Public 45th solution for Kaggle NFL competition
+# Kaggle NFL solution: 1st-stage 45th, 2nd-stage 42nd place
  
 [Kaggle NFL Big Data Bowl](
-https://www.kaggle.com/c/nfl-big-data-bowl-2020/leaderboard
+https://www.kaggle.com/c/nfl-big-data-bowl-2020/discussion/119443
 )
 
 <p align="center">
