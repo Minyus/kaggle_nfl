@@ -177,3 +177,5 @@ catboost_info
 
 test.csv.encrypted
 sample_submission.csv.encrypted
+
+*.png
