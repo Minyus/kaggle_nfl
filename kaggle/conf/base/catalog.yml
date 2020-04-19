@@ -2,50 +2,50 @@
   type: PickleLocalDataSet
 #  cached: True
 
-../input/nfl-big-data-bowl-2020/train.csv:
+input/nfl-big-data-bowl-2020/train.csv:
   type: CSVLocalDataSet
   load_args:
     low_memory: False
 
-../load/train_dataset.pickle:
+load/train_dataset.pickle:
 
-../load/val_dataset.pickle:
+load/val_dataset.pickle:
 
-../load/base_probas.pickle:
+load/base_probas.pickle:
 
-../model/pytorch_model.pickle:
+model/pytorch_model.pickle:
   mlflow_logging: True
 
-#../load/infered_first_iter.csv:
+#load/infered_first_iter.csv:
 #  type: CSVLocalDataSet
 #  mlflow_logging: True
 
-../load/loss_df.csv:
+load/loss_df.csv:
   type: CSVLocalDataSet
 
-../load/rusher_df_raw.csv:
+load/rusher_df_raw.csv:
   type: CSVLocalDataSet
 
-../load/df_030.csv:
+load/df_030.csv:
   type: CSVLocalDataSet
   cached: True
 
-../load/df_031_head.csv:
+load/df_031_head.csv:
   type: CSVLocalDataSet
 
-../load/rusher_2017_describe.csv:
+load/rusher_2017_describe.csv:
   type: pipelinex.PandasDescribeDataSet
   describe_args: # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.describe.html
     include: all
     percentiles: [0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.99]
 
-../load/rusher_2018_describe.csv:
+load/rusher_2018_describe.csv:
   type: pipelinex.PandasDescribeDataSet
   describe_args: # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.describe.html
     include: all
     percentiles: [0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.99]
 
-#../load/pairplot.png:
+#load/pairplot.png:
 #  type: pipelinex.SeabornPairPlotDataSet
 #  save_args: # https://seaborn.pydata.org/generated/seaborn.pairplot.html
 #    x_vars:
@@ -56,7 +56,7 @@
 #    plot_kws:
 #      s: 20
 
-../load/describe.csv:
+load/describe.csv:
   type: pipelinex.PandasDescribeDataSet
   describe_args: # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.describe.html
     include: all
@@ -69,7 +69,7 @@
       - 0.9
       - 0.99
 
-../load/describe_s2017.csv:
+load/describe_s2017.csv:
   type: pipelinex.PandasDescribeDataSet
   describe_args: # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.describe.html
     include: all
@@ -82,7 +82,7 @@
       - 0.9
       - 0.99
 
-../load/describe_s2018.csv:
+load/describe_s2018.csv:
   type: pipelinex.PandasDescribeDataSet
   describe_args: # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.describe.html
     include: all
@@ -95,7 +95,7 @@
       - 0.9
       - 0.99
 
-../load/describe_prep_s2017.csv:
+load/describe_prep_s2017.csv:
   type: pipelinex.PandasDescribeDataSet
   describe_args: # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.describe.html
     include: all
@@ -108,7 +108,7 @@
       - 0.9
       - 0.99
 
-../load/describe_prep_s2018.csv:
+load/describe_prep_s2018.csv:
   type: pipelinex.PandasDescribeDataSet
   describe_args: # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.describe.html
     include: all
@@ -120,18 +120,17 @@
       - 0.75
       - 0.9
       - 0.99
-
-#../load/df_020_filtered.csv:
+#load/df_020_filtered.csv:
 #  type: CSVLocalDataSet
 #
-#../load/test_df.csv:
+#load/test_df.csv:
 #  type: CSVLocalDataSet
 
-#../load/images_4darr.pickle:
+#load/images_4darr.pickle:
 #  type: PickleLocalDataSet
 #  load_args:  # None
 
-#../load/field_image.png:
+#load/field_image.png:
 #  type: pipelinex.ImagesLocalDataSet
 #  cached: False
 #  load_args:
@@ -141,7 +140,7 @@
 #    lower: 0
 #    upper: 255
 
-#../load/pairplot.png:
+#load/pairplot.png:
 #  type: pipelinex.contrib.io.seaborn.SeabornPairPlotDataSet
 #  save_args: # https://seaborn.pydata.org/generated/seaborn.pairplot.html
 #    x_vars:
