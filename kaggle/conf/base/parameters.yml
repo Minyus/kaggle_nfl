@@ -417,14 +417,8 @@ PIPELINES:
           - val_dataset
           - base_probas
 
-      - inputs: # None
-        func:
-          =: ToPipeline
-          _: { $: pytorch_model }
-        outputs: initial_model
-
       - inputs:
-          - initial_model
+          - "params:pytorch_model"
           - train_dataset
           - val_dataset
         func:
