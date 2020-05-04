@@ -145,3 +145,19 @@ to use additional features
 ## Dependencies only for experimentation (not used in Kaggle Kernel)
 - kedro
 - mlflow 
+
+## How to run
+
+### 1. Install dependencies
+
+```bash
+$ pip install torch pytorch-ignite pandas numpy pipelinex kedro mlflow
+```
+
+### 2. Clone this repository and run `kaggle_nfl_main.py`
+
+```bash
+$ git clone https://github.com/Minyus/kaggle_nfl.git
+$ cd kaggle_nfl/kaggle/
+$ pytyon kaggle_nfl_main.py 
+```
