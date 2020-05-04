@@ -161,3 +161,7 @@ $ git clone https://github.com/Minyus/kaggle_nfl.git
 $ cd kaggle_nfl/kaggle/
 $ pytyon kaggle_nfl_main.py 
 ```
+
+## Tested environment
+
+- Python 3.6.8
