@@ -1,9 +1,9 @@
 /:
-  type: PickleLocalDataSet
+  type: pickle.PickleDataSet
 #  cached: True
 
 input/nfl-big-data-bowl-2020/train.csv:
-  type: CSVLocalDataSet
+  type: pipelinex.CSVLocalDataSet
   load_args:
     low_memory: False
 
@@ -17,21 +17,21 @@ model/pytorch_model.pickle:
   mlflow_logging: True
 
 #load/infered_first_iter.csv:
-#  type: CSVLocalDataSet
+#  type: pipelinex.CSVLocalDataSet
 #  mlflow_logging: True
 
 load/loss_df.csv:
-  type: CSVLocalDataSet
+  type: pipelinex.CSVLocalDataSet
 
 load/rusher_df_raw.csv:
-  type: CSVLocalDataSet
+  type: pipelinex.CSVLocalDataSet
 
 load/df_030.csv:
-  type: CSVLocalDataSet
+  type: pipelinex.CSVLocalDataSet
   cached: True
 
 load/df_031_head.csv:
-  type: CSVLocalDataSet
+  type: pipelinex.CSVLocalDataSet
 
 load/rusher_2017_describe.csv:
   type: pipelinex.PandasDescribeDataSet
@@ -121,10 +121,10 @@ load/describe_prep_s2018.csv:
       - 0.9
       - 0.99
 #load/df_020_filtered.csv:
-#  type: CSVLocalDataSet
+#  type: pipelinex.CSVLocalDataSet
 #
 #load/test_df.csv:
-#  type: CSVLocalDataSet
+#  type: pipelinex.CSVLocalDataSet
 
 #load/images_4darr.pickle:
 #  type: PickleLocalDataSet
