@@ -14,11 +14,9 @@ load/val_dataset.pickle:
 load/base_probas.pickle:
 
 model/pytorch_model.pickle:
-  mlflow_logging: True
 
 #load/infered_first_iter.csv:
 #  type: pipelinex.CSVLocalDataSet
-#  mlflow_logging: True
 
 load/loss_df.csv:
   type: pipelinex.CSVLocalDataSet
